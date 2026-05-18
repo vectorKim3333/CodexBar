@@ -14,8 +14,6 @@ struct MenuDescriptorOpenAIAPITests {
         let settings = SettingsStore(
             userDefaults: defaults,
             configStore: testConfigStore(suiteName: suite),
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
         settings.statusChecksEnabled = false
 
         let store = UsageStore(

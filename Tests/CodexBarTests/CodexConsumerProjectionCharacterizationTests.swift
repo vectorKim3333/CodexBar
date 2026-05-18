@@ -21,8 +21,6 @@ struct CodexConsumerProjectionCharacterizationTests {
         return SettingsStore(
             userDefaults: defaults,
             configStore: configStore,
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
     }
 
     private func makeCodexStore(settings: SettingsStore, dashboardAuthorized: Bool) -> UsageStore {

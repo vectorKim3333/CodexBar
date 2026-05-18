@@ -23,7 +23,7 @@ final class CLIEntryTests: XCTestCase {
     }
 
     func test_providerSelectionPrefersOverride() {
-        let selection = CodexBarCLI.providerSelection(rawOverride: "codex", enabled: [.claude, .gemini])
+        let selection = CodexBarCLI.providerSelection(rawOverride: "codex", enabled: [.claude])
         XCTAssertEqual(selection.asList, [.codex])
     }
 
@@ -172,16 +172,6 @@ final class CLIEntryTests: XCTestCase {
         }
     }
 
-    func test_providerSelectionFallsBackToCustomWhenNonPrimary() {
-        let selection = CodexBarCLI.providerSelection(rawOverride: nil, enabled: [.codex, .gemini])
-        switch selection {
-        case let .custom(providers):
-            XCTAssertEqual(providers, [.codex, .gemini])
-        default:
-            XCTFail("Expected custom selection")
-        }
-    }
-
     func test_providerSelectionHonorsEmptyEnabledSet() {
         let selection = CodexBarCLI.providerSelection(rawOverride: nil, enabled: [])
         switch selection {
@@ -208,72 +198,10 @@ final class CLIEntryTests: XCTestCase {
         XCTAssertFalse(CodexBarCLI.shouldUseColor(noColor: false, format: .json))
     }
 
-    func test_kiloUsageTextNotesShowFallbackOnlyForAutoResolvedToCLI() {
-        XCTAssertEqual(CodexBarCLI.usageTextNotes(
-            provider: .kilo,
-            sourceMode: .auto,
-            resolvedSourceLabel: "cli"), ["Using CLI fallback"])
-        XCTAssertTrue(CodexBarCLI.usageTextNotes(
-            provider: .kilo,
-            sourceMode: .api,
-            resolvedSourceLabel: "cli").isEmpty)
-        XCTAssertTrue(CodexBarCLI.usageTextNotes(
-            provider: .codex,
-            sourceMode: .auto,
-            resolvedSourceLabel: "cli").isEmpty)
-    }
-
-    func test_kiloAutoFallbackSummaryIncludesOrderedAttemptDetails() {
-        let attempts = [
-            ProviderFetchAttempt(
-                strategyID: "kilo.api",
-                kind: .apiToken,
-                wasAvailable: true,
-                errorDescription: "Kilo authentication failed (401/403)."),
-            ProviderFetchAttempt(
-                strategyID: "kilo.cli",
-                kind: .cli,
-                wasAvailable: true,
-                errorDescription: "Kilo CLI session not found."),
-        ]
-
-        let summary = CodexBarCLI.kiloAutoFallbackSummary(
-            provider: .kilo,
-            sourceMode: .auto,
-            attempts: attempts)
-        let expected = [
-            "Kilo auto fallback attempts: api: Kilo authentication failed (401/403).",
-            " -> cli: Kilo CLI session not found.",
-        ].joined()
-
-        XCTAssertEqual(summary, expected)
-    }
-
-    func test_kiloAutoFallbackSummaryIsNilOutsideKiloAutoFailures() {
-        let attempts = [
-            ProviderFetchAttempt(
-                strategyID: "kilo.api",
-                kind: .apiToken,
-                wasAvailable: true,
-                errorDescription: "example"),
-        ]
-
-        XCTAssertNil(CodexBarCLI.kiloAutoFallbackSummary(
-            provider: .kilo,
-            sourceMode: .api,
-            attempts: attempts))
-        XCTAssertNil(CodexBarCLI.kiloAutoFallbackSummary(
-            provider: .codex,
-            sourceMode: .auto,
-            attempts: attempts))
-    }
-
     func test_sourceModeRequiresWebSupportIsProviderAware() {
-        XCTAssertTrue(CodexBarCLI.sourceModeRequiresWebSupport(.web, provider: .kilo))
         XCTAssertTrue(CodexBarCLI.sourceModeRequiresWebSupport(.auto, provider: .codex))
-        XCTAssertFalse(CodexBarCLI.sourceModeRequiresWebSupport(.auto, provider: .kilo))
-        XCTAssertFalse(CodexBarCLI.sourceModeRequiresWebSupport(.auto, provider: .grok))
-        XCTAssertFalse(CodexBarCLI.sourceModeRequiresWebSupport(.web, provider: .grok))
-        XCTAssertFalse(CodexBarCLI.sourceModeRequiresWebSupport(.api, provider: .kilo))
+        XCTAssertFalse(CodexBarCLI.sourceModeRequiresWebSupport(.api, provider: .codex))
+        XCTAssertFalse(CodexBarCLI.sourceModeRequiresWebSupport(.auto, provider: .claude))
+        XCTAssertFalse(CodexBarCLI.sourceModeRequiresWebSupport(.web, provider: .claude))
     }
 }

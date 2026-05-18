@@ -15,8 +15,8 @@ struct StatusItemExtraUsageMetricTests {
     }
 
     @Test
-    func `menu bar extra usage preference uses cursor on demand budget`() {
-        let (store, controller) = self.makeCursorController(suiteName: "StatusItemExtraUsageMetricTests-budget")
+    func `menu bar extra usage preference uses provider cost budget`() {
+        let (store, controller) = self.makeController(suiteName: "StatusItemExtraUsageMetricTests-budget")
         let snapshot = UsageSnapshot(
             primary: RateWindow(usedPercent: 10, windowMinutes: nil, resetsAt: nil, resetDescription: nil),
             secondary: RateWindow(usedPercent: 20, windowMinutes: nil, resetsAt: nil, resetDescription: nil),
@@ -28,17 +28,17 @@ struct StatusItemExtraUsageMetricTests {
                 updatedAt: Date()),
             updatedAt: Date())
 
-        store._setSnapshotForTesting(snapshot, provider: .cursor)
-        store._setErrorForTesting(nil, provider: .cursor)
+        store._setSnapshotForTesting(snapshot, provider: .claude)
+        store._setErrorForTesting(nil, provider: .claude)
 
-        let window = controller.menuBarMetricWindow(for: .cursor, snapshot: snapshot)
+        let window = controller.menuBarMetricWindow(for: .claude, snapshot: snapshot)
 
         #expect(window?.usedPercent == 15)
     }
 
     @Test
-    func `menu bar extra usage preference falls back to automatic when cursor on demand budget is missing`() {
-        let (store, controller) = self.makeCursorController(suiteName: "StatusItemExtraUsageMetricTests-missing-budget")
+    func `menu bar extra usage preference returns nil when provider cost budget is missing`() {
+        let (store, controller) = self.makeController(suiteName: "StatusItemExtraUsageMetricTests-missing-budget")
         let snapshot = UsageSnapshot(
             primary: RateWindow(usedPercent: 10, windowMinutes: nil, resetsAt: nil, resetDescription: nil),
             secondary: RateWindow(usedPercent: 72, windowMinutes: nil, resetsAt: nil, resetDescription: nil),
@@ -46,27 +46,26 @@ struct StatusItemExtraUsageMetricTests {
             providerCost: nil,
             updatedAt: Date())
 
-        store._setSnapshotForTesting(snapshot, provider: .cursor)
-        store._setErrorForTesting(nil, provider: .cursor)
+        store._setSnapshotForTesting(snapshot, provider: .claude)
+        store._setErrorForTesting(nil, provider: .claude)
 
-        let window = controller.menuBarMetricWindow(for: .cursor, snapshot: snapshot)
+        let window = controller.menuBarMetricWindow(for: .claude, snapshot: snapshot)
 
-        #expect(window?.usedPercent == 72)
+        #expect(window == nil)
     }
 
-    private func makeCursorController(suiteName: String) -> (UsageStore, StatusItemController) {
+    private func makeController(suiteName: String) -> (UsageStore, StatusItemController) {
         let settings = SettingsStore(
             configStore: testConfigStore(suiteName: suiteName),
-            zaiTokenStore: NoopZaiTokenStore())
         settings.statusChecksEnabled = false
         settings.refreshFrequency = .manual
         settings.mergeIcons = true
-        settings.selectedMenuProvider = .cursor
-        settings.setMenuBarMetricPreference(.extraUsage, for: .cursor)
+        settings.selectedMenuProvider = .claude
+        settings.setMenuBarMetricPreference(.extraUsage, for: .claude)
 
         let registry = ProviderRegistry.shared
-        if let cursorMeta = registry.metadata[.cursor] {
-            settings.setProviderEnabled(provider: .cursor, metadata: cursorMeta, enabled: true)
+        if let claudeMeta = registry.metadata[.claude] {
+            settings.setProviderEnabled(provider: .claude, metadata: claudeMeta, enabled: true)
         }
 
         let fetcher = UsageFetcher()

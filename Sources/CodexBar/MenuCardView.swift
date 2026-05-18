@@ -689,7 +689,6 @@ extension UsageMenuCardView.Model {
         let tokenCostUsageEnabled: Bool
         let showOptionalCreditsAndExtraUsage: Bool
         let sourceLabel: String?
-        let kiloAutoMode: Bool
         let hidePersonalInfo: Bool
         let claudePeakHoursEnabled: Bool
         let weeklyPace: UsagePace?
@@ -715,7 +714,6 @@ extension UsageMenuCardView.Model {
             tokenCostUsageEnabled: Bool,
             showOptionalCreditsAndExtraUsage: Bool,
             sourceLabel: String? = nil,
-            kiloAutoMode: Bool = false,
             hidePersonalInfo: Bool,
             claudePeakHoursEnabled: Bool = true,
             weeklyPace: UsagePace? = nil,
@@ -740,7 +738,6 @@ extension UsageMenuCardView.Model {
             self.tokenCostUsageEnabled = tokenCostUsageEnabled
             self.showOptionalCreditsAndExtraUsage = showOptionalCreditsAndExtraUsage
             self.sourceLabel = sourceLabel
-            self.kiloAutoMode = kiloAutoMode
             self.hidePersonalInfo = hidePersonalInfo
             self.claudePeakHoursEnabled = claudePeakHoursEnabled
             self.weeklyPace = weeklyPace

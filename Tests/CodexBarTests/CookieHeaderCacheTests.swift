@@ -221,7 +221,7 @@ struct CookieHeaderCacheTests {
                 cookieHeader: "auth=codex",
                 sourceLabel: "Chrome")
             KeychainCacheStore.store(
-                key: .cookie(provider: .cursor),
+                key: .cookie(provider: .claude, scopeIdentifier: UUID().uuidString),
                 entry: WrongEntry(value: "invalid"))
 
             let cleared = CookieHeaderCache.clearAll()

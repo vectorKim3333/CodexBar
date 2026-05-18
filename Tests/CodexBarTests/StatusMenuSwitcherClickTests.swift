@@ -20,8 +20,6 @@ struct StatusMenuSwitcherClickTests {
         return SettingsStore(
             userDefaults: defaults,
             configStore: configStore,
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
     }
 
     @Test
@@ -236,7 +234,7 @@ struct StatusMenuSwitcherClickTests {
     @Test
     func `switcher hover styling keeps layout stable`() {
         let view = ProviderSwitcherView(
-            providers: [.codex, .claude, .cursor, .factory, .zai, .minimax, .alibaba],
+            providers: [.codex, .claude],
             selected: .provider(.codex),
             includesOverview: true,
             width: 300,
@@ -259,7 +257,7 @@ struct StatusMenuSwitcherClickTests {
     @Test
     func `switcher quota indicator preserves remaining percentage`() throws {
         let view = ProviderSwitcherView(
-            providers: [.claude, .grok],
+            providers: [.claude, .codex],
             selected: .provider(.claude),
             includesOverview: false,
             width: 180,
@@ -269,10 +267,8 @@ struct StatusMenuSwitcherClickTests {
                 switch provider {
                 case .claude:
                     5
-                case .grok:
+                case .codex:
                     95
-                default:
-                    nil
                 }
             },
             onSelect: { _ in })

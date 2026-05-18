@@ -843,8 +843,8 @@ struct UsageStorePlanUtilizationTests {
     @Test
     func `weekly quota celebration posts for generic provider weekly lane`() async {
         let store = Self.makeStore()
-        let accountLabel = "zai-reset-org"
-        let recorder = WeeklyLimitResetEventRecorder(provider: .zai, accountLabel: accountLabel)
+        let accountLabel = "claude-reset-org"
+        let recorder = WeeklyLimitResetEventRecorder(provider: .claude, accountLabel: accountLabel)
         defer { recorder.invalidate() }
 
         let before = UsageSnapshot(
@@ -852,7 +852,7 @@ struct UsageStorePlanUtilizationTests {
             secondary: RateWindow(usedPercent: 15, windowMinutes: 300, resetsAt: nil, resetDescription: nil),
             updatedAt: Date(timeIntervalSince1970: 1_700_000_000),
             identity: ProviderIdentitySnapshot(
-                providerID: .zai,
+                providerID: .claude,
                 accountEmail: nil,
                 accountOrganization: accountLabel,
                 loginMethod: "pro"))
@@ -861,17 +861,17 @@ struct UsageStorePlanUtilizationTests {
             secondary: RateWindow(usedPercent: 15, windowMinutes: 300, resetsAt: nil, resetDescription: nil),
             updatedAt: Date(timeIntervalSince1970: 1_700_003_600),
             identity: ProviderIdentitySnapshot(
-                providerID: .zai,
+                providerID: .claude,
                 accountEmail: nil,
                 accountOrganization: accountLabel,
                 loginMethod: "pro"))
 
-        await store.recordPlanUtilizationHistorySample(provider: .zai, snapshot: before, now: before.updatedAt)
-        await store.recordPlanUtilizationHistorySample(provider: .zai, snapshot: after, now: after.updatedAt)
+        await store.recordPlanUtilizationHistorySample(provider: .claude, snapshot: before, now: before.updatedAt)
+        await store.recordPlanUtilizationHistorySample(provider: .claude, snapshot: after, now: after.updatedAt)
 
         let events = recorder.events
         #expect(events.count == 1)
-        #expect(events[0].provider == .zai)
+        #expect(events[0].provider == .claude)
         #expect(events[0].accountLabel == accountLabel)
         #expect(events[0].usedPercent == 0)
     }

@@ -14,8 +14,6 @@ struct CodexAccountReconciliationTests {
         let settings = SettingsStore(
             userDefaults: defaults,
             configStore: testConfigStore(suiteName: suite),
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
         let managed = ManagedCodexAccount(
             id: UUID(),
             email: "managed@example.com",
@@ -65,8 +63,6 @@ struct CodexAccountReconciliationTests {
         let settings = SettingsStore(
             userDefaults: defaults,
             configStore: testConfigStore(suiteName: suite),
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
         let managed = ManagedCodexAccount(
             id: UUID(),
             email: "managed@example.com",
@@ -101,8 +97,6 @@ struct CodexAccountReconciliationTests {
         let settings = SettingsStore(
             userDefaults: defaults,
             configStore: testConfigStore(suiteName: suite),
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
         let ambientHome = FileManager.default.temporaryDirectory.appendingPathComponent(
             UUID().uuidString,
             isDirectory: true)
@@ -137,8 +131,6 @@ struct CodexAccountReconciliationTests {
         let settings = SettingsStore(
             userDefaults: defaults,
             configStore: testConfigStore(suiteName: suite),
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
         settings._test_activeManagedCodexRemoteHomePath = "/tmp/managed-route-home"
         settings._test_liveSystemCodexAccount = nil
         settings._test_codexReconciliationEnvironment = nil
@@ -169,8 +161,6 @@ struct CodexAccountReconciliationTests {
         let settings = SettingsStore(
             userDefaults: defaults,
             configStore: testConfigStore(suiteName: suite),
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
         let ambient = ManagedCodexAccount(
             id: UUID(),
             email: "ambient-managed@example.com",
@@ -212,8 +202,6 @@ struct CodexAccountReconciliationTests {
         let settings = SettingsStore(
             userDefaults: defaults,
             configStore: testConfigStore(suiteName: suite),
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
         let persistedSource = CodexActiveSource.managedAccount(id: UUID())
         settings.codexActiveSource = persistedSource
 
@@ -231,8 +219,6 @@ struct CodexAccountReconciliationTests {
         let settings = SettingsStore(
             userDefaults: defaults,
             configStore: testConfigStore(suiteName: suite),
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
         let stored = ManagedCodexAccount(
             id: UUID(),
             email: "stored@example.com",
@@ -693,8 +679,6 @@ struct CodexAccountReconciliationTests {
         let settings = SettingsStore(
             userDefaults: defaults,
             configStore: testConfigStore(suiteName: suite),
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
         let managed = ManagedCodexAccount(
             id: UUID(),
             email: "managed@example.com",
@@ -732,8 +716,6 @@ struct CodexAccountReconciliationTests {
         let settings = SettingsStore(
             userDefaults: defaults,
             configStore: testConfigStore(suiteName: suite),
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
         let managed = ManagedCodexAccount(
             id: UUID(),
             email: "same@example.com",
@@ -769,8 +751,6 @@ struct CodexAccountReconciliationTests {
         let settings = SettingsStore(
             userDefaults: defaults,
             configStore: testConfigStore(suiteName: suite),
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
         let managed = ManagedCodexAccount(
             id: UUID(),
             email: "same@example.com",
@@ -805,8 +785,6 @@ struct CodexAccountReconciliationTests {
         let settings = SettingsStore(
             userDefaults: defaults,
             configStore: testConfigStore(suiteName: suite),
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
         let managedHome = FileManager.default.temporaryDirectory.appendingPathComponent(
             UUID().uuidString,
             isDirectory: true)

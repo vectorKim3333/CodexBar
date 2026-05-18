@@ -19,7 +19,6 @@
 "All" = "All";
 "Always allow prompts" = "Always allow prompts";
 "Animation pattern" = "Animation pattern";
-"Antigravity login is managed in the app" = "Antigravity login is managed in the app";
 "Applies only to the Security.framework OAuth keychain reader." = "Applies only to the Security.framework OAuth keychain reader.";
 "Auto falls back to the next source if the preferred one fails." = "Auto falls back to the next source if the preferred one fails.";
 "Auto uses API first, then falls back to CLI on auth failures." = "Auto uses API first, then falls back to CLI on auth failures.";
@@ -27,14 +26,7 @@
 "Auto-refresh is off; use the menu's Refresh command." = "Auto-refresh is off; use the menu's Refresh command.";
 "Auto-refresh: hourly · Timeout: 10m" = "Auto-refresh: hourly · Timeout: 10m";
 "Automatic" = "Automatic";
-"Automatic imports browser cookies and WorkOS tokens." = "Automatic imports browser cookies and WorkOS tokens.";
-"Automatic imports browser cookies and local storage tokens." = "Automatic imports browser cookies and local storage tokens.";
-"Automatic imports browser cookies for dashboard extras." = "Automatic imports browser cookies for dashboard extras.";
 "Automatic imports browser cookies for the web API." = "Automatic imports browser cookies for the web API.";
-"Automatic imports browser cookies from Model Studio/Bailian." = "Automatic imports browser cookies from Model Studio/Bailian.";
-"Automatic imports browser cookies from admin.mistral.ai." = "Automatic imports browser cookies from admin.mistral.ai.";
-"Automatic imports browser cookies from opencode.ai." = "Automatic imports browser cookies from opencode.ai.";
-"Automatic imports browser cookies or stored sessions." = "Automatic imports browser cookies or stored sessions.";
 "Automatic imports browser cookies." = "Automatic imports browser cookies.";
 "Automatically imports browser session cookie." = "Automatically imports browser session cookie.";
 "Automatically opens CodexBar when you start your Mac." = "Automatically opens CodexBar when you start your Mac.";
@@ -58,7 +50,6 @@
 "Check if you like your agents having some fun up there." = "Check if you like your agents having some fun up there.";
 "Check provider status" = "Check provider status";
 "Choose Codex workspace" = "Choose Codex workspace";
-"Choose the MiniMax host (global .io or China mainland .com)." = "Choose the MiniMax host (global .io or China mainland .com).";
 "Choose up to " = "Choose up to ";
 "Choose up to \\(Self.maxOverviewProviders) providers" = "Choose up to \\(Self.maxOverviewProviders) providers";
 "Choose up to \\(count) providers" = "Choose up to \\(count) providers";
@@ -87,20 +78,14 @@
 "Cookie header" = "Cookie header";
 "Cookie source" = "Cookie source";
 "Cookie: ..." = "Cookie: ...";
-"Cookie: \\u{2026}\\\n\\\nor paste a cURL capture from the Abacus AI dashboard" = "Cookie: \\u{2026}\\\n\\\nor paste a cURL capture from the Abacus AI dashboard";
-"Cookie: \\u{2026}\\\n\\\nor paste the __Secure-next-auth.session-token value" = "Cookie: \\u{2026}\\\n\\\nor paste the __Secure-next-auth.session-token value";
-"Cookie: \\u{2026}\\\n\\\nor paste the kimi-auth token value" = "Cookie: \\u{2026}\\\n\\\nor paste the kimi-auth token value";
 "Cookie: …" = "Cookie: …";
-"CopilotDeviceFlow" = "CopilotDeviceFlow";
 "Cost" = "Cost";
 "Could not add Codex account" = "Could not add Codex account";
-"Could not open Terminal for Gemini" = "Could not open Terminal for Gemini";
 "Could not start claude /login" = "Could not start claude /login";
 "Could not start codex login" = "Could not start codex login";
 "Could not switch system account" = "Could not switch system account";
 "Credits" = "Credits";
 "Credits history" = "Credits history";
-"Cursor login failed" = "Cursor login failed";
 "Custom" = "Custom";
 "Custom Path" = "Custom Path";
 "Daily Routines" = "Daily Routines";
@@ -132,12 +117,8 @@
 "Finish the current managed account change before switching the system account." = "Finish the current managed account change before switching the system account.";
 "Force animation on next refresh" = "Force animation on next refresh";
 "Gateway region" = "Gateway region";
-"Gemini CLI not found" = "Gemini CLI not found";
-"Gemini/Antigravity, surfacing incidents in the icon and menu." = "Gemini/Antigravity, surfacing incidents in the icon and menu.";
 "General" = "General";
 "GitHub" = "GitHub";
-"GitHub Copilot Login" = "GitHub Copilot Login";
-"GitHub Login" = "GitHub Login";
 "Hide details" = "Hide details";
 "Hide personal information" = "Hide personal information";
 "Historical tracking" = "Historical tracking";
@@ -146,9 +127,6 @@
 "Install CLI" = "Install CLI";
 "Install the Claude CLI (npm i -g @anthropic-ai/claude-code) and try again." = "Install the Claude CLI (npm i -g @anthropic-ai/claude-code) and try again.";
 "Install the Codex CLI (npm i -g @openai/codex) and try again." = "Install the Codex CLI (npm i -g @openai/codex) and try again.";
-"Install the Gemini CLI (npm i -g @google/gemini-cli) and try again." = "Install the Gemini CLI (npm i -g @google/gemini-cli) and try again.";
-"JetBrains AI is ready" = "JetBrains AI is ready";
-"JetBrains IDE" = "JetBrains IDE";
 "Keep CLI sessions alive" = "Keep CLI sessions alive";
 "Keyboard shortcut" = "Keyboard shortcut";
 "Keychain access" = "Keychain access";
@@ -178,7 +156,6 @@
 "Never prompt" = "Never prompt";
 "No" = "No";
 "No Codex accounts detected yet." = "No Codex accounts detected yet.";
-"No JetBrains IDE detected" = "No JetBrains IDE detected";
 "No cost history data." = "No cost history data.";
 "No credits history data." = "No credits history data.";
 "No data available" = "No data available";
@@ -202,17 +179,12 @@
 "Open" = "Open";
 "Open API Keys" = "Open API Keys";
 "Open Amp Settings" = "Open Amp Settings";
-"Open Antigravity to sign in, then refresh CodexBar." = "Open Antigravity to sign in, then refresh CodexBar.";
 "Open Browser" = "Open Browser";
-"Open Coding Plan" = "Open Coding Plan";
 "Open Console" = "Open Console";
 "Open Dashboard" = "Open Dashboard";
-"Open Mistral Admin" = "Open Mistral Admin";
 "Open Menu Bar Settings" = "Open Menu Bar Settings";
-"Open Ollama Settings" = "Open Ollama Settings";
 "Open Terminal" = "Open Terminal";
 "Open Usage Page" = "Open Usage Page";
-"Open Warp API Key Guide" = "Open Warp API Key Guide";
 "Open menu" = "Open menu";
 "Open token file" = "Open token file";
 "OpenAI cookies" = "OpenAI cookies";
@@ -221,7 +193,6 @@
 "Option B" = "Option B";
 "Optional override if workspace lookup fails." = "Optional override if workspace lookup fails.";
 "Options" = "Options";
-"Override auto-detection with a custom IDE base path" = "Override auto-detection with a custom IDE base path";
 "Overview" = "Overview";
 "Overview rows always follow provider order." = "Overview rows always follow provider order.";
 "Overview tab providers" = "Overview tab providers";
@@ -229,7 +200,6 @@
 "Paste API token…" = "Paste API token…";
 "Paste key…" = "Paste key…";
 "Paste sessionKey or OAuth token…" = "Paste sessionKey or OAuth token…";
-"Paste the Cookie header from a request to admin.mistral.ai. " = "Paste the Cookie header from a request to admin.mistral.ai. ";
 "Paste token…" = "Paste token…";
 "Peak · ends in \\(self.formatDuration(minutes: remaining))" = "Peak · ends in \\(self.formatDuration(minutes: remaining))";
 "Personal" = "Personal";
@@ -267,7 +237,6 @@
 "Secondary (\\(label))" = "Secondary (\\(label))";
 "Secondary (\\(metadata.weeklyLabel))" = "Secondary (\\(metadata.weeklyLabel))";
 "Select a provider" = "Select a provider";
-"Select the IDE to monitor" = "Select the IDE to monitor";
 "Session quota notifications" = "Session quota notifications";
 "Session tokens" = "Session tokens";
 "Settings" = "Settings";
@@ -289,22 +258,8 @@
 "Start at Login" = "Start at Login";
 "Status" = "Status";
 "Store Claude sessionKey cookies or OAuth access tokens." = "Store Claude sessionKey cookies or OAuth access tokens.";
-"Store multiple Abacus AI Cookie headers." = "Store multiple Abacus AI Cookie headers.";
-"Store multiple Augment Cookie headers." = "Store multiple Augment Cookie headers.";
-"Store multiple Cursor Cookie headers." = "Store multiple Cursor Cookie headers.";
-"Store multiple Factory Cookie headers." = "Store multiple Factory Cookie headers.";
-"Store multiple MiniMax Cookie headers." = "Store multiple MiniMax Cookie headers.";
-"Store multiple Mistral Cookie headers." = "Store multiple Mistral Cookie headers.";
-"Store multiple Ollama Cookie headers." = "Store multiple Ollama Cookie headers.";
-"Store multiple OpenCode Cookie headers." = "Store multiple OpenCode Cookie headers.";
-"Store multiple OpenCode Go Cookie headers." = "Store multiple OpenCode Go Cookie headers.";
 "Stored in the CodexBar config file." = "Stored in the CodexBar config file.";
 "Stored in ~/.codexbar/config.json. " = "Stored in ~/.codexbar/config.json. ";
-"Stored in ~/.codexbar/config.json. Generate one at kimi-k2.ai." = "Stored in ~/.codexbar/config.json. Generate one at kimi-k2.ai.";
-"Stored in ~/.codexbar/config.json. Paste the key from the Synthetic dashboard." = "Stored in ~/.codexbar/config.json. Paste the key from the Synthetic dashboard.";
-"Stored in ~/.codexbar/config.json. Paste your Coding Plan API key from Model Studio." = "Stored in ~/.codexbar/config.json. Paste your Coding Plan API key from Model Studio.";
-"Stored in ~/.codexbar/config.json. Paste your MiniMax API key." = "Stored in ~/.codexbar/config.json. Paste your MiniMax API key.";
-"Stored in ~/.codexbar/config.json. You can also provide KILO_API_KEY or " = "Stored in ~/.codexbar/config.json. You can also provide KILO_API_KEY or ";
 "Stores local Codex usage history (8 weeks) to personalize Pace predictions." = "Stores local Codex usage history (8 weeks) to personalize Pace predictions.";
 "Subscription Utilization" = "Subscription Utilization";
 "Surprise me" = "Surprise me";
@@ -329,14 +284,12 @@
 "Usage breakdown" = "Usage breakdown";
 "Usage history (30 days)" = "Usage history (30 days)";
 "Usage source" = "Usage source";
-"Use BigModel for the China mainland endpoints (open.bigmodel.cn)." = "Use BigModel for the China mainland endpoints (open.bigmodel.cn).";
 "Use a single menu bar icon with a provider switcher." = "Use a single menu bar icon with a provider switcher.";
 "Use international or China mainland console gateways for quota fetches." = "Use international or China mainland console gateways for quota fetches.";
 "Version" = "Version";
 "Version \\(self.versionString)" = "Version \\(self.versionString)";
 "Version \\(version)" = "Version \\(version)";
 "Version \\(versionString)" = "Version \\(versionString)";
-"Vertex AI Login" = "Vertex AI Login";
 "Wait for the current managed Codex login to finish before adding another account." = "Wait for the current managed Codex login to finish before adding another account.";
 "Waiting for Authentication..." = "Waiting for Authentication...";
 "Website" = "Website";
@@ -357,12 +310,6 @@
 "all browsers" = "all browsers";
 "available again." = "available again.";
 "built_format" = "Built %@";
-"copilot_complete_in_browser" = "Complete sign in in your browser.";
-"copilot_device_code" = "Device code copied to clipboard: %1$@\n\nVerify at: %2$@";
-"copilot_device_code_copied" = "Device code copied.";
-"copilot_verify_at" = "Verify at %@";
-"copilot_waiting_text" = "Complete sign in in your browser.\nThis window closes automatically when sign-in completes.";
-"copilot_window_closes_auto" = "This window closes automatically when sign-in completes.";
 "cost_status_error" = "%1$@: %2$@";
 "cost_status_fetching" = "%1$@: fetching… %2$@";
 "cost_status_last_attempt" = "%1$@: last attempt %2$@";
@@ -370,11 +317,7 @@
 "cost_status_snapshot" = "%1$@: %2$@ · 30d %3$@";
 "cost_status_unsupported" = "%@: unsupported";
 "credits_remaining" = "Credits: %@";
-"cursor_on_demand" = "On-demand: %@";
-"cursor_on_demand_with_limit" = "On-demand: %1$@ / %2$@";
 "extra_usage_format" = "Extra usage: %1$@ / %2$@";
-"jetbrains_detected_generate" = "Detected: %@. Use the AI assistant once to generate quota data, then refresh CodexBar.";
-"jetbrains_detected_select" = "Detected: %@. Select your preferred IDE in Settings, then refresh CodexBar.";
 "last_fetch_failed_with_provider" = "Last %@ fetch failed:";
 "last_spend" = "Last spend: %@";
 "mcp_model_usage" = "%1$@: %2$@";
@@ -392,8 +335,6 @@
 "peak_ends_in" = "Peak ends in %@";
 "remove_account_message" = "Remove %@ from CodexBar? Its managed Codex home will be deleted.";
 "version_format" = "Version %@";
-"vertex_ai_login_instructions" = "To track Vertex AI usage, authenticate with Google Cloud.\n\n1. Open Terminal\n2. Run: gcloud auth application-default login\n3. Follow the browser prompts to sign in\n4. Set your project: gcloud config set project PROJECT_ID\n\nOpen Terminal now?";
-"workspaceID is set but only opencode, opencodego, and deepgram support workspaceID." = "workspaceID is set but only opencode, opencodego, and deepgram support workspaceID.";
 "© 2026 Peter Steinberger. MIT License." = "© 2026 Peter Steinberger. MIT License.";
 
 /* General Pane */
@@ -415,7 +356,7 @@
 "refresh_cadence_subtitle" = "How often CodexBar polls providers in the background.";
 "manual_refresh_hint" = "Auto-refresh is off; use the menu's Refresh command.";
 "check_provider_status_title" = "Check provider status";
-"check_provider_status_subtitle" = "Polls OpenAI/Claude status pages and Google Workspace for Gemini/Antigravity, surfacing incidents in the icon and menu.";
+"check_provider_status_subtitle" = "Polls OpenAI/Claude status pages, surfacing incidents in the icon and menu.";
 "session_quota_notifications_title" = "Session quota notifications";
 "session_quota_notifications_subtitle" = "Notifies when the 5-hour session quota hits 0% and when it becomes available again.";
 "quota_warning_notifications_title" = "Quota warning notifications";
@@ -463,10 +404,6 @@
 "unsafe_managed_home" = "CodexBar refused to modify an unexpected managed home path: %@";
 "menu_bar_metric_title" = "Menu bar metric";
 "menu_bar_metric_subtitle" = "Choose which window drives the menu bar percent.";
-"menu_bar_metric_subtitle_deepseek" = "Shows the DeepSeek balance in the menu bar.";
-"menu_bar_metric_subtitle_moonshot" = "Shows the Moonshot / Kimi API balance in the menu bar.";
-"menu_bar_metric_subtitle_mistral" = "Shows current-month Mistral API spend in the menu bar.";
-"menu_bar_metric_subtitle_kimik2" = "Shows Kimi K2 API-key credits in the menu bar.";
 "automatic" = "Automatic";
 "primary_api_key_limit" = "Primary (API key limit)";
 

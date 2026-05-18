@@ -81,8 +81,6 @@ struct StatusMenuSwitcherRefreshTests {
         return SettingsStore(
             userDefaults: defaults,
             configStore: testConfigStore(suiteName: suite),
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
     }
 
     private static func enableCodexAndClaude(_ settings: SettingsStore) {

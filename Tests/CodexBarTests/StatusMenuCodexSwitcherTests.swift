@@ -20,8 +20,6 @@ struct StatusMenuCodexSwitcherTests {
         return SettingsStore(
             userDefaults: defaults,
             configStore: configStore,
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
     }
 
     private func makeStatusBarForTesting() -> NSStatusBar {

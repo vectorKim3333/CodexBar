@@ -19,7 +19,6 @@
 "All" = "Todos";
 "Always allow prompts" = "Sempre permitir prompts";
 "Animation pattern" = "Padrão de animação";
-"Antigravity login is managed in the app" = "O login do Antigravity é gerenciado no app";
 "Applies only to the Security.framework OAuth keychain reader." = "Aplica-se apenas ao leitor de chaves OAuth Security.framework.";
 "Auto falls back to the next source if the preferred one fails." = "Automático usa a próxima fonte se a preferida falhar.";
 "Auto uses API first, then falls back to CLI on auth failures." = "Automático usa a API primeiro e recorre à CLI em falhas de autenticação.";
@@ -27,14 +26,7 @@
 "Auto-refresh is off; use the menu's Refresh command." = "A atualização automática está desativada; use Atualizar no menu.";
 "Auto-refresh: hourly · Timeout: 10m" = "Atualização automática: a cada hora · Timeout: 10 min";
 "Automatic" = "Automático";
-"Automatic imports browser cookies and WorkOS tokens." = "Importa automaticamente cookies do navegador e tokens WorkOS.";
-"Automatic imports browser cookies and local storage tokens." = "Importa automaticamente cookies do navegador e tokens do armazenamento local.";
-"Automatic imports browser cookies for dashboard extras." = "Importa automaticamente cookies do navegador para extras do dashboard.";
 "Automatic imports browser cookies for the web API." = "Importa automaticamente cookies do navegador para a API web.";
-"Automatic imports browser cookies from Model Studio/Bailian." = "Importa automaticamente cookies do navegador do Model Studio/Bailian.";
-"Automatic imports browser cookies from admin.mistral.ai." = "Importa automaticamente cookies do navegador de admin.mistral.ai.";
-"Automatic imports browser cookies from opencode.ai." = "Importa automaticamente cookies do navegador de opencode.ai.";
-"Automatic imports browser cookies or stored sessions." = "Importa automaticamente cookies do navegador ou sessões salvas.";
 "Automatic imports browser cookies." = "Importa cookies do navegador automaticamente.";
 "Automatically imports browser session cookie." = "Importa automaticamente o cookie de sessão do navegador.";
 "Automatically opens CodexBar when you start your Mac." = "Abre o CodexBar automaticamente ao iniciar o Mac.";
@@ -58,7 +50,6 @@
 "Check if you like your agents having some fun up there." = "Veja se você gosta dos seus agentes se divertindo ali em cima.";
 "Check provider status" = "Verificar status dos provedores";
 "Choose Codex workspace" = "Escolher workspace do Codex";
-"Choose the MiniMax host (global .io or China mainland .com)." = "Escolha o host MiniMax (global .io ou China continental .com).";
 "Choose up to " = "Escolha até ";
 "Choose up to \\(Self.maxOverviewProviders) providers" = "Escolha até \\(Self.maxOverviewProviders) provedores";
 "Choose up to \\(count) providers" = "Escolha até \\(count) provedores";
@@ -87,20 +78,14 @@
 "Cookie header" = "Cabeçalho Cookie";
 "Cookie source" = "Fonte do cookie";
 "Cookie: ..." = "Cookie: ...";
-"Cookie: \\u{2026}\\\n\\\nor paste a cURL capture from the Abacus AI dashboard" = "Cookie: \\u{2026}\\\n\\\nou cole uma captura cURL do dashboard do Abacus AI";
-"Cookie: \\u{2026}\\\n\\\nor paste the __Secure-next-auth.session-token value" = "Cookie: \\u{2026}\\\n\\\nou cole o valor de __Secure-next-auth.session-token";
-"Cookie: \\u{2026}\\\n\\\nor paste the kimi-auth token value" = "Cookie: \\u{2026}\\\n\\\nou cole o valor do token kimi-auth";
 "Cookie: …" = "Cookie: …";
-"CopilotDeviceFlow" = "CopilotDeviceFlow";
 "Cost" = "Custo";
 "Could not add Codex account" = "Não foi possível adicionar a conta Codex";
-"Could not open Terminal for Gemini" = "Não foi possível abrir o Terminal para Gemini";
 "Could not start claude /login" = "Não foi possível iniciar claude /login";
 "Could not start codex login" = "Não foi possível iniciar o login do Codex";
 "Could not switch system account" = "Não foi possível trocar a conta do sistema";
 "Credits" = "Créditos";
 "Credits history" = "Histórico de créditos";
-"Cursor login failed" = "Falha no login do Cursor";
 "Custom" = "Personalizado";
 "Custom Path" = "Caminho personalizado";
 "Daily Routines" = "Rotinas diárias";
@@ -132,12 +117,8 @@
 "Finish the current managed account change before switching the system account." = "Conclua a alteração de conta gerenciada atual antes de trocar a conta do sistema.";
 "Force animation on next refresh" = "Forçar animação na próxima atualização";
 "Gateway region" = "Região do gateway";
-"Gemini CLI not found" = "CLI do Gemini não encontrada";
-"Gemini/Antigravity, surfacing incidents in the icon and menu." = "Gemini/Antigravity, exibindo incidentes no ícone e no menu.";
 "General" = "Geral";
 "GitHub" = "GitHub";
-"GitHub Copilot Login" = "Login do GitHub Copilot";
-"GitHub Login" = "Login do GitHub";
 "Hide details" = "Ocultar detalhes";
 "Hide personal information" = "Ocultar informações pessoais";
 "Historical tracking" = "Acompanhamento histórico";
@@ -146,9 +127,6 @@
 "Install CLI" = "Instalar CLI";
 "Install the Claude CLI (npm i -g @anthropic-ai/claude-code) and try again." = "Instale a CLI do Claude (npm i -g @anthropic-ai/claude-code) e tente novamente.";
 "Install the Codex CLI (npm i -g @openai/codex) and try again." = "Instale a CLI do Codex (npm i -g @openai/codex) e tente novamente.";
-"Install the Gemini CLI (npm i -g @google/gemini-cli) and try again." = "Instale a CLI do Gemini (npm i -g @google/gemini-cli) e tente novamente.";
-"JetBrains AI is ready" = "JetBrains AI está pronto";
-"JetBrains IDE" = "IDE JetBrains";
 "Keep CLI sessions alive" = "Manter sessões da CLI ativas";
 "Keyboard shortcut" = "Atalho de teclado";
 "Keychain access" = "Acesso ao Keychain";
@@ -178,7 +156,6 @@
 "Never prompt" = "Nunca perguntar";
 "No" = "Não";
 "No Codex accounts detected yet." = "Nenhuma conta Codex detectada ainda.";
-"No JetBrains IDE detected" = "Nenhuma IDE JetBrains detectada";
 "No cost history data." = "Sem dados de histórico de custos.";
 "No credits history data." = "Sem dados de histórico de créditos.";
 "No data available" = "Nenhum dado disponível";
@@ -201,18 +178,12 @@
 "Only on user action" = "Somente por ação do usuário";
 "Open" = "Abrir";
 "Open API Keys" = "Abrir chaves de API";
-"Open Amp Settings" = "Abrir ajustes do Amp";
-"Open Antigravity to sign in, then refresh CodexBar." = "Abra o Antigravity para entrar e depois atualize o CodexBar.";
 "Open Browser" = "Abrir navegador";
-"Open Coding Plan" = "Abrir Coding Plan";
 "Open Console" = "Abrir console";
 "Open Dashboard" = "Abrir dashboard";
 "Open Menu Bar Settings" = "Abrir ajustes da barra de menus";
-"Open Mistral Admin" = "Abrir Mistral Admin";
-"Open Ollama Settings" = "Abrir ajustes do Ollama";
 "Open Terminal" = "Abrir Terminal";
 "Open Usage Page" = "Abrir página de uso";
-"Open Warp API Key Guide" = "Abrir guia de chave de API do Warp";
 "Open menu" = "Abrir menu";
 "Open token file" = "Abrir arquivo de token";
 "OpenAI cookies" = "Cookies da OpenAI";
@@ -221,7 +192,6 @@
 "Option B" = "Opção B";
 "Optional override if workspace lookup fails." = "Substituição opcional se a busca do workspace falhar.";
 "Options" = "Opções";
-"Override auto-detection with a custom IDE base path" = "Substituir detecção automática por um caminho base personalizado da IDE";
 "Overview" = "Visão geral";
 "Overview rows always follow provider order." = "As linhas da Visão geral sempre seguem a ordem dos provedores.";
 "Overview tab providers" = "Provedores da aba Visão geral";
@@ -229,7 +199,6 @@
 "Paste API token…" = "Cole o token da API…";
 "Paste key…" = "Cole a chave…";
 "Paste sessionKey or OAuth token…" = "Cole sessionKey ou token OAuth…";
-"Paste the Cookie header from a request to admin.mistral.ai. " = "Cole o cabeçalho Cookie de uma requisição para admin.mistral.ai. ";
 "Paste token…" = "Cole o token…";
 "Peak · ends in \\(self.formatDuration(minutes: remaining))" = "Pico · termina em \\(self.formatDuration(minutes: remaining))";
 "Personal" = "Pessoal";
@@ -267,7 +236,6 @@
 "Secondary (\\(label))" = "Secundário (\\(label))";
 "Secondary (\\(metadata.weeklyLabel))" = "Secundário (\\(metadata.weeklyLabel))";
 "Select a provider" = "Selecione um provedor";
-"Select the IDE to monitor" = "Selecione a IDE para monitorar";
 "Session quota notifications" = "Notificações de cota de sessão";
 "Session tokens" = "Tokens de sessão";
 "Settings" = "Ajustes";
@@ -289,22 +257,8 @@
 "Start at Login" = "Iniciar ao fazer login";
 "Status" = "Status";
 "Store Claude sessionKey cookies or OAuth access tokens." = "Armazena cookies sessionKey ou tokens de acesso OAuth do Claude.";
-"Store multiple Abacus AI Cookie headers." = "Armazena vários cabeçalhos Cookie do Abacus AI.";
-"Store multiple Augment Cookie headers." = "Armazena vários cabeçalhos Cookie do Augment.";
-"Store multiple Cursor Cookie headers." = "Armazena vários cabeçalhos Cookie do Cursor.";
-"Store multiple Factory Cookie headers." = "Armazena vários cabeçalhos Cookie do Factory.";
-"Store multiple MiniMax Cookie headers." = "Armazena vários cabeçalhos Cookie do MiniMax.";
-"Store multiple Mistral Cookie headers." = "Armazena vários cabeçalhos Cookie do Mistral.";
-"Store multiple Ollama Cookie headers." = "Armazena vários cabeçalhos Cookie do Ollama.";
-"Store multiple OpenCode Cookie headers." = "Armazena vários cabeçalhos Cookie do OpenCode.";
-"Store multiple OpenCode Go Cookie headers." = "Armazena vários cabeçalhos Cookie do OpenCode Go.";
 "Stored in the CodexBar config file." = "Armazenado no arquivo de configuração do CodexBar.";
 "Stored in ~/.codexbar/config.json. " = "Armazenado em ~/.codexbar/config.json. ";
-"Stored in ~/.codexbar/config.json. Generate one at kimi-k2.ai." = "Armazenado em ~/.codexbar/config.json. Gere um em kimi-k2.ai.";
-"Stored in ~/.codexbar/config.json. Paste the key from the Synthetic dashboard." = "Armazenado em ~/.codexbar/config.json. Cole a chave do dashboard Synthetic.";
-"Stored in ~/.codexbar/config.json. Paste your Coding Plan API key from Model Studio." = "Armazenado em ~/.codexbar/config.json. Cole sua chave de API do Coding Plan do Model Studio.";
-"Stored in ~/.codexbar/config.json. Paste your MiniMax API key." = "Armazenado em ~/.codexbar/config.json. Cole sua chave de API do MiniMax.";
-"Stored in ~/.codexbar/config.json. You can also provide KILO_API_KEY or " = "Armazenado em ~/.codexbar/config.json. Você também pode informar KILO_API_KEY ou ";
 "Stores local Codex usage history (8 weeks) to personalize Pace predictions." = "Armazena histórico local de uso do Codex (8 semanas) para personalizar previsões de Ritmo.";
 "Subscription Utilization" = "Uso da assinatura";
 "Surprise me" = "Surpreenda-me";
@@ -329,14 +283,12 @@
 "Usage breakdown" = "Detalhamento de uso";
 "Usage history (30 days)" = "Histórico de uso (30 dias)";
 "Usage source" = "Fonte de uso";
-"Use BigModel for the China mainland endpoints (open.bigmodel.cn)." = "Usa BigModel para endpoints da China continental (open.bigmodel.cn).";
 "Use a single menu bar icon with a provider switcher." = "Usa um único ícone na barra de menus com alternador de provedores.";
 "Use international or China mainland console gateways for quota fetches." = "Usa gateways de console internacionais ou da China continental para buscar cotas.";
 "Version" = "Versão";
 "Version \\(self.versionString)" = "Versão \\(self.versionString)";
 "Version \\(version)" = "Versão \\(version)";
 "Version \\(versionString)" = "Versão \\(versionString)";
-"Vertex AI Login" = "Login do Vertex AI";
 "Wait for the current managed Codex login to finish before adding another account." = "Aguarde o login gerenciado atual do Codex terminar antes de adicionar outra conta.";
 "Waiting for Authentication..." = "Aguardando autenticação...";
 "Website" = "Site";
@@ -357,12 +309,6 @@
 "all browsers" = "todos os navegadores";
 "available again." = "disponível novamente.";
 "built_format" = "Build %@";
-"copilot_complete_in_browser" = "Conclua o login no navegador.";
-"copilot_device_code" = "Código do dispositivo copiado para a área de transferência: %1$@\n\nVerifique em: %2$@";
-"copilot_device_code_copied" = "Código do dispositivo copiado.";
-"copilot_verify_at" = "Verifique em %@";
-"copilot_waiting_text" = "Conclua o login no navegador.\nEsta janela fecha automaticamente quando o login for concluído.";
-"copilot_window_closes_auto" = "Esta janela fecha automaticamente quando o login for concluído.";
 "cost_status_error" = "%1$@: %2$@";
 "cost_status_fetching" = "%1$@: buscando… %2$@";
 "cost_status_last_attempt" = "%1$@: última tentativa %2$@";
@@ -370,11 +316,7 @@
 "cost_status_snapshot" = "%1$@: %2$@ · 30d %3$@";
 "cost_status_unsupported" = "%@: não suportado";
 "credits_remaining" = "Créditos: %@";
-"cursor_on_demand" = "Sob demanda: %@";
-"cursor_on_demand_with_limit" = "Sob demanda: %1$@ / %2$@";
 "extra_usage_format" = "Uso extra: %1$@ / %2$@";
-"jetbrains_detected_generate" = "Detectado: %@. Use o assistente de IA uma vez para gerar dados de cota e atualize o CodexBar.";
-"jetbrains_detected_select" = "Detectado: %@. Selecione sua IDE preferida em Ajustes e atualize o CodexBar.";
 "last_fetch_failed_with_provider" = "Última busca de %@ falhou:";
 "last_spend" = "Último gasto: %@";
 "mcp_model_usage" = "%1$@: %2$@";
@@ -392,8 +334,6 @@
 "peak_ends_in" = "Pico termina em %@";
 "remove_account_message" = "Remover %@ do CodexBar? O diretório Codex gerenciado será apagado.";
 "version_format" = "Versão %@";
-"vertex_ai_login_instructions" = "Para acompanhar o uso do Vertex AI, autentique-se no Google Cloud.\n\n1. Abra o Terminal\n2. Execute: gcloud auth application-default login\n3. Siga os prompts no navegador para entrar\n4. Defina seu projeto: gcloud config set project PROJECT_ID\n\nAbrir o Terminal agora?";
-"workspaceID is set but only opencode, opencodego, and deepgram support workspaceID." = "workspaceID está definido, mas somente opencode, opencodego e deepgram oferecem suporte a workspaceID.";
 "© 2026 Peter Steinberger. MIT License." = "© 2026 Peter Steinberger. Licença MIT.";
 
 /* General Pane */
@@ -415,7 +355,7 @@
 "refresh_cadence_subtitle" = "Frequência com que o CodexBar consulta provedores em segundo plano.";
 "manual_refresh_hint" = "A atualização automática está desativada; use Atualizar no menu.";
 "check_provider_status_title" = "Verificar status dos provedores";
-"check_provider_status_subtitle" = "Consulta páginas de status da OpenAI/Claude e o Google Workspace para Gemini/Antigravity, exibindo incidentes no ícone e no menu.";
+"check_provider_status_subtitle" = "Consulta páginas de status da OpenAI/Claude, exibindo incidentes no ícone e no menu.";
 "session_quota_notifications_title" = "Notificações de cota de sessão";
 "session_quota_notifications_subtitle" = "Notifica quando a cota de sessão de 5 horas chega a 0% e quando fica disponível novamente.";
 "quota_warning_notifications_title" = "Notificações de alerta de cota";
@@ -463,10 +403,6 @@
 "unsafe_managed_home" = "O CodexBar se recusou a modificar um caminho de diretório gerenciado inesperado: %@";
 "menu_bar_metric_title" = "Métrica da barra de menus";
 "menu_bar_metric_subtitle" = "Escolha qual janela define a porcentagem da barra de menus.";
-"menu_bar_metric_subtitle_deepseek" = "Mostra o saldo do DeepSeek na barra de menus.";
-"menu_bar_metric_subtitle_moonshot" = "Mostra o saldo da API Moonshot / Kimi na barra de menus.";
-"menu_bar_metric_subtitle_mistral" = "Mostra o gasto da API Mistral no mês atual na barra de menus.";
-"menu_bar_metric_subtitle_kimik2" = "Mostra os créditos da chave de API do Kimi K2 na barra de menus.";
 "automatic" = "Automático";
 "primary_api_key_limit" = "Primário (limite da chave de API)";
 

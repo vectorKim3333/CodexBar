@@ -41,32 +41,13 @@ struct StatusItemControllerMenuTests {
     }
 
     @Test
-    func `cursor switcher falls back to on demand budget when plan exhausted and showing remaining`() {
-        let primary = RateWindow(usedPercent: 100, windowMinutes: nil, resetsAt: nil, resetDescription: nil)
-        let secondary = RateWindow(usedPercent: 36, windowMinutes: nil, resetsAt: nil, resetDescription: nil)
-        let providerCost = ProviderCostSnapshot(
-            used: 12,
-            limit: 200,
-            currencyCode: "USD",
-            updatedAt: Date())
-        let snapshot = self.makeSnapshot(primary: primary, secondary: secondary, providerCost: providerCost)
-
-        let percent = StatusItemController.switcherWeeklyMetricPercent(
-            for: .cursor,
-            snapshot: snapshot,
-            showUsed: false)
-
-        #expect(percent == 94)
-    }
-
-    @Test
-    func `cursor switcher uses primary when showing used`() {
+    func `switcher uses primary when showing used`() {
         let primary = RateWindow(usedPercent: 100, windowMinutes: nil, resetsAt: nil, resetDescription: nil)
         let secondary = RateWindow(usedPercent: 36, windowMinutes: nil, resetsAt: nil, resetDescription: nil)
         let snapshot = self.makeSnapshot(primary: primary, secondary: secondary)
 
         let percent = StatusItemController.switcherWeeklyMetricPercent(
-            for: .cursor,
+            for: .codex,
             snapshot: snapshot,
             showUsed: true)
 
@@ -74,13 +55,13 @@ struct StatusItemControllerMenuTests {
     }
 
     @Test
-    func `cursor switcher keeps primary when remaining is positive`() {
+    func `switcher keeps primary when remaining is positive`() {
         let primary = RateWindow(usedPercent: 20, windowMinutes: nil, resetsAt: nil, resetDescription: nil)
         let secondary = RateWindow(usedPercent: 40, windowMinutes: nil, resetsAt: nil, resetDescription: nil)
         let snapshot = self.makeSnapshot(primary: primary, secondary: secondary)
 
         let percent = StatusItemController.switcherWeeklyMetricPercent(
-            for: .cursor,
+            for: .codex,
             snapshot: snapshot,
             showUsed: false)
 
@@ -88,32 +69,17 @@ struct StatusItemControllerMenuTests {
     }
 
     @Test
-    func `cursor switcher does not treat auto lane as extra remaining quota`() {
+    func `switcher returns zero remaining when primary is exhausted and no secondary`() {
         let primary = RateWindow(usedPercent: 100, windowMinutes: nil, resetsAt: nil, resetDescription: nil)
         let secondary = RateWindow(usedPercent: 36, windowMinutes: nil, resetsAt: nil, resetDescription: nil)
         let snapshot = self.makeSnapshot(primary: primary, secondary: secondary)
 
         let percent = StatusItemController.switcherWeeklyMetricPercent(
-            for: .cursor,
+            for: .codex,
             snapshot: snapshot,
             showUsed: false)
 
         #expect(percent == 0)
-    }
-
-    @Test
-    func `perplexity switcher falls back after recurring credits are exhausted`() {
-        let primary = RateWindow(usedPercent: 100, windowMinutes: nil, resetsAt: nil, resetDescription: nil)
-        let secondary = RateWindow(usedPercent: 100, windowMinutes: nil, resetsAt: nil, resetDescription: nil)
-        let tertiary = RateWindow(usedPercent: 24, windowMinutes: nil, resetsAt: nil, resetDescription: nil)
-        let snapshot = self.makeSnapshot(primary: primary, secondary: secondary, tertiary: tertiary)
-
-        let percent = StatusItemController.switcherWeeklyMetricPercent(
-            for: .perplexity,
-            snapshot: snapshot,
-            showUsed: false)
-
-        #expect(percent == 76)
     }
 
     @Test
@@ -140,8 +106,6 @@ struct StatusItemControllerMenuTests {
         let settings = SettingsStore(
             userDefaults: defaults,
             configStore: testConfigStore(suiteName: suite),
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
         settings.statusChecksEnabled = false
         settings.refreshFrequency = .manual
 

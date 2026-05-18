@@ -19,7 +19,6 @@
 "All" = "";
 "Always allow prompts" = "";
 "Animation pattern" = "";
-"Antigravity login is managed in the app" = "";
 "Applies only to the Security.framework OAuth keychain reader." = "";
 "Auto falls back to the next source if the preferred one fails." = "";
 "Auto uses API first, then falls back to CLI on auth failures." = "";
@@ -27,14 +26,7 @@
 "Auto-refresh is off; use the menu's Refresh command." = "";
 "Auto-refresh: hourly · Timeout: 10m" = "";
 "Automatic" = "";
-"Automatic imports browser cookies and WorkOS tokens." = "";
-"Automatic imports browser cookies and local storage tokens." = "";
-"Automatic imports browser cookies for dashboard extras." = "";
 "Automatic imports browser cookies for the web API." = "";
-"Automatic imports browser cookies from Model Studio/Bailian." = "";
-"Automatic imports browser cookies from admin.mistral.ai." = "";
-"Automatic imports browser cookies from opencode.ai." = "";
-"Automatic imports browser cookies or stored sessions." = "";
 "Automatic imports browser cookies." = "";
 "Automatically imports browser session cookie." = "";
 "Automatically opens CodexBar when you start your Mac." = "";
@@ -58,7 +50,6 @@
 "Check if you like your agents having some fun up there." = "";
 "Check provider status" = "";
 "Choose Codex workspace" = "选择 Codex 工作区";
-"Choose the MiniMax host (global .io or China mainland .com)." = "";
 "Choose up to " = "";
 "Choose up to \\(Self.maxOverviewProviders) providers" = "";
 "Choose up to \\(count) providers" = "";
@@ -86,20 +77,14 @@
 "Cookie header" = "";
 "Cookie source" = "";
 "Cookie: ..." = "";
-"Cookie: \\u{2026}\\\n\\\nor paste a cURL capture from the Abacus AI dashboard" = "";
-"Cookie: \\u{2026}\\\n\\\nor paste the __Secure-next-auth.session-token value" = "";
-"Cookie: \\u{2026}\\\n\\\nor paste the kimi-auth token value" = "";
 "Cookie: …" = "";
-"CopilotDeviceFlow" = "";
 "Cost" = "";
 "Could not add Codex account" = "";
-"Could not open Terminal for Gemini" = "";
 "Could not start claude /login" = "";
 "Could not start codex login" = "";
 "Could not switch system account" = "";
 "Credits" = "";
 "Credits history" = "";
-"Cursor login failed" = "";
 "Custom" = "";
 "Custom Path" = "";
 "Daily Routines" = "";
@@ -130,12 +115,8 @@
 "Finish the current managed account change before switching the system account." = "";
 "Force animation on next refresh" = "";
 "Gateway region" = "";
-"Gemini CLI not found" = "";
-"Gemini/Antigravity, surfacing incidents in the icon and menu." = "";
 "General" = "";
 "GitHub" = "";
-"GitHub Copilot Login" = "GitHub Copilot 登录";
-"GitHub Login" = "";
 "Hide details" = "隐藏详情";
 "Hide personal information" = "";
 "Historical tracking" = "";
@@ -144,9 +125,6 @@
 "Install CLI" = "";
 "Install the Claude CLI (npm i -g @anthropic-ai/claude-code) and try again." = "";
 "Install the Codex CLI (npm i -g @openai/codex) and try again." = "";
-"Install the Gemini CLI (npm i -g @google/gemini-cli) and try again." = "";
-"JetBrains AI is ready" = "JetBrains AI 已就绪";
-"JetBrains IDE" = "";
 "Keep CLI sessions alive" = "";
 "Keyboard shortcut" = "";
 "Keychain access" = "";
@@ -176,7 +154,6 @@
 "Never prompt" = "";
 "No" = "";
 "No Codex accounts detected yet." = "";
-"No JetBrains IDE detected" = "";
 "No cost history data." = "";
 "No credits history data." = "";
 "No data available" = "";
@@ -199,17 +176,11 @@
 "Only on user action" = "";
 "Open" = "";
 "Open API Keys" = "";
-"Open Amp Settings" = "";
-"Open Antigravity to sign in, then refresh CodexBar." = "";
 "Open Browser" = "打开浏览器";
-"Open Coding Plan" = "";
 "Open Console" = "";
 "Open Dashboard" = "";
-"Open Mistral Admin" = "";
-"Open Ollama Settings" = "";
 "Open Terminal" = "打开终端";
 "Open Usage Page" = "";
-"Open Warp API Key Guide" = "";
 "Open menu" = "";
 "Open token file" = "";
 "OpenAI cookies" = "";
@@ -218,7 +189,6 @@
 "Option B" = "";
 "Optional override if workspace lookup fails." = "";
 "Options" = "";
-"Override auto-detection with a custom IDE base path" = "";
 "Overview" = "";
 "Overview rows always follow provider order." = "";
 "Overview tab providers" = "";
@@ -226,7 +196,6 @@
 "Paste API token…" = "";
 "Paste key…" = "";
 "Paste sessionKey or OAuth token…" = "";
-"Paste the Cookie header from a request to admin.mistral.ai. " = "";
 "Paste token…" = "";
 "Peak · ends in \\(self.formatDuration(minutes: remaining))" = "";
 "Personal" = "";
@@ -264,7 +233,6 @@
 "Secondary (\\(label))" = "";
 "Secondary (\\(metadata.weeklyLabel))" = "";
 "Select a provider" = "";
-"Select the IDE to monitor" = "";
 "Session quota notifications" = "";
 "Session tokens" = "";
 "Settings" = "";
@@ -286,22 +254,8 @@
 "Start at Login" = "";
 "Status" = "";
 "Store Claude sessionKey cookies or OAuth access tokens." = "";
-"Store multiple Abacus AI Cookie headers." = "";
-"Store multiple Augment Cookie headers." = "";
-"Store multiple Cursor Cookie headers." = "";
-"Store multiple Factory Cookie headers." = "";
-"Store multiple MiniMax Cookie headers." = "";
-"Store multiple Mistral Cookie headers." = "";
-"Store multiple Ollama Cookie headers." = "";
-"Store multiple OpenCode Cookie headers." = "";
-"Store multiple OpenCode Go Cookie headers." = "";
 "Stored in the CodexBar config file." = "";
 "Stored in ~/.codexbar/config.json. " = "";
-"Stored in ~/.codexbar/config.json. Generate one at kimi-k2.ai." = "";
-"Stored in ~/.codexbar/config.json. Paste the key from the Synthetic dashboard." = "";
-"Stored in ~/.codexbar/config.json. Paste your Coding Plan API key from Model Studio." = "";
-"Stored in ~/.codexbar/config.json. Paste your MiniMax API key." = "";
-"Stored in ~/.codexbar/config.json. You can also provide KILO_API_KEY or " = "";
 "Stores local Codex usage history (8 weeks) to personalize Pace predictions." = "";
 "Subscription Utilization" = "";
 "Surprise me" = "给我惊喜";
@@ -326,14 +280,12 @@
 "Usage breakdown" = "";
 "Usage history (30 days)" = "";
 "Usage source" = "";
-"Use BigModel for the China mainland endpoints (open.bigmodel.cn)." = "";
 "Use a single menu bar icon with a provider switcher." = "";
 "Use international or China mainland console gateways for quota fetches." = "";
 "Version" = "";
 "Version \\(self.versionString)" = "";
 "Version \\(version)" = "";
 "Version \\(versionString)" = "";
-"Vertex AI Login" = "Vertex AI 登录";
 "Wait for the current managed Codex login to finish before adding another account." = "";
 "Waiting for Authentication..." = "等待认证…";
 "Website" = "";
@@ -354,15 +306,6 @@
 "all browsers" = "";
 "available again." = "";
 "built_format" = "构建于 %@";
-"copilot_complete_in_browser" = "";
-"copilot_device_code" = "设备代码已复制到剪贴板：%1$@
-
-请在以下地址验证：%2$@";
-"copilot_device_code_copied" = "";
-"copilot_verify_at" = "";
-"copilot_waiting_text" = "请在浏览器中完成登录。
-完成后此窗口将自动关闭。";
-"copilot_window_closes_auto" = "";
 "cost_status_error" = "%@：%@";
 "cost_status_fetching" = "%1$@：获取中…%2$@";
 "cost_status_last_attempt" = "%1$@：上次尝试 %2$@";
@@ -370,11 +313,7 @@
 "cost_status_snapshot" = "%1$@：%2$@ · 30天 %3$@";
 "cost_status_unsupported" = "%@：不支持";
 "credits_remaining" = "积分：%@";
-"cursor_on_demand" = "按需计费：%@";
-"cursor_on_demand_with_limit" = "按需计费：%1$@ / %2$@";
 "extra_usage_format" = "额外用量：%1$@ / %2$@";
-"jetbrains_detected_generate" = "检测到：%@。使用一次 AI 助手以生成配额数据，然后刷新 CodexBar。";
-"jetbrains_detected_select" = "检测到：%@。在设置中选择您偏好的 IDE，然后刷新 CodexBar。";
 "last_fetch_failed_with_provider" = "上次获取 %1$@ 失败：";
 "last_spend" = "上次消耗：%@";
 "mcp_model_usage" = "%1$@：%2$@";
@@ -392,15 +331,6 @@
 "peak_ends_in" = "高峰 · %@ 后结束";
 "remove_account_message" = "从 CodexBar 中移除 %@？其托管的 Codex 主目录将被删除。";
 "version_format" = "版本 %@";
-"vertex_ai_login_instructions" = "要使用 Vertex AI 跟踪，您需要通过 Google Cloud 进行认证。
-
-1. 打开终端
-2. 运行：gcloud auth application-default login
-3. 按照浏览器提示登录
-4. 设置项目：gcloud config set project PROJECT_ID
-
-是否现在打开终端？";
-"workspaceID is set but only opencode, opencodego, and deepgram support workspaceID." = "";
 "© 2026 Peter Steinberger. MIT License." = "";
 
 /* General Pane */
@@ -422,7 +352,7 @@
 "refresh_cadence_subtitle" = "CodexBar 在后台轮询提供商的频率。";
 "manual_refresh_hint" = "自动刷新已关闭；请使用菜单中的刷新命令。";
 "check_provider_status_title" = "检查提供商状态";
-"check_provider_status_subtitle" = "轮询 OpenAI/Claude 状态页面和 Google Workspace 的 Gemini/Antigravity，在图标和菜单中显示故障信息。";
+"check_provider_status_subtitle" = "轮询 OpenAI/Claude 状态页面，在图标和菜单中显示故障信息。";
 "session_quota_notifications_title" = "会话配额通知";
 "session_quota_notifications_subtitle" = "当5小时会话配额用完及恢复时发送通知。";
 "quota_warning_notifications_title" = "配额预警通知";
@@ -470,10 +400,6 @@
 "unsafe_managed_home" = "CodexBar 拒绝修改意外的托管主目录路径：%@";
 "menu_bar_metric_title" = "菜单栏指标";
 "menu_bar_metric_subtitle" = "选择哪个窗口驱动菜单栏百分比。";
-"menu_bar_metric_subtitle_deepseek" = "在菜单栏显示 DeepSeek 余额。";
-"menu_bar_metric_subtitle_moonshot" = "在菜单栏显示 Moonshot / Kimi API 余额。";
-"menu_bar_metric_subtitle_mistral" = "在菜单栏显示 Mistral API 本月支出。";
-"menu_bar_metric_subtitle_kimik2" = "在菜单栏显示 Kimi K2 API Key 额度。";
 "automatic" = "自动";
 "primary_api_key_limit" = "主要（API 密钥限制）";
 
