@@ -695,8 +695,8 @@ final class UsageStore {
     }
 
     func handleSessionQuotaTransition(provider: UsageProvider, snapshot: UsageSnapshot) {
-        // Session quota notifications are tied to the primary session window. Copilot free plans can
-        // expose only chat quota, so allow Copilot to fall back to secondary for transition tracking.
+        // Session quota notifications are tied to the primary session window. Some plans can
+        // expose only chat quota, so allow fallback to secondary for transition tracking.
         guard let sessionWindow = self.sessionQuotaWindow(provider: provider, snapshot: snapshot) else {
             self.lastKnownSessionRemaining.removeValue(forKey: provider)
             self.lastKnownSessionWindowSource.removeValue(forKey: provider)
