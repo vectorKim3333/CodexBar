@@ -354,16 +354,14 @@ extension StatusItemController {
             if self.shouldSkipMergedIconRender(signature) {
                 return true
             }
-            let image = IconRenderer.makeIcon(
-                primaryRemaining: primary,
-                weeklyRemaining: weekly,
-                creditsRemaining: credits,
-                stale: stale,
-                style: style,
-                blink: blink,
-                wiggle: wiggle,
-                tilt: tilt,
-                statusIndicator: statusIndicator)
+            // Battery-pill style for the merged status item. Shows the primary
+            // provider's remaining quota + countdown to its next reset.
+            let remainingFraction: Double? = primary.map { showUsed ? max(0, 1 - $0) : $0 }
+            let resetText = IconRenderer.shortResetText(snapshot?.primary?.resetsAt)
+            let image = IconRenderer.makeBatteryPillIcon(
+                remaining: remainingFraction,
+                resetText: resetText,
+                stale: stale)
             self.setButtonImage(warningFlash ? Self.quotaWarningFlashImage(base: image) : image, for: button)
         }
         return false
@@ -500,16 +498,15 @@ extension StatusItemController {
                 return true
             }
             self.setButtonTitle(nil, for: button)
-            let image = IconRenderer.makeIcon(
-                primaryRemaining: primary,
-                weeklyRemaining: weekly,
-                creditsRemaining: credits,
-                stale: stale,
-                style: style,
-                blink: blink,
-                wiggle: wiggle,
-                tilt: tilt,
-                statusIndicator: statusIndicator)
+            // Battery-pill style: % remaining fill + reset countdown text.
+            // `primary` here is a 0–1 fraction (already accounts for showUsed flag).
+            // The pill always represents quota *remaining*, so flip when needed.
+            let remainingFraction: Double? = primary.map { showUsed ? max(0, 1 - $0) : $0 }
+            let resetText = IconRenderer.shortResetText(snapshot?.primary?.resetsAt)
+            let image = IconRenderer.makeBatteryPillIcon(
+                remaining: remainingFraction,
+                resetText: resetText,
+                stale: stale)
             self.setButtonImage(warningFlash ? Self.quotaWarningFlashImage(base: image) : image, for: button)
         }
         return false

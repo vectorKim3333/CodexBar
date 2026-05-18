@@ -39,8 +39,10 @@ enum MenuHighlightStyle {
     }
 
     static func selectionBackground(_ highlighted: Bool) -> Color {
-        // Subtle accent tint instead of the saturated system selection color
-        // so the embedded chart bars and cost summary remain visible on hover.
-        highlighted ? Color(nsColor: .controlAccentColor).opacity(0.15) : .clear
+        // Hover tint disabled entirely: the main usage card embeds a chart +
+        // progress bars that lose contrast under any tinted background.
+        // The card is a content panel, not a critical action target, so we
+        // skip the hover highlight here.
+        .clear
     }
 }

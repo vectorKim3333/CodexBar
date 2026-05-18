@@ -696,3 +696,110 @@ extension CGFloat {
         self + (other - self) * p
     }
 }
+
+// MARK: - Battery pill icon (clean menu-bar style with reset countdown)
+
+extension IconRenderer {
+    /// Format a `resetsAt` date into a compact countdown string for the menu bar.
+    /// - Examples: `"5h"`, `"2d"`, `"42m"`, `"<1m"`, or `nil` if the input is `nil` / already past.
+    static func shortResetText(_ resetsAt: Date?, now: Date = Date()) -> String? {
+        guard let resetsAt, resetsAt > now else { return nil }
+        let totalSeconds = Int(resetsAt.timeIntervalSince(now))
+        let totalMinutes = totalSeconds / 60
+        let totalHours = totalMinutes / 60
+        let totalDays = totalHours / 24
+        if totalDays >= 1 { return "\(totalDays)d" }
+        if totalHours >= 1 { return "\(totalHours)h" }
+        if totalMinutes >= 1 { return "\(totalMinutes)m" }
+        return "<1m"
+    }
+
+    /// Battery-style pill icon: rounded rectangle "shell" with proportional fill, optional reset countdown text alongside.
+    ///
+    /// - Parameters:
+    ///   - remaining: 0.0 – 1.0 fraction of quota remaining (drives fill width). `nil` = no fill drawn.
+    ///   - resetText: Short countdown string from `shortResetText(_:)`. `nil` = no text.
+    ///   - stale: If `true`, dim the icon to indicate stale data.
+    static func makeBatteryPillIcon(
+        remaining: Double?,
+        resetText: String?,
+        stale: Bool = false) -> NSImage
+    {
+        // Layout (pt). Width grows when text is present.
+        let height: CGFloat = 18
+        let pillWidth: CGFloat = 24
+        let capWidth: CGFloat = 2
+        let capGap: CGFloat = 0.5
+        let textGap: CGFloat = 3
+        let textWidth: CGFloat = {
+            guard let resetText else { return 0 }
+            let font = NSFont.monospacedDigitSystemFont(ofSize: 10, weight: .semibold)
+            let size = (resetText as NSString).size(withAttributes: [.font: font])
+            // Round up so we don't clip.
+            return ceil(size.width)
+        }()
+        let totalWidth = pillWidth + capGap + capWidth
+            + (resetText != nil ? textGap + textWidth : 0)
+
+        let image = NSImage(size: NSSize(width: totalWidth, height: height))
+        image.lockFocus()
+
+        let strokeAlpha: CGFloat = stale ? 0.45 : 1.0
+        let fillAlpha: CGFloat = stale ? 0.35 : 1.0
+        let strokeColor = NSColor.black.withAlphaComponent(strokeAlpha)
+        let fillColor = NSColor.black.withAlphaComponent(fillAlpha)
+
+        // Battery shell.
+        let shellRect = CGRect(x: 0.5, y: 3, width: pillWidth - 1, height: height - 6)
+        let shellPath = NSBezierPath(roundedRect: shellRect, xRadius: 3, yRadius: 3)
+        shellPath.lineWidth = 1.0
+        strokeColor.setStroke()
+        shellPath.stroke()
+
+        // Battery cap (small nub on right).
+        let capRect = CGRect(
+            x: pillWidth + capGap,
+            y: shellRect.midY - 2.5,
+            width: capWidth,
+            height: 5)
+        strokeColor.setFill()
+        NSBezierPath(roundedRect: capRect, xRadius: 0.6, yRadius: 0.6).fill()
+
+        // Inner fill — proportional to `remaining`.
+        if let remaining {
+            let clamped = max(0, min(1, remaining))
+            let innerInset: CGFloat = 1.5
+            let innerWidth = shellRect.width - innerInset * 2
+            let innerHeight = shellRect.height - innerInset * 2
+            let fillWidth = innerWidth * clamped
+            if fillWidth > 0.5 {
+                let fillRect = CGRect(
+                    x: shellRect.minX + innerInset,
+                    y: shellRect.minY + innerInset,
+                    width: fillWidth,
+                    height: innerHeight)
+                fillColor.setFill()
+                NSBezierPath(roundedRect: fillRect, xRadius: 1.2, yRadius: 1.2).fill()
+            }
+        }
+
+        // Countdown text.
+        if let resetText {
+            let font = NSFont.monospacedDigitSystemFont(ofSize: 10, weight: .semibold)
+            let attrs: [NSAttributedString.Key: Any] = [
+                .font: font,
+                .foregroundColor: fillColor,
+            ]
+            let str = NSAttributedString(string: resetText, attributes: attrs)
+            let textSize = str.size()
+            let drawX = pillWidth + capGap + capWidth + textGap
+            let drawY = (height - textSize.height) / 2
+            str.draw(at: NSPoint(x: drawX, y: drawY))
+        }
+
+        image.unlockFocus()
+        // Template = system handles light/dark + menu-bar selection tinting.
+        image.isTemplate = true
+        return image
+    }
+}
