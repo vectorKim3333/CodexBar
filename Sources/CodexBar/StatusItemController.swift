@@ -94,8 +94,6 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
         didSet { self.refreshMenusForLoginStateChange() }
     }
 
-    var creditsPurchaseWindow: OpenAICreditsPurchaseWindowController?
-
     var activeLoginProvider: UsageProvider? {
         didSet {
             if oldValue != self.activeLoginProvider {

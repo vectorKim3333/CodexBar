@@ -1203,7 +1203,6 @@ extension UsageStore {
                         environment: environment,
                         now: now,
                         forceRefresh: force,
-                        allowVertexClaudeFallback: !self.isEnabled(.claude),
                         codexHomePath: costScope.codexHomePath)
                 }
                 group.addTask {

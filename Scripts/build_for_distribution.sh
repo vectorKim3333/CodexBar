@@ -33,10 +33,47 @@ ZIP_PATH="$DIST_DIR/$ZIP_NAME"
 
 echo "→ Building CodexBar ${VERSION} (build ${BUILD}) for ${ARCH_TAG}…"
 
+# Resolve packages so KeyboardShortcuts checkout exists before patching.
+echo "→ Resolving Swift packages"
+swift package resolve >/dev/null
+
+# KeyboardShortcuts ships #Preview macros that require Xcode's PreviewsMacros
+# plugin. Command Line Tools alone can't compile them. Strip those blocks
+# from the checked-out source — they're SwiftUI design-time only and have
+# zero runtime effect. Idempotent.
+patch_keyboard_shortcuts_previews() {
+  local file="$ROOT/.build/checkouts/KeyboardShortcuts/Sources/KeyboardShortcuts/Recorder.swift"
+  if [[ ! -f "$file" ]]; then
+    return 0
+  fi
+  if grep -q "// Preview blocks stripped" "$file" 2>/dev/null; then
+    return 0
+  fi
+  chmod +w "$file" 2>/dev/null || true
+  python3 - "$file" <<'PY'
+import re, sys
+from pathlib import Path
+path = Path(sys.argv[1])
+text = path.read_text()
+# Match `#Preview { ... }` blocks where the body contains no nested braces.
+# (The three blocks in Recorder.swift fit this pattern.)
+new = re.sub(r"\n#Preview \{[^{}]*?\}\n", "\n", text, flags=re.DOTALL)
+if new != text:
+    new = new.rstrip() + "\n\n// Preview blocks stripped for CLI build (no full Xcode)\n"
+    path.write_text(new)
+    print("    patched: removed #Preview blocks from Recorder.swift")
+else:
+    print("    skipped: no #Preview blocks found in Recorder.swift")
+PY
+}
+
+echo "→ Patching KeyboardShortcuts to drop SwiftUI #Preview blocks"
+patch_keyboard_shortcuts_previews
+
 if [[ "$SKIP_TEST" != "1" ]]; then
   echo "→ swift test"
   swift test 2>&1 | tail -10 || {
-    echo "WARN: swift test failed or was blocked by PreviewsMacros toolchain artifact." >&2
+    echo "WARN: swift test failed (may be unrelated to our code)." >&2
     echo "      Set SKIP_TEST=1 to bypass this check." >&2
     echo "      Continuing with build…" >&2
   }

@@ -1023,6 +1023,7 @@ extension UsageMenuCardView.Model {
         var primaryDetailRight: String?
         var primaryPacePercent: Double?
         var primaryPaceOnTop = true
+        let primaryStatusText: String? = nil
         if let paceDetail = Self.sessionPaceDetail(
             provider: input.provider,
             window: primary,

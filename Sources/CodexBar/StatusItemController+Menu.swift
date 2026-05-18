@@ -673,13 +673,6 @@ extension StatusItemController {
             {
                 menu.addItem(.separator())
             }
-            if self.addZaiHourlyUsageMenuItemIfNeeded(
-                to: menu,
-                provider: context.currentProvider,
-                width: context.menuWidth)
-            {
-                menu.addItem(.separator())
-            }
         }
     }
 
