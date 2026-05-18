@@ -50,7 +50,7 @@ extension StatusItemController {
                 tokenSnapshot = nil
                 tokenError = nil
             }
-        } else if target == .claude || target == .vertexai || target == .bedrock, snapshotOverride == nil {
+        } else if target == .claude, snapshotOverride == nil {
             credits = nil
             creditsError = nil
             dashboard = nil
@@ -67,9 +67,7 @@ extension StatusItemController {
         }
 
         let sourceLabel = snapshotOverride == nil ? self.store.sourceLabel(for: target) : nil
-        let kiloAutoMode = target == .kilo && self.settings.kiloUsageDataSource == .auto
-        // Abacus uses primary for monthly credits (no secondary window)
-        let paceWindow = target == .abacus ? snapshot?.primary : snapshot?.secondary
+        let paceWindow = snapshot?.secondary
         let weeklyPace = if let codexProjection,
                             let weekly = codexProjection.rateWindow(for: .weekly)
         {
@@ -100,7 +98,6 @@ extension StatusItemController {
             tokenCostUsageEnabled: self.settings.isCostUsageEffectivelyEnabled(for: target),
             showOptionalCreditsAndExtraUsage: self.settings.showOptionalCreditsAndExtraUsage,
             sourceLabel: sourceLabel,
-            kiloAutoMode: kiloAutoMode,
             hidePersonalInfo: self.settings.hidePersonalInfo,
             claudePeakHoursEnabled: self.settings.claudePeakHoursEnabled,
             weeklyPace: weeklyPace,

@@ -85,15 +85,7 @@ public struct UsageSnapshot: Codable, Sendable {
     public let tertiary: RateWindow?
     public let extraRateWindows: [NamedRateWindow]?
     public let providerCost: ProviderCostSnapshot?
-    public let kiroUsage: KiroUsageDetails?
-    public let zaiUsage: ZaiUsageSnapshot?
-    public let minimaxUsage: MiniMaxUsageSnapshot?
-    public let openRouterUsage: OpenRouterUsageSnapshot?
-    public let openAIAPIUsage: OpenAIAPIUsageSnapshot?
     public let claudeAdminAPIUsage: ClaudeAdminAPIUsageSnapshot?
-    public let mistralUsage: MistralUsageSnapshot?
-    public let deepgramUsage: DeepgramUsageSnapshot?
-    public let cursorRequests: CursorRequestUsage?
     public let updatedAt: Date
     public let identity: ProviderIdentitySnapshot?
 
@@ -103,12 +95,7 @@ public struct UsageSnapshot: Codable, Sendable {
         case tertiary
         case extraRateWindows
         case providerCost
-        case kiroUsage
-        case openRouterUsage
-        case openAIAPIUsage
         case claudeAdminAPIUsage
-        case mistralUsage
-        case deepgramUsage
         case updatedAt
         case identity
         case accountEmail
@@ -121,16 +108,8 @@ public struct UsageSnapshot: Codable, Sendable {
         secondary: RateWindow?,
         tertiary: RateWindow? = nil,
         extraRateWindows: [NamedRateWindow]? = nil,
-        kiroUsage: KiroUsageDetails? = nil,
         providerCost: ProviderCostSnapshot? = nil,
-        zaiUsage: ZaiUsageSnapshot? = nil,
-        minimaxUsage: MiniMaxUsageSnapshot? = nil,
-        openRouterUsage: OpenRouterUsageSnapshot? = nil,
-        openAIAPIUsage: OpenAIAPIUsageSnapshot? = nil,
         claudeAdminAPIUsage: ClaudeAdminAPIUsageSnapshot? = nil,
-        mistralUsage: MistralUsageSnapshot? = nil,
-        deepgramUsage: DeepgramUsageSnapshot? = nil,
-        cursorRequests: CursorRequestUsage? = nil,
         updatedAt: Date,
         identity: ProviderIdentitySnapshot? = nil)
     {
@@ -138,16 +117,8 @@ public struct UsageSnapshot: Codable, Sendable {
         self.secondary = secondary
         self.tertiary = tertiary
         self.extraRateWindows = extraRateWindows
-        self.kiroUsage = kiroUsage
         self.providerCost = providerCost
-        self.zaiUsage = zaiUsage
-        self.minimaxUsage = minimaxUsage
-        self.openRouterUsage = openRouterUsage
-        self.openAIAPIUsage = openAIAPIUsage
         self.claudeAdminAPIUsage = claudeAdminAPIUsage
-        self.mistralUsage = mistralUsage
-        self.deepgramUsage = deepgramUsage
-        self.cursorRequests = cursorRequests
         self.updatedAt = updatedAt
         self.identity = identity
     }
@@ -159,17 +130,9 @@ public struct UsageSnapshot: Codable, Sendable {
         self.tertiary = try container.decodeIfPresent(RateWindow.self, forKey: .tertiary)
         self.extraRateWindows = try container.decodeIfPresent([NamedRateWindow].self, forKey: .extraRateWindows)
         self.providerCost = try container.decodeIfPresent(ProviderCostSnapshot.self, forKey: .providerCost)
-        self.kiroUsage = try container.decodeIfPresent(KiroUsageDetails.self, forKey: .kiroUsage)
-        self.zaiUsage = nil // Not persisted, fetched fresh each time
-        self.minimaxUsage = nil // Not persisted, fetched fresh each time
-        self.openRouterUsage = try container.decodeIfPresent(OpenRouterUsageSnapshot.self, forKey: .openRouterUsage)
-        self.openAIAPIUsage = try container.decodeIfPresent(OpenAIAPIUsageSnapshot.self, forKey: .openAIAPIUsage)
         self.claudeAdminAPIUsage = try container.decodeIfPresent(
             ClaudeAdminAPIUsageSnapshot.self,
             forKey: .claudeAdminAPIUsage)
-        self.mistralUsage = try container.decodeIfPresent(MistralUsageSnapshot.self, forKey: .mistralUsage)
-        self.deepgramUsage = try container.decodeIfPresent(DeepgramUsageSnapshot.self, forKey: .deepgramUsage)
-        self.cursorRequests = nil // Not persisted, fetched fresh each time
         self.updatedAt = try container.decode(Date.self, forKey: .updatedAt)
         if let identity = try container.decodeIfPresent(ProviderIdentitySnapshot.self, forKey: .identity) {
             self.identity = identity
@@ -197,12 +160,7 @@ public struct UsageSnapshot: Codable, Sendable {
         try container.encode(self.tertiary, forKey: .tertiary)
         try container.encodeIfPresent(self.extraRateWindows, forKey: .extraRateWindows)
         try container.encodeIfPresent(self.providerCost, forKey: .providerCost)
-        try container.encodeIfPresent(self.kiroUsage, forKey: .kiroUsage)
-        try container.encodeIfPresent(self.openRouterUsage, forKey: .openRouterUsage)
-        try container.encodeIfPresent(self.openAIAPIUsage, forKey: .openAIAPIUsage)
         try container.encodeIfPresent(self.claudeAdminAPIUsage, forKey: .claudeAdminAPIUsage)
-        try container.encodeIfPresent(self.mistralUsage, forKey: .mistralUsage)
-        try container.encodeIfPresent(self.deepgramUsage, forKey: .deepgramUsage)
         try container.encode(self.updatedAt, forKey: .updatedAt)
         try container.encodeIfPresent(self.identity, forKey: .identity)
         try container.encodeIfPresent(self.identity?.accountEmail, forKey: .accountEmail)
@@ -215,56 +173,8 @@ public struct UsageSnapshot: Codable, Sendable {
         return identity
     }
 
-    public func automaticPerplexityWindow() -> RateWindow? {
-        let fallbackWindows = self.orderedPerplexityFallbackWindows()
-        guard let primary = self.primary else {
-            return fallbackWindows.first
-        }
-        if primary.remainingPercent > 0 || fallbackWindows.isEmpty {
-            return primary
-        }
-        return fallbackWindows.first
-    }
-
-    public func orderedPerplexityDisplayWindows() -> [RateWindow] {
-        let fallbackWindows = self.orderedPerplexityFallbackWindows()
-        guard let primary = self.primary else {
-            return fallbackWindows
-        }
-        if primary.remainingPercent > 0 || fallbackWindows.isEmpty {
-            return [primary] + fallbackWindows
-        }
-        return fallbackWindows + [primary]
-    }
-
     public func switcherWeeklyWindow(for provider: UsageProvider, showUsed: Bool) -> RateWindow? {
-        switch provider {
-        case .factory:
-            // Factory prefers secondary window
-            return self.secondary ?? self.primary
-        case .perplexity:
-            return self.automaticPerplexityWindow()
-        case .cursor:
-            // Cursor: fall back to on-demand budget when the included plan is exhausted (only in
-            // "show remaining" mode). The secondary/tertiary lanes are Total/Auto/API breakdowns,
-            // not extra capacity, so they should not replace the remaining paid quota indicator.
-            if !showUsed,
-               let primary = self.primary,
-               primary.remainingPercent <= 0,
-               let providerCost = self.providerCost,
-               providerCost.limit > 0
-            {
-                let usedPercent = max(0, min(100, (providerCost.used / providerCost.limit) * 100))
-                return RateWindow(
-                    usedPercent: usedPercent,
-                    windowMinutes: nil,
-                    resetsAt: providerCost.resetsAt,
-                    resetDescription: nil)
-            }
-            return self.primary ?? self.secondary
-        default:
-            return self.primary ?? self.secondary
-        }
+        self.primary ?? self.secondary
     }
 
     public func accountEmail(for provider: UsageProvider) -> String? {
@@ -295,16 +205,8 @@ public struct UsageSnapshot: Codable, Sendable {
             secondary: self.secondary,
             tertiary: self.tertiary,
             extraRateWindows: self.extraRateWindows,
-            kiroUsage: self.kiroUsage,
             providerCost: self.providerCost,
-            zaiUsage: self.zaiUsage,
-            minimaxUsage: self.minimaxUsage,
-            openRouterUsage: self.openRouterUsage,
-            openAIAPIUsage: self.openAIAPIUsage,
             claudeAdminAPIUsage: self.claudeAdminAPIUsage,
-            mistralUsage: self.mistralUsage,
-            deepgramUsage: self.deepgramUsage,
-            cursorRequests: self.cursorRequests,
             updatedAt: self.updatedAt,
             identity: identity)
     }
@@ -331,23 +233,9 @@ public struct UsageSnapshot: Codable, Sendable {
             tertiary: tertiary,
             extraRateWindows: self.extraRateWindows,
             providerCost: self.providerCost,
-            zaiUsage: self.zaiUsage,
-            minimaxUsage: self.minimaxUsage,
-            openRouterUsage: self.openRouterUsage,
-            openAIAPIUsage: self.openAIAPIUsage,
             claudeAdminAPIUsage: self.claudeAdminAPIUsage,
-            mistralUsage: self.mistralUsage,
-            deepgramUsage: self.deepgramUsage,
-            cursorRequests: self.cursorRequests,
             updatedAt: self.updatedAt,
             identity: self.identity)
-    }
-
-    private func orderedPerplexityFallbackWindows() -> [RateWindow] {
-        let fallbackWindows = [self.tertiary, self.secondary].compactMap(\.self)
-        let usableFallback = fallbackWindows.filter { $0.remainingPercent > 0 }
-        let exhaustedFallback = fallbackWindows.filter { $0.remainingPercent <= 0 }
-        return usableFallback + exhaustedFallback
     }
 
     private static func identitiesMatch(_ lhs: ProviderIdentitySnapshot?, _ rhs: ProviderIdentitySnapshot?) -> Bool {

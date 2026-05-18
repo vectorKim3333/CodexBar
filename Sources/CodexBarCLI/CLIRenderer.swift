@@ -34,7 +34,6 @@ enum CLIRenderer {
             now: now,
             lines: &lines)
         self.appendTertiaryLines(snapshot: snapshot, labels: labels, context: context, now: now, lines: &lines)
-        self.appendDeepgramLines(snapshot: snapshot, useColor: context.useColor, lines: &lines)
         self.appendLimitsUnavailableLine(
             provider: provider,
             snapshot: snapshot,
@@ -127,25 +126,6 @@ enum CLIRenderer {
         }
     }
 
-    private static func appendDeepgramLines(
-        snapshot: UsageSnapshot,
-        useColor: Bool,
-        lines: inout [String])
-    {
-        guard let usage = snapshot.deepgramUsage else { return }
-        for line in usage.displayLines {
-            let parts = line.split(separator: ":", maxSplits: 1).map(String.init)
-            if parts.count == 2 {
-                lines.append(self.labelValueLine(
-                    parts[0].trimmingCharacters(in: .whitespacesAndNewlines),
-                    value: parts[1].trimmingCharacters(in: .whitespacesAndNewlines),
-                    useColor: useColor))
-            } else {
-                lines.append(self.labelValueLine("Usage", value: line, useColor: useColor))
-            }
-        }
-    }
-
     private struct RateWindowLabels {
         let primary: String
         let secondary: String
@@ -158,14 +138,6 @@ enum CLIRenderer {
         metadata: ProviderMetadata,
         snapshot: UsageSnapshot) -> RateWindowLabels
     {
-        if provider == .factory, snapshot.tertiary != nil {
-            return RateWindowLabels(
-                primary: "5-hour",
-                secondary: "Weekly",
-                tertiary: "Monthly",
-                showsTertiary: true)
-        }
-
         return RateWindowLabels(
             primary: metadata.sessionLabel,
             secondary: metadata.weeklyLabel,
@@ -206,16 +178,7 @@ enum CLIRenderer {
             lines.append(self.labelValueLine("Account", value: email, useColor: context.useColor))
         }
 
-        if provider == .kilo {
-            let kiloLogin = self.kiloLoginParts(snapshot: snapshot)
-            if let pass = kiloLogin.pass {
-                let cleaned = UsageFormatter.cleanPlanName(pass)
-                lines.append(self.labelValueLine("Plan", value: cleaned, useColor: context.useColor))
-            }
-            for detail in kiloLogin.details {
-                lines.append(self.labelValueLine("Activity", value: detail, useColor: context.useColor))
-            }
-        } else if let plan = snapshot.loginMethod(for: provider), !plan.isEmpty {
+        if let plan = snapshot.loginMethod(for: provider), !plan.isEmpty {
             let displayPlan = if provider == .codex {
                 CodexPlanFormatting.displayName(plan) ?? plan
             } else {
@@ -262,18 +225,6 @@ enum CLIRenderer {
         now: Date,
         lines: inout [String])
     {
-        if provider == .warp || provider == .kilo || provider == .mistral || provider == .deepseek ||
-            provider == .crof
-        {
-            if let reset = self.resetLineForDetailBackedWindow(window: window, style: context.resetStyle, now: now) {
-                lines.append(self.subtleLine(reset, useColor: context.useColor))
-            }
-            if let detail = self.detailLineForDetailBackedWindow(window: window) {
-                lines.append(self.subtleLine(detail, useColor: context.useColor))
-            }
-            return
-        }
-
         if let reset = self.resetLine(for: window, style: context.resetStyle, now: now) {
             lines.append(self.subtleLine(reset, useColor: context.useColor))
         }
@@ -303,29 +254,6 @@ enum CLIRenderer {
         guard let desc = window.resetDescription else { return nil }
         let trimmed = desc.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed
-    }
-
-    private static func kiloLoginParts(snapshot: UsageSnapshot) -> (pass: String?, details: [String]) {
-        guard let loginMethod = snapshot.loginMethod(for: .kilo) else {
-            return (nil, [])
-        }
-        let parts = loginMethod
-            .components(separatedBy: "·")
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty }
-        guard !parts.isEmpty else {
-            return (nil, [])
-        }
-        let first = parts[0]
-        if self.isKiloActivitySegment(first) {
-            return (nil, parts)
-        }
-        return (first, Array(parts.dropFirst()))
-    }
-
-    private static func isKiloActivitySegment(_ text: String) -> Bool {
-        let normalized = text.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        return normalized.hasPrefix("auto top-up:")
     }
 
     private static func headerLine(_ header: String, useColor: Bool) -> String {
@@ -365,7 +293,7 @@ enum CLIRenderer {
         useColor: Bool,
         now: Date) -> String?
     {
-        guard provider == .codex || provider == .claude || provider == .opencode else { return nil }
+        guard provider == .codex || provider == .claude else { return nil }
         guard window.remainingPercent > 0 else { return nil }
         guard let pace = UsagePace.weekly(window: window, now: now, defaultWindowMinutes: 10080) else { return nil }
         guard pace.expectedUsedPercent >= Self.paceMinimumExpectedPercent else { return nil }

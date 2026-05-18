@@ -53,7 +53,6 @@ struct MenuDescriptor {
     enum MenuAction: Equatable {
         case installUpdate
         case refresh
-        case refreshAugmentSession
         case dashboard
         case statusPage
         case changelog
@@ -150,92 +149,35 @@ struct MenuDescriptor {
             let resetStyle = settings.resetTimeDisplayStyle
             let labels = Self.rateWindowLabels(provider: provider, metadata: meta, snapshot: snap)
             if let primary = snap.primary {
-                let primaryWindow = if provider == .warp || provider == .kilo || provider == .mimo || provider ==
-                    .abacus ||
-                    provider == .deepseek
-                {
-                    // Some providers use resetDescription for non-reset detail
-                    // (e.g., "Unlimited", "X/Y credits"). Avoid rendering it as a "Resets ..." line.
-                    RateWindow(
-                        usedPercent: primary.usedPercent,
-                        windowMinutes: primary.windowMinutes,
-                        resetsAt: primary.resetsAt,
-                        resetDescription: nil)
-                } else {
-                    primary
-                }
                 Self.appendRateWindow(
                     entries: &entries,
                     title: labels.primary,
-                    window: primaryWindow,
+                    window: primary,
                     resetStyle: resetStyle,
                     showUsed: settings.usageBarsShowUsed)
-                if provider == .warp || provider == .kilo || provider == .mimo || provider == .abacus || provider ==
-                    .deepseek,
-                    let detail = primary.resetDescription?.trimmingCharacters(in: .whitespacesAndNewlines),
-                    !detail.isEmpty
-                {
-                    entries.append(.text(detail, .secondary))
-                }
-                if provider == .crof,
-                   primary.resetsAt != nil,
-                   let detail = primary.resetDescription?.trimmingCharacters(in: .whitespacesAndNewlines),
-                   !detail.isEmpty
-                {
-                    entries.append(.text(detail, .secondary))
-                }
-                if provider == .abacus,
-                   let pace = store.weeklyPace(provider: provider, window: primary)
-                {
-                    let paceSummary = UsagePaceText.weeklySummary(pace: pace)
-                    entries.append(.text(paceSummary, .secondary))
-                }
                 if let paceSummary = UsagePaceText.sessionSummary(provider: provider, window: primary) {
                     entries.append(.text(paceSummary, .secondary))
                 }
             }
             if let weekly = snap.secondary {
-                let weeklyResetOverride: String? = {
-                    guard provider == .warp || provider == .kilo || provider == .perplexity || provider == .crof
-                    else { return nil }
-                    let detail = weekly.resetDescription?.trimmingCharacters(in: .whitespacesAndNewlines)
-                    guard let detail, !detail.isEmpty else { return nil }
-                    if provider == .kilo, weekly.resetsAt != nil {
-                        return nil
-                    }
-                    return detail
-                }()
                 Self.appendRateWindow(
                     entries: &entries,
                     title: labels.secondary,
                     window: weekly,
                     resetStyle: resetStyle,
-                    showUsed: settings.usageBarsShowUsed,
-                    resetOverride: weeklyResetOverride)
-                if provider == .kilo,
-                   weekly.resetsAt != nil,
-                   let detail = weekly.resetDescription?.trimmingCharacters(in: .whitespacesAndNewlines),
-                   !detail.isEmpty
-                {
-                    entries.append(.text(detail, .secondary))
-                }
+                    showUsed: settings.usageBarsShowUsed)
                 if let pace = store.weeklyPace(provider: provider, window: weekly) {
                     let paceSummary = UsagePaceText.weeklySummary(pace: pace)
                     entries.append(.text(paceSummary, .secondary))
                 }
             }
             if labels.showsTertiary, let opus = snap.tertiary {
-                // Perplexity purchased credits don't reset; show the balance as plain text.
-                let opusResetOverride: String? = provider == .perplexity
-                    ? opus.resetDescription?.trimmingCharacters(in: .whitespacesAndNewlines)
-                    : nil
                 Self.appendRateWindow(
                     entries: &entries,
                     title: labels.tertiary,
                     window: opus,
                     resetStyle: resetStyle,
-                    showUsed: settings.usageBarsShowUsed,
-                    resetOverride: opusResetOverride)
+                    showUsed: settings.usageBarsShowUsed)
             }
 
             Self.appendProviderUsageSummaries(entries: &entries, snapshot: snap)
@@ -266,42 +208,8 @@ struct MenuDescriptor {
                 entries.append(.text("Quota: \(used) / \(limit)", .primary))
             }
         }
-        if let openAIAPIUsage = snapshot.openAIAPIUsage {
-            Self.appendOpenAIAPIUsageSummary(entries: &entries, usage: openAIAPIUsage)
-        }
         if let claudeAdminAPIUsage = snapshot.claudeAdminAPIUsage {
             Self.appendClaudeAdminAPIUsageSummary(entries: &entries, usage: claudeAdminAPIUsage)
-        }
-        if let openRouterUsage = snapshot.openRouterUsage {
-            Self.appendOpenRouterUsageSummary(entries: &entries, usage: openRouterUsage)
-        }
-        if let mistralUsage = snapshot.mistralUsage, !mistralUsage.daily.isEmpty {
-            Self.appendMistralUsageSummary(entries: &entries, usage: mistralUsage)
-        }
-    }
-
-    private static func appendOpenAIAPIUsageSummary(
-        entries: inout [Entry],
-        usage: OpenAIAPIUsageSnapshot)
-    {
-        let today = usage.latestDay
-        let last7 = usage.last7Days
-        let last30 = usage.last30Days
-
-        entries.append(.text(
-            "Today: \(UsageFormatter.usdString(today.costUSD)) · " +
-                "\(UsageFormatter.tokenCountString(today.totalTokens)) tokens",
-            .secondary))
-        entries.append(.text(
-            "7d: \(UsageFormatter.usdString(last7.costUSD)) · " +
-                "\(UsageFormatter.tokenCountString(last7.requests)) requests",
-            .secondary))
-        entries.append(.text(
-            "30d: \(UsageFormatter.usdString(last30.costUSD)) · " +
-                "\(UsageFormatter.tokenCountString(last30.requests)) requests",
-            .secondary))
-        if let topModel = usage.topModels.first?.name {
-            entries.append(.text("Top model: \(topModel)", .secondary))
         }
     }
 
@@ -328,55 +236,6 @@ struct MenuDescriptor {
         if let topModel = usage.topModels.first?.name {
             entries.append(.text("Top model: \(topModel)", .secondary))
         }
-    }
-
-    private static func appendOpenRouterUsageSummary(
-        entries: inout [Entry],
-        usage: OpenRouterUsageSnapshot)
-    {
-        if let daily = usage.keyUsageDaily {
-            entries.append(.text("Today: \(UsageFormatter.usdString(daily))", .secondary))
-        }
-        if let weekly = usage.keyUsageWeekly {
-            entries.append(.text("Week: \(UsageFormatter.usdString(weekly))", .secondary))
-        }
-        if let monthly = usage.keyUsageMonthly {
-            entries.append(.text("Month: \(UsageFormatter.usdString(monthly))", .secondary))
-        }
-    }
-
-    private static func appendMistralUsageSummary(
-        entries: inout [Entry],
-        usage: MistralUsageSnapshot)
-    {
-        let latest = usage.daily.last
-        if let latest {
-            entries.append(.text(
-                "Latest: \(usage.currencySymbol)\(String(format: "%.4f", max(0, latest.cost))) · " +
-                    "\(UsageFormatter.tokenCountString(latest.totalTokens)) tokens",
-                .secondary))
-        }
-        let totalTokens = usage.totalInputTokens + usage.totalCachedTokens + usage.totalOutputTokens
-        entries.append(.text(
-            "Month: \(usage.currencySymbol)\(String(format: "%.4f", max(0, usage.totalCost))) · " +
-                "\(UsageFormatter.tokenCountString(totalTokens)) tokens",
-            .secondary))
-        if let top = Self.topMistralModel(from: usage.daily) {
-            entries.append(.text("Top model: \(top)", .secondary))
-        }
-    }
-
-    private static func topMistralModel(from entries: [MistralDailyUsageBucket]) -> String? {
-        var tokens: [String: Int] = [:]
-        for entry in entries {
-            for model in entry.models {
-                tokens[model.name, default: 0] += model.totalTokens
-            }
-        }
-        return tokens.max {
-            if $0.value == $1.value { return $0.key > $1.key }
-            return $0.value < $1.value
-        }?.key
     }
 
     private static func accountSection(
@@ -414,43 +273,8 @@ struct MenuDescriptor {
         if let emailText, !emailText.isEmpty {
             entries.append(.text("Account: \(redactedEmail)", .secondary))
         }
-        if provider == .kiro {
-            if let plan = snapshot?.kiroUsage?.displayPlanName,
-               !plan.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            {
-                entries.append(.text("Plan: \(plan)", .secondary))
-            }
-            if let loginMethodText, !loginMethodText.isEmpty {
-                entries.append(.text("Auth: \(loginMethodText)", .secondary))
-            }
-            if let overages = snapshot?.kiroUsage?.overagesStatus,
-               !overages.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            {
-                entries.append(.text("Overages: \(overages)", .secondary))
-            }
-        } else if provider == .kilo {
-            let kiloLogin = self.kiloLoginParts(loginMethod: loginMethodText)
-            if let pass = kiloLogin.pass {
-                entries.append(.text("Plan: \(AccountFormatter.plan(pass, provider: provider))", .secondary))
-            }
-            for detail in kiloLogin.details {
-                entries.append(.text("Activity: \(detail)", .secondary))
-            }
-        } else if let loginMethodText, !loginMethodText.isEmpty {
-            if provider == .openrouter || provider == .mimo,
-               loginMethodText.localizedCaseInsensitiveContains("balance:")
-            {
-                let balanceValue = loginMethodText
-                    .replacingOccurrences(
-                        of: #"(?i)^\s*balance:\s*"#,
-                        with: "",
-                        options: [.regularExpression])
-                    .trimmingCharacters(in: .whitespacesAndNewlines)
-                let value = balanceValue.isEmpty ? loginMethodText : balanceValue
-                entries.append(.text("Balance: \(AccountFormatter.plan(value, provider: provider))", .secondary))
-            } else {
-                entries.append(.text("Plan: \(AccountFormatter.plan(loginMethodText, provider: provider))", .secondary))
-            }
+        if let loginMethodText, !loginMethodText.isEmpty {
+            entries.append(.text("Plan: \(AccountFormatter.plan(loginMethodText, provider: provider))", .secondary))
         }
 
         if metadata.usesAccountFallback {
@@ -464,29 +288,6 @@ struct MenuDescriptor {
         }
 
         return entries
-    }
-
-    private static func kiloLoginParts(loginMethod: String?) -> (pass: String?, details: [String]) {
-        guard let loginMethod else {
-            return (nil, [])
-        }
-        let parts = loginMethod
-            .components(separatedBy: "·")
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty }
-        guard !parts.isEmpty else {
-            return (nil, [])
-        }
-        let first = parts[0]
-        if self.isKiloActivitySegment(first) {
-            return (nil, parts)
-        }
-        return (first, Array(parts.dropFirst()))
-    }
-
-    private static func isKiloActivitySegment(_ text: String) -> Bool {
-        let normalized = text.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        return normalized.hasPrefix("auto top-up:")
     }
 
     private static func accountProviderForCombined(store: UsageStore) -> UsageProvider? {
@@ -624,9 +425,6 @@ struct MenuDescriptor {
         metadata: ProviderMetadata,
         snapshot: UsageSnapshot) -> (primary: String, secondary: String, tertiary: String, showsTertiary: Bool)
     {
-        if provider == .factory, snapshot.tertiary != nil {
-            return ("5-hour", "Weekly", "Monthly", true)
-        }
         return (
             metadata.sessionLabel,
             metadata.weeklyLabel,
@@ -684,7 +482,6 @@ extension MenuDescriptor.MenuAction {
         case .installUpdate, .settings, .about, .quit:
             nil
         case .refresh: MenuDescriptor.MenuActionSystemImage.refresh.rawValue
-        case .refreshAugmentSession: MenuDescriptor.MenuActionSystemImage.refresh.rawValue
         case .dashboard: MenuDescriptor.MenuActionSystemImage.dashboard.rawValue
         case .statusPage: MenuDescriptor.MenuActionSystemImage.statusPage.rawValue
         case .changelog: MenuDescriptor.MenuActionSystemImage.changelog.rawValue

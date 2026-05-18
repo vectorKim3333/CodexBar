@@ -12,7 +12,6 @@ struct ProviderPayload: Encodable {
     let status: ProviderStatusPayload?
     let usage: UsageSnapshot?
     let credits: CreditsSnapshot?
-    let antigravityPlanInfo: AntigravityPlanInfoSummary?
     let openaiDashboard: OpenAIDashboardSnapshot?
     let error: ProviderErrorPayload?
 
@@ -24,7 +23,6 @@ struct ProviderPayload: Encodable {
         status: ProviderStatusPayload?,
         usage: UsageSnapshot?,
         credits: CreditsSnapshot?,
-        antigravityPlanInfo: AntigravityPlanInfoSummary?,
         openaiDashboard: OpenAIDashboardSnapshot?,
         error: ProviderErrorPayload?)
     {
@@ -35,7 +33,6 @@ struct ProviderPayload: Encodable {
         self.status = status
         self.usage = usage
         self.credits = credits
-        self.antigravityPlanInfo = antigravityPlanInfo
         self.openaiDashboard = openaiDashboard
         self.error = error
     }
@@ -48,7 +45,6 @@ struct ProviderPayload: Encodable {
         status: ProviderStatusPayload?,
         usage: UsageSnapshot?,
         credits: CreditsSnapshot?,
-        antigravityPlanInfo: AntigravityPlanInfoSummary?,
         openaiDashboard: OpenAIDashboardSnapshot?,
         error: ProviderErrorPayload?)
     {
@@ -59,7 +55,6 @@ struct ProviderPayload: Encodable {
         self.status = status
         self.usage = usage
         self.credits = credits
-        self.antigravityPlanInfo = antigravityPlanInfo
         self.openaiDashboard = openaiDashboard
         self.error = error
     }

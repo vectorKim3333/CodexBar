@@ -119,24 +119,6 @@ struct TokenAccountCLIContext {
                     cookieSource: cookieSource,
                     manualCookieHeader: routing.manualCookieHeader,
                     organizationID: account?.sanitizedOrganizationID))
-        case .zai:
-            return self.makeSnapshot(
-                zai: ProviderSettingsSnapshot.ZaiProviderSettings(apiRegion: self.resolveZaiRegion(config)))
-        case .moonshot:
-            return self.makeSnapshot(
-                moonshot: ProviderSettingsSnapshot.MoonshotProviderSettings(
-                    region: self.resolveMoonshotRegion(config)))
-        case .kilo:
-            return self.makeSnapshot(
-                kilo: ProviderSettingsSnapshot.KiloProviderSettings(
-                    usageDataSource: Self.kiloUsageDataSource(from: config?.source),
-                    extrasEnabled: Self.kiloExtrasEnabled(from: config)))
-        case .jetbrains:
-            return self.makeSnapshot(
-                jetbrains: ProviderSettingsSnapshot.JetBrainsProviderSettings(
-                    ideBasePath: nil))
-        default:
-            return nil
         }
     }
 
@@ -145,150 +127,14 @@ struct TokenAccountCLIContext {
         account: ProviderTokenAccount?,
         config: ProviderConfig?) -> ProviderSettingsSnapshot?
     {
-        let cookieHeader = self.manualCookieHeader(provider: provider, account: account, config: config)
-        let cookieSource = self.cookieSource(provider: provider, account: account, config: config)
-
-        switch provider {
-        case .cursor:
-            return self.makeSnapshot(
-                cursor: ProviderSettingsSnapshot.CursorProviderSettings(
-                    cookieSource: cookieSource,
-                    manualCookieHeader: cookieHeader))
-        case .opencode:
-            return self.makeSnapshot(
-                opencode: ProviderSettingsSnapshot.OpenCodeProviderSettings(
-                    cookieSource: cookieSource,
-                    manualCookieHeader: cookieHeader,
-                    workspaceID: config?.workspaceID))
-        case .opencodego:
-            return self.makeSnapshot(
-                opencodego: ProviderSettingsSnapshot.OpenCodeProviderSettings(
-                    cookieSource: cookieSource,
-                    manualCookieHeader: cookieHeader,
-                    workspaceID: config?.workspaceID))
-        case .alibaba:
-            return self.makeSnapshot(
-                alibaba: ProviderSettingsSnapshot.AlibabaCodingPlanProviderSettings(
-                    cookieSource: cookieSource,
-                    manualCookieHeader: cookieHeader,
-                    apiRegion: self.resolveAlibabaCodingPlanRegion(config)))
-        case .factory:
-            return self.makeSnapshot(
-                factory: ProviderSettingsSnapshot.FactoryProviderSettings(
-                    cookieSource: cookieSource,
-                    manualCookieHeader: cookieHeader))
-        case .minimax:
-            return self.makeSnapshot(
-                minimax: ProviderSettingsSnapshot.MiniMaxProviderSettings(
-                    cookieSource: cookieSource,
-                    manualCookieHeader: cookieHeader,
-                    apiRegion: self.resolveMiniMaxRegion(config)))
-        case .manus:
-            return self.makeSnapshot(
-                manus: ProviderSettingsSnapshot.ManusProviderSettings(
-                    cookieSource: cookieSource,
-                    manualCookieHeader: cookieHeader))
-        case .augment:
-            return self.makeSnapshot(
-                augment: ProviderSettingsSnapshot.AugmentProviderSettings(
-                    cookieSource: cookieSource,
-                    manualCookieHeader: cookieHeader))
-        case .amp:
-            return self.makeSnapshot(
-                amp: ProviderSettingsSnapshot.AmpProviderSettings(
-                    cookieSource: cookieSource,
-                    manualCookieHeader: cookieHeader))
-        case .ollama:
-            return self.makeSnapshot(
-                ollama: ProviderSettingsSnapshot.OllamaProviderSettings(
-                    cookieSource: cookieSource,
-                    manualCookieHeader: cookieHeader))
-        case .kimi:
-            return self.makeSnapshot(
-                kimi: ProviderSettingsSnapshot.KimiProviderSettings(
-                    cookieSource: cookieSource,
-                    manualCookieHeader: cookieHeader))
-        case .perplexity:
-            return self.makeSnapshot(
-                perplexity: ProviderSettingsSnapshot.PerplexityProviderSettings(
-                    cookieSource: cookieSource,
-                    manualCookieHeader: cookieHeader))
-        case .mimo:
-            return self.makeSnapshot(
-                mimo: ProviderSettingsSnapshot.MiMoProviderSettings(
-                    cookieSource: cookieSource,
-                    manualCookieHeader: cookieHeader))
-        case .doubao:
-            return nil
-        case .abacus:
-            return self.makeSnapshot(
-                abacus: ProviderSettingsSnapshot.AbacusProviderSettings(
-                    cookieSource: cookieSource,
-                    manualCookieHeader: cookieHeader))
-        case .mistral:
-            return self.makeSnapshot(
-                mistral: ProviderSettingsSnapshot.MistralProviderSettings(
-                    cookieSource: cookieSource,
-                    manualCookieHeader: cookieHeader))
-        case .stepfun:
-            return self.makeSnapshot(
-                stepfun: ProviderSettingsSnapshot.StepFunProviderSettings(
-                    cookieSource: cookieSource,
-                    manualToken: cookieHeader ?? "",
-                    username: config?.sanitizedAPIKey ?? "",
-                    password: ""))
-        default:
-            return nil
-        }
+        return nil
     }
 
     private func makeSnapshot(
         codex: ProviderSettingsSnapshot.CodexProviderSettings? = nil,
-        claude: ProviderSettingsSnapshot.ClaudeProviderSettings? = nil,
-        cursor: ProviderSettingsSnapshot.CursorProviderSettings? = nil,
-        opencode: ProviderSettingsSnapshot.OpenCodeProviderSettings? = nil,
-        opencodego: ProviderSettingsSnapshot.OpenCodeProviderSettings? = nil,
-        alibaba: ProviderSettingsSnapshot.AlibabaCodingPlanProviderSettings? = nil,
-        factory: ProviderSettingsSnapshot.FactoryProviderSettings? = nil,
-        minimax: ProviderSettingsSnapshot.MiniMaxProviderSettings? = nil,
-        manus: ProviderSettingsSnapshot.ManusProviderSettings? = nil,
-        zai: ProviderSettingsSnapshot.ZaiProviderSettings? = nil,
-        moonshot: ProviderSettingsSnapshot.MoonshotProviderSettings? = nil,
-        kilo: ProviderSettingsSnapshot.KiloProviderSettings? = nil,
-        kimi: ProviderSettingsSnapshot.KimiProviderSettings? = nil,
-        augment: ProviderSettingsSnapshot.AugmentProviderSettings? = nil,
-        amp: ProviderSettingsSnapshot.AmpProviderSettings? = nil,
-        ollama: ProviderSettingsSnapshot.OllamaProviderSettings? = nil,
-        jetbrains: ProviderSettingsSnapshot.JetBrainsProviderSettings? = nil,
-        perplexity: ProviderSettingsSnapshot.PerplexityProviderSettings? = nil,
-        mimo: ProviderSettingsSnapshot.MiMoProviderSettings? = nil,
-        abacus: ProviderSettingsSnapshot.AbacusProviderSettings? = nil,
-        mistral: ProviderSettingsSnapshot.MistralProviderSettings? = nil,
-        stepfun: ProviderSettingsSnapshot.StepFunProviderSettings? = nil) -> ProviderSettingsSnapshot
+        claude: ProviderSettingsSnapshot.ClaudeProviderSettings? = nil) -> ProviderSettingsSnapshot
     {
-        ProviderSettingsSnapshot.make(
-            codex: codex,
-            claude: claude,
-            cursor: cursor,
-            opencode: opencode,
-            opencodego: opencodego,
-            alibaba: alibaba,
-            factory: factory,
-            minimax: minimax,
-            manus: manus,
-            zai: zai,
-            kilo: kilo,
-            kimi: kimi,
-            augment: augment,
-            moonshot: moonshot,
-            amp: amp,
-            ollama: ollama,
-            jetbrains: jetbrains,
-            perplexity: perplexity,
-            mimo: mimo,
-            abacus: abacus,
-            mistral: mistral,
-            stepfun: stepfun)
+        ProviderSettingsSnapshot.make(codex: codex, claude: claude)
     }
 
     private func makeCodexSettingsSnapshot(
@@ -484,59 +330,6 @@ struct TokenAccountCLIContext {
             return .manual
         }
         return .auto
-    }
-
-    private func resolveZaiRegion(_ config: ProviderConfig?) -> ZaiAPIRegion {
-        guard let raw = config?.region?.trimmingCharacters(in: .whitespacesAndNewlines),
-              !raw.isEmpty
-        else {
-            return .global
-        }
-        return ZaiAPIRegion(rawValue: raw) ?? .global
-    }
-
-    private func resolveMiniMaxRegion(_ config: ProviderConfig?) -> MiniMaxAPIRegion {
-        guard let raw = config?.region?.trimmingCharacters(in: .whitespacesAndNewlines),
-              !raw.isEmpty
-        else {
-            return .global
-        }
-        return MiniMaxAPIRegion(rawValue: raw) ?? .global
-    }
-
-    private func resolveMoonshotRegion(_ config: ProviderConfig?) -> MoonshotRegion? {
-        guard let raw = config?.region?.trimmingCharacters(in: .whitespacesAndNewlines),
-              !raw.isEmpty
-        else {
-            return nil
-        }
-        return MoonshotRegion(rawValue: raw) ?? .international
-    }
-
-    private func resolveAlibabaCodingPlanRegion(_ config: ProviderConfig?) -> AlibabaCodingPlanAPIRegion {
-        guard let raw = config?.region?.trimmingCharacters(in: .whitespacesAndNewlines),
-              !raw.isEmpty
-        else {
-            return .international
-        }
-        return AlibabaCodingPlanAPIRegion(rawValue: raw) ?? .international
-    }
-
-    private static func kiloUsageDataSource(from source: ProviderSourceMode?) -> KiloUsageDataSource {
-        guard let source else { return .auto }
-        switch source {
-        case .auto, .web, .oauth:
-            return .auto
-        case .api:
-            return .api
-        case .cli:
-            return .cli
-        }
-    }
-
-    private static func kiloExtrasEnabled(from config: ProviderConfig?) -> Bool {
-        guard self.kiloUsageDataSource(from: config?.source) == .auto else { return false }
-        return config?.extrasEnabled ?? false
     }
 
     private func claudeCredentialRouting(

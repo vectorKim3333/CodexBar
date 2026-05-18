@@ -4,96 +4,14 @@ import SweetCookieKit
 // swiftformat:disable sortDeclarations
 public enum UsageProvider: String, CaseIterable, Sendable, Codable {
     case codex
-    case openai
     case claude
-    case cursor
-    case opencode
-    case opencodego
-    case alibaba
-    case factory
-    case gemini
-    case antigravity
-    case copilot
-    case zai
-    case minimax
-    case manus
-    case kimi
-    case kilo
-    case kiro
-    case vertexai
-    case augment
-    case jetbrains
-    case kimik2
-    case moonshot
-    case amp
-    case ollama
-    case synthetic
-    case warp
-    case openrouter
-    case elevenlabs
-    case windsurf
-    case perplexity
-    case mimo
-    case doubao
-    case abacus
-    case mistral
-    case deepseek
-    case codebuff
-    case crof
-    case venice
-    case commandcode
-    case stepfun
-    case bedrock
-    case grok
-    case deepgram
 }
 
 // swiftformat:enable sortDeclarations
 
 public enum IconStyle: Sendable, CaseIterable {
     case codex
-    case openai
     case claude
-    case zai
-    case minimax
-    case manus
-    case gemini
-    case antigravity
-    case cursor
-    case opencode
-    case opencodego
-    case alibaba
-    case factory
-    case copilot
-    case kimi
-    case kimik2
-    case kilo
-    case kiro
-    case vertexai
-    case augment
-    case jetbrains
-    case moonshot
-    case amp
-    case ollama
-    case synthetic
-    case warp
-    case openrouter
-    case elevenlabs
-    case windsurf
-    case perplexity
-    case mimo
-    case doubao
-    case abacus
-    case mistral
-    case deepseek
-    case codebuff
-    case crof
-    case venice
-    case commandcode
-    case stepfun
-    case bedrock
-    case grok
-    case deepgram
     case combined
 }
 
@@ -183,31 +101,12 @@ public enum ProviderBrowserCookieDefaults {
         #endif
     }
 
-    /// Safari first for Cursor: active sessions often live only there, and Chromium profiles may carry stale tokens.
-    public static var cursorCookieImportOrder: BrowserCookieImportOrder? {
-        #if os(macOS)
-        [.safari] + Browser.defaultImportOrder.filter { $0 != .safari }
-        #else
-        nil
-        #endif
-    }
-
     /// Preserve the legacy Codex prompt behavior: prefer Safari/Chrome/Firefox before
     /// probing additional Chromium variants that may trigger Safe Storage prompts.
     public static var codexCookieImportOrder: BrowserCookieImportOrder? {
         #if os(macOS)
         let preferredPrefix: [Browser] = [.safari, .chrome, .firefox]
         return preferredPrefix + Browser.defaultImportOrder.filter { !preferredPrefix.contains($0) }
-        #else
-        nil
-        #endif
-    }
-
-    /// Grok is normally signed in through Chrome; keep this narrow so CLI/live probes do not touch
-    /// unrelated browser keychains.
-    public static var grokCookieImportOrder: BrowserCookieImportOrder? {
-        #if os(macOS)
-        [.chrome]
         #else
         nil
         #endif

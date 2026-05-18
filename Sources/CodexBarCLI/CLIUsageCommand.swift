@@ -308,10 +308,6 @@ extension CodexBarCLI {
 
         switch outcome.result {
         case let .success(result):
-            let antigravityPlanInfo = await Self.fetchAntigravityPlanInfoIfNeeded(
-                provider: provider,
-                command: command)
-            await Self.emitAugmentDebugIfNeeded(provider: provider, command: command)
 
             var usage = result.usage.scoped(to: provider)
             if let account {
@@ -367,7 +363,6 @@ extension CodexBarCLI {
                     status: status,
                     usage: usage,
                     credits: result.credits,
-                    antigravityPlanInfo: antigravityPlanInfo,
                     openaiDashboard: dashboard,
                     error: nil))
             }
@@ -388,48 +383,12 @@ extension CodexBarCLI {
                 } else {
                     Self.writeStderr("Error: \(error.localizedDescription)\n")
                 }
-                if let summary = Self.kiloAutoFallbackSummary(
-                    provider: provider,
-                    sourceMode: effectiveSourceMode,
-                    attempts: outcome.attempts)
-                {
-                    Self.writeStderr("\(summary)\n")
-                }
             }
         }
 
         return output
     }
 
-    private static func fetchAntigravityPlanInfoIfNeeded(
-        provider: UsageProvider,
-        command: UsageCommandContext) async -> AntigravityPlanInfoSummary?
-    {
-        guard command.antigravityPlanDebug,
-              provider == .antigravity,
-              !command.jsonOnly
-        else {
-            return nil
-        }
-        let info = try? await AntigravityStatusProbe().fetchPlanInfoSummary()
-        if command.format == .text, let info {
-            Self.printAntigravityPlanInfo(info)
-        }
-        return info
-    }
-
-    private static func emitAugmentDebugIfNeeded(
-        provider: UsageProvider,
-        command: UsageCommandContext) async
-    {
-        guard command.augmentDebug, provider == .augment else { return }
-        #if os(macOS)
-        let dump = await AugmentStatusProbe.latestDumps()
-        if command.format == .text, !dump.isEmpty, !command.jsonOnly {
-            Self.writeStderr("Augment API responses:\n\(dump)\n")
-        }
-        #endif
-    }
 
     private static func webSourceUnsupportedOutput(
         provider: UsageProvider,
@@ -460,10 +419,7 @@ extension CodexBarCLI {
     }
 
     static func sourceModeRequiresWebSupport(_ sourceMode: ProviderSourceMode, provider: UsageProvider) -> Bool {
-        guard provider != .grok else {
-            return false
-        }
-        return switch sourceMode {
+        switch sourceMode {
         case .web:
             true
         case .auto:

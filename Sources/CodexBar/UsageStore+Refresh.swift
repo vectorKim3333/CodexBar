@@ -7,11 +7,6 @@ extension UsageStore {
         _ = self.settings.persistResolvedCodexActiveSourceCorrectionIfNeeded()
     }
 
-    /// Force refresh Augment session (called from UI button)
-    func forceRefreshAugmentSession() async {
-        await self.performRuntimeAction(.forceSessionRefresh, for: .augment)
-    }
-
     func refreshProvider(_ provider: UsageProvider, allowDisabled: Bool = false) async {
         self.prepareRefreshState(for: provider)
         guard let spec = self.providerSpecs[provider] else { return }
@@ -28,9 +23,6 @@ extension UsageStore {
                 self.accountSnapshots.removeValue(forKey: provider)
                 if provider == .codex {
                     self.codexAccountSnapshots = []
-                }
-                if provider == .kilo {
-                    self.kiloScopeSnapshots = []
                 }
                 self.tokenSnapshots.removeValue(forKey: provider)
                 self.tokenErrors[provider] = nil
@@ -53,15 +45,6 @@ extension UsageStore {
             return
         } else if provider == .codex {
             self.codexAccountSnapshots = []
-        }
-
-        if provider == .kilo, self.shouldFanOutKiloScopes() {
-            await self.refreshKiloScopes()
-            // Continue to also fetch the personal snapshot through the regular path
-            // so the existing single-card render keeps working when only personal is shown.
-            // The presence of multi-element kiloScopeSnapshots triggers stacked rendering.
-        } else if provider == .kilo {
-            await MainActor.run { self.kiloScopeSnapshots = [] }
         }
 
         let tokenAccounts = self.tokenAccounts(for: provider)

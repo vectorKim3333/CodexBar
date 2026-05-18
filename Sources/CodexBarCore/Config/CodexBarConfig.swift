@@ -87,8 +87,6 @@ public struct ProviderConfig: Codable, Sendable, Identifiable {
     public var tokenAccounts: ProviderTokenAccountData?
     public var codexActiveSource: CodexActiveSource?
     public var quotaWarnings: QuotaWarningConfig?
-    public var kiloKnownOrganizations: [KiloOrganization]?
-    public var kiloEnabledOrganizationIDs: [String]?
 
     public init(
         id: UsageProvider,
@@ -104,9 +102,7 @@ public struct ProviderConfig: Codable, Sendable, Identifiable {
         enterpriseHost: String? = nil,
         tokenAccounts: ProviderTokenAccountData? = nil,
         codexActiveSource: CodexActiveSource? = nil,
-        quotaWarnings: QuotaWarningConfig? = nil,
-        kiloKnownOrganizations: [KiloOrganization]? = nil,
-        kiloEnabledOrganizationIDs: [String]? = nil)
+        quotaWarnings: QuotaWarningConfig? = nil)
     {
         self.id = id
         self.enabled = enabled
@@ -122,8 +118,6 @@ public struct ProviderConfig: Codable, Sendable, Identifiable {
         self.tokenAccounts = tokenAccounts
         self.codexActiveSource = codexActiveSource
         self.quotaWarnings = quotaWarnings
-        self.kiloKnownOrganizations = kiloKnownOrganizations
-        self.kiloEnabledOrganizationIDs = kiloEnabledOrganizationIDs
     }
 
     public var sanitizedAPIKey: String? {
