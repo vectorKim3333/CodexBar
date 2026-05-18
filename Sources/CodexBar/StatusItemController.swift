@@ -701,7 +701,18 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
     }
 
     var shouldMergeIcons: Bool {
-        self.settings.mergeIcons && self.store.enabledProvidersForDisplay().count > 1
+        // Merge mode is removed in this fork. The menu bar always shows one
+        // status item per enabled provider. Each item's click surfaces the
+        // unified menu (Claude card + Codex card + Overview switcher) via
+        // `shouldShowUnifiedMenu`.
+        false
+    }
+
+    /// True when the unified merged-style menu (provider switcher across
+    /// Claude / Codex / Overview) should be shown, regardless of whether the
+    /// menu bar itself is in merged or split icon mode.
+    var shouldShowUnifiedMenu: Bool {
+        self.store.enabledProvidersForDisplay().count > 1
     }
 
     func switchAccountSubtitle(for target: UsageProvider) -> String? {

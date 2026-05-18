@@ -356,7 +356,13 @@ extension StatusItemController {
             }
             // Battery-pill style for the merged status item. Shows the primary
             // provider's remaining quota + countdown to its next reset.
-            let remainingFraction: Double? = primary.map { showUsed ? max(0, 1 - $0) : $0 }
+            // (Merge mode is removed in this fork, so this path is dead in
+            // practice — kept for completeness.) Convert 0–100 percent to a
+            // 0–1 fraction for the pill fill.
+            let remainingFraction: Double? = primary.map {
+                let raw = showUsed ? (100 - $0) : $0
+                return max(0, min(1, raw / 100))
+            }
             let resetText = IconRenderer.shortResetText(snapshot?.primary?.resetsAt)
             let image = IconRenderer.makeBatteryPillIcon(
                 remaining: remainingFraction,
@@ -499,10 +505,22 @@ extension StatusItemController {
             }
             self.setButtonTitle(nil, for: button)
             // Battery-pill style: % remaining fill + reset countdown text +
-            // brand glyph on the left to identify Claude vs Codex at a glance
-            // (this code path is the non-merged status item per provider).
-            let remainingFraction: Double? = primary.map { showUsed ? max(0, 1 - $0) : $0 }
-            let resetText = IconRenderer.shortResetText(snapshot?.primary?.resetsAt)
+            // brand glyph on the left to identify Claude vs Codex at a glance.
+            //
+            // `primary` is already a 0–100 percent (from IconRemainingResolver).
+            // We need a 0–1 fraction for the pill fill, AND we want the reset
+            // timestamp from the *same* resolved window (different per
+            // IconStyle: Codex uses `codexVisibleWindows`, Claude uses
+            // `snapshot.primary`).
+            let resolvedWindows = snapshot.map {
+                IconRemainingResolver.resolvedWindows(snapshot: $0, style: style)
+            }
+            let primaryWindow = resolvedWindows?.primary
+            let remainingFraction: Double? = primary.map {
+                let raw = showUsed ? (100 - $0) : $0
+                return max(0, min(1, raw / 100))
+            }
+            let resetText = IconRenderer.shortResetText(primaryWindow?.resetsAt)
             let brandImage = ProviderBrandIcon.image(for: provider)
             let image = IconRenderer.makeBatteryPillIcon(
                 remaining: remainingFraction,

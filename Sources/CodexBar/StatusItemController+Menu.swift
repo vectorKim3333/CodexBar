@@ -66,10 +66,9 @@ extension StatusItemController {
     }
 
     func makeMenu() -> NSMenu {
-        guard self.shouldMergeIcons else {
-            return self.makeMenu(for: nil)
-        }
-        return self.makeBaseMenu()
+        // Always return the unified merged-style base menu — every status
+        // item (Claude/Codex) shows the full switcher menu when clicked.
+        self.makeBaseMenu()
     }
 
     func menuWillOpen(_ menu: NSMenu) {
@@ -89,7 +88,7 @@ extension StatusItemController {
         }
 
         var provider: UsageProvider?
-        if self.shouldMergeIcons {
+        if self.shouldShowUnifiedMenu {
             let resolvedProvider = self.resolvedMenuProvider()
             self.lastMenuProvider = resolvedProvider ?? .codex
             provider = resolvedProvider
@@ -160,7 +159,7 @@ extension StatusItemController {
     func populateMenu(_ menu: NSMenu, provider: UsageProvider?) {
         let enabledProviders = self.store.enabledProvidersForDisplay()
         let includesOverview = self.includesOverviewTab(enabledProviders: enabledProviders)
-        let switcherSelection = self.shouldMergeIcons && enabledProviders.count > 1
+        let switcherSelection = self.shouldShowUnifiedMenu && enabledProviders.count > 1
             ? self.resolvedSwitcherSelection(
                 enabledProviders: enabledProviders,
                 includesOverview: includesOverview)
@@ -213,7 +212,7 @@ extension StatusItemController {
         let providerSwitcherWidthMatches = (menu.items.first?.view as? ProviderSwitcherView).map { view in
             abs(view.frame.width - menuWidth) <= 0.5
         } ?? false
-        let canSmartUpdate = self.shouldMergeIcons &&
+        let canSmartUpdate = self.shouldShowUnifiedMenu &&
             enabledProviders.count > 1 &&
             !isOverviewSelected &&
             switcherProvidersMatch &&
@@ -252,7 +251,7 @@ extension StatusItemController {
             return
         }
 
-        let canPreserveProviderSwitcher = self.shouldMergeIcons &&
+        let canPreserveProviderSwitcher = self.shouldShowUnifiedMenu &&
             enabledProviders.count > 1 &&
             switcherProvidersMatch &&
             switcherUsageBarsShowUsedMatch &&
@@ -399,7 +398,7 @@ extension StatusItemController {
                 selection: context.switcherSelection ?? .provider(context.currentProvider),
                 width: context.menuWidth)
             // Track which providers the switcher was built with for smart update detection
-            if self.shouldMergeIcons, context.enabledProviders.count > 1 {
+            if self.shouldShowUnifiedMenu, context.enabledProviders.count > 1 {
                 self.lastSwitcherProviders = context.enabledProviders
                 self.lastSwitcherUsageBarsShowUsed = self.settings.usageBarsShowUsed
                 self.lastMergedSwitcherSelection = context.switcherSelection
@@ -460,7 +459,7 @@ extension StatusItemController {
         selection: ProviderSwitcherSelection,
         width: CGFloat)
     {
-        guard self.shouldMergeIcons, enabledProviders.count > 1 else { return }
+        guard self.shouldShowUnifiedMenu, enabledProviders.count > 1 else { return }
         let switcherItem = self.makeProviderSwitcherItem(
             providers: enabledProviders,
             includesOverview: includesOverview,
@@ -1034,7 +1033,7 @@ extension StatusItemController {
     }
 
     func menuProvider(for menu: NSMenu) -> UsageProvider? {
-        if self.shouldMergeIcons {
+        if self.shouldShowUnifiedMenu {
             return self.resolvedMenuProvider()
         }
         if let provider = self.menuProviders[ObjectIdentifier(menu)] {
@@ -1118,7 +1117,7 @@ extension StatusItemController {
         guard !enabledProviders.isEmpty else { return [] }
         let includesOverview = self.includesOverviewTab(enabledProviders: enabledProviders)
 
-        if self.shouldMergeIcons,
+        if self.shouldShowUnifiedMenu,
            enabledProviders.count > 1,
            self.resolvedSwitcherSelection(
                enabledProviders: enabledProviders,
