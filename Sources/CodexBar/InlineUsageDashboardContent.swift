@@ -260,9 +260,9 @@ struct InlineUsageDashboardContent: View {
 
         private func fill(for point: InlineUsageDashboardModel.Point, maxValue: Double) -> Color {
             let ratio = max(0.18, min(1, point.value / maxValue))
-            if self.isHighlighted {
-                return Color.white.opacity(0.55 + ratio * 0.35)
-            }
+            // Always render with the value-style native color; the card no
+            // longer flips the chart to white-on-blue on hover because the
+            // hover tint was dropped (chart now stays readable on hover).
             switch self.model.valueStyle {
             case .currencyUSD, .currency:
                 return Color(red: 0.81, green: 0.56, blue: 0.24).opacity(0.42 + ratio * 0.58)

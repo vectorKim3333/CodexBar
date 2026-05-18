@@ -715,18 +715,25 @@ extension IconRenderer {
     }
 
     /// Battery-style pill icon: rounded rectangle "shell" with proportional fill, optional reset countdown text alongside.
+    /// An optional `brand` template image is drawn on the left of the pill so a provider can be identified at a glance
+    /// in non-merged mode.
     ///
     /// - Parameters:
     ///   - remaining: 0.0 – 1.0 fraction of quota remaining (drives fill width). `nil` = no fill drawn.
     ///   - resetText: Short countdown string from `shortResetText(_:)`. `nil` = no text.
     ///   - stale: If `true`, dim the icon to indicate stale data.
+    ///   - brand: Optional template brand image (e.g. Claude/Codex logo). Drawn at 14×14 to the left of the pill.
     static func makeBatteryPillIcon(
         remaining: Double?,
         resetText: String?,
-        stale: Bool = false) -> NSImage
+        stale: Bool = false,
+        brand: NSImage? = nil) -> NSImage
     {
-        // Layout (pt). Width grows when text is present.
+        // Layout (pt). Width grows when text or brand image are present.
         let height: CGFloat = 18
+        let brandSize: CGFloat = 14
+        let brandGap: CGFloat = 3
+        let brandTotal: CGFloat = (brand != nil) ? brandSize + brandGap : 0
         let pillWidth: CGFloat = 24
         let capWidth: CGFloat = 2
         let capGap: CGFloat = 0.5
@@ -738,7 +745,7 @@ extension IconRenderer {
             // Round up so we don't clip.
             return ceil(size.width)
         }()
-        let totalWidth = pillWidth + capGap + capWidth
+        let totalWidth = brandTotal + pillWidth + capGap + capWidth
             + (resetText != nil ? textGap + textWidth : 0)
 
         let image = NSImage(size: NSSize(width: totalWidth, height: height))
@@ -749,8 +756,24 @@ extension IconRenderer {
         let strokeColor = NSColor.black.withAlphaComponent(strokeAlpha)
         let fillColor = NSColor.black.withAlphaComponent(fillAlpha)
 
+        // Brand glyph on the left.
+        if let brand {
+            let brandRect = CGRect(
+                x: 0,
+                y: (height - brandSize) / 2,
+                width: brandSize,
+                height: brandSize)
+            brand.draw(
+                in: brandRect,
+                from: .zero,
+                operation: .sourceOver,
+                fraction: stale ? 0.45 : 1.0)
+        }
+
+        let pillOriginX: CGFloat = brandTotal
+
         // Battery shell.
-        let shellRect = CGRect(x: 0.5, y: 3, width: pillWidth - 1, height: height - 6)
+        let shellRect = CGRect(x: pillOriginX + 0.5, y: 3, width: pillWidth - 1, height: height - 6)
         let shellPath = NSBezierPath(roundedRect: shellRect, xRadius: 3, yRadius: 3)
         shellPath.lineWidth = 1.0
         strokeColor.setStroke()
@@ -758,7 +781,7 @@ extension IconRenderer {
 
         // Battery cap (small nub on right).
         let capRect = CGRect(
-            x: pillWidth + capGap,
+            x: pillOriginX + pillWidth + capGap,
             y: shellRect.midY - 2.5,
             width: capWidth,
             height: 5)
@@ -792,7 +815,7 @@ extension IconRenderer {
             ]
             let str = NSAttributedString(string: resetText, attributes: attrs)
             let textSize = str.size()
-            let drawX = pillWidth + capGap + capWidth + textGap
+            let drawX = pillOriginX + pillWidth + capGap + capWidth + textGap
             let drawY = (height - textSize.height) / 2
             str.draw(at: NSPoint(x: drawX, y: drawY))
         }

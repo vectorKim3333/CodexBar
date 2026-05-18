@@ -498,15 +498,17 @@ extension StatusItemController {
                 return true
             }
             self.setButtonTitle(nil, for: button)
-            // Battery-pill style: % remaining fill + reset countdown text.
-            // `primary` here is a 0–1 fraction (already accounts for showUsed flag).
-            // The pill always represents quota *remaining*, so flip when needed.
+            // Battery-pill style: % remaining fill + reset countdown text +
+            // brand glyph on the left to identify Claude vs Codex at a glance
+            // (this code path is the non-merged status item per provider).
             let remainingFraction: Double? = primary.map { showUsed ? max(0, 1 - $0) : $0 }
             let resetText = IconRenderer.shortResetText(snapshot?.primary?.resetsAt)
+            let brandImage = ProviderBrandIcon.image(for: provider)
             let image = IconRenderer.makeBatteryPillIcon(
                 remaining: remainingFraction,
                 resetText: resetText,
-                stale: stale)
+                stale: stale,
+                brand: brandImage)
             self.setButtonImage(warningFlash ? Self.quotaWarningFlashImage(base: image) : image, for: button)
         }
         return false
