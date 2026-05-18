@@ -88,22 +88,25 @@ extension StatusItemController {
         }
 
         var provider: UsageProvider?
-        if self.shouldShowUnifiedMenu {
+        if let registered = self.menuProviders[ObjectIdentifier(menu)] {
+            // A status item's menu carries its provider registration.
+            // Snap the unified menu to that provider on open so clicking the
+            // Claude pill always shows the Claude card (and Codex pill → Codex)
+            // regardless of which tab was last selected.
+            self.lastMenuProvider = registered
+            self.settings.mergedMenuLastSelectedWasOverview = false
+            provider = registered
+        } else if self.shouldShowUnifiedMenu {
             let resolvedProvider = self.resolvedMenuProvider()
             self.lastMenuProvider = resolvedProvider ?? .codex
             provider = resolvedProvider
+        } else if menu === self.fallbackMenu {
+            self.lastMenuProvider = self.store.enabledProvidersForDisplay().first ?? .codex
+            provider = nil
         } else {
-            if let menuProvider = self.menuProviders[ObjectIdentifier(menu)] {
-                self.lastMenuProvider = menuProvider
-                provider = menuProvider
-            } else if menu === self.fallbackMenu {
-                self.lastMenuProvider = self.store.enabledProvidersForDisplay().first ?? .codex
-                provider = nil
-            } else {
-                let resolved = self.store.enabledProvidersForDisplay().first ?? .codex
-                self.lastMenuProvider = resolved
-                provider = resolved
-            }
+            let resolved = self.store.enabledProvidersForDisplay().first ?? .codex
+            self.lastMenuProvider = resolved
+            provider = resolved
         }
 
         let didRefresh = self.menuNeedsRefresh(menu)
@@ -1033,11 +1036,14 @@ extension StatusItemController {
     }
 
     func menuProvider(for menu: NSMenu) -> UsageProvider? {
-        if self.shouldShowUnifiedMenu {
-            return self.resolvedMenuProvider()
-        }
+        // Prefer the registered per-status-item provider so callers see the
+        // provider tied to the menu bar item, not whichever provider the
+        // switcher last landed on.
         if let provider = self.menuProviders[ObjectIdentifier(menu)] {
             return provider
+        }
+        if self.shouldShowUnifiedMenu {
+            return self.resolvedMenuProvider()
         }
         if menu === self.fallbackMenu {
             return nil

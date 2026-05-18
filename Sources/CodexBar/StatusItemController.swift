@@ -641,17 +641,19 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
 
     private func attachMenus(fallback: UsageProvider? = nil) {
         // Non-merged mode: every status item still shows the same unified menu
-        // (Claude card + Codex card + Overview) so clicking either menu-bar
-        // entry surfaces the full overview, not just that provider's slice.
-        // Each provider gets its own NSMenu instance keyed in `providerMenus`
-        // so AppKit doesn't have to juggle one menu across multiple status items.
+        // (Claude card + Codex card + Overview switcher), but the menu opens
+        // *pre-focused* on the provider whose pill was clicked. We use
+        // `makeMenu(for: provider)` instead of `makeMenu()` so the resulting
+        // NSMenu is registered in `menuProviders[menu] = provider`. The
+        // `menuWillOpen` handler reads that registration and snaps the
+        // switcher selection to that provider before populating.
         for provider in UsageProvider.allCases {
             let shouldHaveItem = self.isEnabled(provider) || fallback == provider
 
             if shouldHaveItem {
                 let item = self.lazyStatusItem(for: provider)
                 if self.providerMenus[provider] == nil {
-                    self.providerMenus[provider] = self.makeMenu()
+                    self.providerMenus[provider] = self.makeMenu(for: provider)
                 }
                 let menu = self.providerMenus[provider]
                 if item.menu !== menu {
