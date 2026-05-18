@@ -260,7 +260,6 @@
 "Subscription Utilization" = "";
 "Surprise me" = "给我惊喜";
 "Switcher shows icons" = "";
-"Symlink CodexBarCLI to /usr/local/bin and /opt/homebrew/bin as codexbar." = "";
 "System" = "";
 "Temporarily shows the loading animation after the next refresh." = "";
 "Tertiary (\\(label))" = "";
@@ -443,10 +442,6 @@
 "section_keyboard_shortcut" = "快捷键";
 "open_menu_shortcut_title" = "打开菜单";
 "open_menu_shortcut_subtitle" = "从任意位置触发菜单栏菜单。";
-"install_cli" = "安装 CLI";
-"install_cli_subtitle" = "将 CodexBarCLI 符号链接到 /usr/local/bin 和 /opt/homebrew/bin 作为 codexbar。";
-"cli_not_found" = "在应用包中未找到 CodexBarCLI。";
-"no_writable_bin_dirs" = "未找到可写的 bin 目录。";
 "show_debug_settings_title" = "显示调试设置";
 "show_debug_settings_subtitle" = "在调试标签中显示故障排除工具。";
 "surprise_me_title" = "给我惊喜";

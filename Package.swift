@@ -18,8 +18,6 @@ let package = Package(
         .macOS(.v14),
     ],
     dependencies: [
-        .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.9.1"),
-        .package(url: "https://github.com/steipete/Commander", from: "0.2.1"),
         .package(url: "https://github.com/apple/swift-crypto.git", from: "3.0.0"),
         .package(url: "https://github.com/apple/swift-log", from: "1.12.0"),
         .package(url: "https://github.com/apple/swift-syntax", from: "600.0.1"),
@@ -52,24 +50,6 @@ let package = Package(
                 dependencies: [
                     "CodexBarMacros",
                 ]),
-            .executableTarget(
-                name: "CodexBarCLI",
-                dependencies: [
-                    "CodexBarCore",
-                    .product(name: "Commander", package: "Commander"),
-                ],
-                path: "Sources/CodexBarCLI",
-                swiftSettings: [
-                    .enableUpcomingFeature("StrictConcurrency"),
-                ]),
-            .testTarget(
-                name: "CodexBarLinuxTests",
-                dependencies: ["CodexBarCore", "CodexBarCLI"],
-                path: "TestsLinux",
-                swiftSettings: [
-                    .enableUpcomingFeature("StrictConcurrency"),
-                    .enableExperimentalFeature("SwiftTesting"),
-                ]),
         ]
 
         #if os(macOS)
@@ -84,7 +64,6 @@ let package = Package(
             .executableTarget(
                 name: "CodexBar",
                 dependencies: [
-                    .product(name: "Sparkle", package: "Sparkle"),
                     .product(name: "KeyboardShortcuts", package: "KeyboardShortcuts"),
                     .product(name: "Vortex", package: "Vortex"),
                     "CodexBarMacroSupport",
@@ -96,14 +75,6 @@ let package = Package(
                 ],
                 swiftSettings: [
                     // Opt into Swift 6 strict concurrency (approachable migration path).
-                    .enableUpcomingFeature("StrictConcurrency"),
-                    .define("ENABLE_SPARKLE"),
-                ]),
-            .executableTarget(
-                name: "CodexBarWidget",
-                dependencies: ["CodexBarCore"],
-                path: "Sources/CodexBarWidget",
-                swiftSettings: [
                     .enableUpcomingFeature("StrictConcurrency"),
                 ]),
             .executableTarget(
@@ -117,7 +88,7 @@ let package = Package(
 
         targets.append(.testTarget(
             name: "CodexBarTests",
-            dependencies: ["CodexBar", "CodexBarCore", "CodexBarCLI", "CodexBarWidget"],
+            dependencies: ["CodexBar", "CodexBarCore"],
             path: "Tests",
             resources: [
                 .copy("CodexBarTests/Fixtures"),
