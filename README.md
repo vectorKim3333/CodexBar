@@ -19,6 +19,18 @@ swift build -c release
 - First launch → menu bar icon appears.
 - Open **Preferences → Providers** and sign in to Claude and/or Codex via the source path of your choice (OAuth, CLI, browser cookies).
 - See [`docs/claude.md`](docs/claude.md) and [`docs/codex.md`](docs/codex.md) for provider-specific details.
+- 한글 사용 안내: [`docs/usage-guide-ko.md`](docs/usage-guide-ko.md)
+
+## Distribute to Teammates
+
+Build a shareable zip with ad-hoc signing:
+
+```bash
+./Scripts/build_for_distribution.sh           # host arch only
+ARCHES="arm64 x86_64" ./Scripts/build_for_distribution.sh   # universal
+```
+
+Output lands in `dist/CodexBar-<version>-<arch>.zip`. Share that single file (Slack / Drive / GitHub Release) and point teammates at [`docs/install-guide-ko.md`](docs/install-guide-ko.md) — drag-and-drop install, no Apple Developer account required.
 
 ## Development
 
