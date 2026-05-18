@@ -12,31 +12,35 @@ extension EnvironmentValues {
 }
 
 enum MenuHighlightStyle {
-    static let selectionText = Color(nsColor: .selectedMenuItemTextColor)
     static let normalPrimaryText = Color(nsColor: .controlTextColor)
     static let normalSecondaryText = Color(nsColor: .secondaryLabelColor)
 
+    // Card content keeps its natural colors on hover so the embedded chart,
+    // progress bars, and labels stay readable. Hover is communicated via a
+    // subtle accent-tinted background only (see selectionBackground).
     static func primary(_ highlighted: Bool) -> Color {
-        highlighted ? self.selectionText : self.normalPrimaryText
+        self.normalPrimaryText
     }
 
     static func secondary(_ highlighted: Bool) -> Color {
-        highlighted ? self.selectionText : self.normalSecondaryText
+        self.normalSecondaryText
     }
 
     static func error(_ highlighted: Bool) -> Color {
-        highlighted ? self.selectionText : Color(nsColor: .systemRed)
+        Color(nsColor: .systemRed)
     }
 
     static func progressTrack(_ highlighted: Bool) -> Color {
-        highlighted ? self.selectionText.opacity(0.22) : Color(nsColor: .tertiaryLabelColor).opacity(0.22)
+        Color(nsColor: .tertiaryLabelColor).opacity(0.22)
     }
 
     static func progressTint(_ highlighted: Bool, fallback: Color) -> Color {
-        highlighted ? self.selectionText : fallback
+        fallback
     }
 
     static func selectionBackground(_ highlighted: Bool) -> Color {
-        highlighted ? Color(nsColor: .selectedContentBackgroundColor) : .clear
+        // Subtle accent tint instead of the saturated system selection color
+        // so the embedded chart bars and cost summary remain visible on hover.
+        highlighted ? Color(nsColor: .controlAccentColor).opacity(0.15) : .clear
     }
 }
