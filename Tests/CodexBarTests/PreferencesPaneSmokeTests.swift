@@ -16,7 +16,7 @@ struct PreferencesPaneSmokeTests {
         _ = AdvancedPane(settings: settings).body
         _ = ProvidersPane(settings: settings, store: store).body
         _ = DebugPane(settings: settings, store: store).body
-        _ = AboutPane(updater: DisabledUpdaterController()).body
+        _ = AboutPane().body
 
         settings.debugDisableKeychainAccess = false
     }
@@ -41,7 +41,7 @@ struct PreferencesPaneSmokeTests {
         _ = AdvancedPane(settings: settings).body
         _ = ProvidersPane(settings: settings, store: store).body
         _ = DebugPane(settings: settings, store: store).body
-        _ = AboutPane(updater: DisabledUpdaterController()).body
+        _ = AboutPane().body
     }
 
     @Test

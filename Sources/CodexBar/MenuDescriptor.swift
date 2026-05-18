@@ -51,7 +51,6 @@ struct MenuDescriptor {
     }
 
     enum MenuAction: Equatable {
-        case installUpdate
         case refresh
         case dashboard
         case statusPage
@@ -77,7 +76,6 @@ struct MenuDescriptor {
         account: AccountInfo,
         managedCodexAccountCoordinator: ManagedCodexAccountCoordinator? = nil,
         codexAccountPromotionCoordinator: CodexAccountPromotionCoordinator? = nil,
-        updateReady: Bool,
         includeContextualActions: Bool = true) -> MenuDescriptor
     {
         var sections: [Section] = []
@@ -127,7 +125,7 @@ struct MenuDescriptor {
                 sections.append(actions)
             }
         }
-        sections.append(Self.metaSection(updateReady: updateReady))
+        sections.append(Self.metaSection())
 
         return MenuDescriptor(sections: sections)
     }
@@ -368,11 +366,8 @@ struct MenuDescriptor {
         return Section(entries: entries)
     }
 
-    private static func metaSection(updateReady: Bool) -> Section {
+    private static func metaSection() -> Section {
         var entries: [Entry] = []
-        if updateReady {
-            entries.append(.action("Update ready, restart now?", .installUpdate))
-        }
         entries.append(contentsOf: [
             .action("Refresh", .refresh),
             .action("Settings...", .settings),
@@ -479,7 +474,7 @@ private enum AccountFormatter {
 extension MenuDescriptor.MenuAction {
     var systemImageName: String? {
         switch self {
-        case .installUpdate, .settings, .about, .quit:
+        case .settings, .about, .quit:
             nil
         case .refresh: MenuDescriptor.MenuActionSystemImage.refresh.rawValue
         case .dashboard: MenuDescriptor.MenuActionSystemImage.dashboard.rawValue

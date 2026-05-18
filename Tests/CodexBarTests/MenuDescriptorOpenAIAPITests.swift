@@ -71,9 +71,7 @@ struct MenuDescriptorOpenAIAPITests {
             provider: .openai,
             store: store,
             settings: settings,
-            account: AccountInfo(email: nil, plan: nil),
-            updateReady: false,
-            includeContextualActions: false)
+            account: AccountInfo(email: nil, plan: nil),            includeContextualActions: false)
         let lines = descriptor.sections
             .flatMap(\.entries)
             .compactMap { entry -> String? in

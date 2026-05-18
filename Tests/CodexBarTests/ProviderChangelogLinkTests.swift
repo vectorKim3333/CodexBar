@@ -60,9 +60,7 @@ struct ProviderChangelogLinkTests {
             provider: provider,
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updateReady: false,
-            includeContextualActions: true)
+            account: fetcher.loadAccountInfo(),            includeContextualActions: true)
     }
 
     private func actionTitles(from descriptor: MenuDescriptor) -> [String] {

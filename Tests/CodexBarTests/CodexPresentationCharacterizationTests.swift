@@ -37,9 +37,7 @@ struct CodexPresentationCharacterizationTests {
             provider: .codex,
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updateReady: false,
-            includeContextualActions: false)
+            account: fetcher.loadAccountInfo(),            includeContextualActions: false)
 
         let lines = self.textLines(from: descriptor)
         #expect(!lines.contains(where: { $0.hasPrefix("Session:") }))
@@ -84,9 +82,7 @@ struct CodexPresentationCharacterizationTests {
             provider: .codex,
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updateReady: false,
-            includeContextualActions: false)
+            account: fetcher.loadAccountInfo(),            includeContextualActions: false)
 
         let lines = self.textLines(from: descriptor)
         #expect(lines.contains("Account: codex@example.com"))
@@ -122,9 +118,7 @@ struct CodexPresentationCharacterizationTests {
             provider: .codex,
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updateReady: false,
-            includeContextualActions: false)
+            account: fetcher.loadAccountInfo(),            includeContextualActions: false)
 
         let lines = self.textLines(from: descriptor)
         #expect(lines.contains("Plan: Pro 5x"))
@@ -181,9 +175,7 @@ struct CodexPresentationCharacterizationTests {
             provider: .codex,
             store: store,
             settings: settings,
-            account: AccountInfo(email: nil, plan: nil),
-            updateReady: false,
-            includeContextualActions: false)
+            account: AccountInfo(email: nil, plan: nil),            includeContextualActions: false)
 
         let lines = self.textLines(from: descriptor)
         #expect(lines.contains("Account: snapshot@example.com"))
@@ -237,9 +229,7 @@ struct CodexPresentationCharacterizationTests {
             provider: .codex,
             store: store,
             settings: settings,
-            account: AccountInfo(email: nil, plan: nil),
-            updateReady: false,
-            includeContextualActions: false)
+            account: AccountInfo(email: nil, plan: nil),            includeContextualActions: false)
 
         let lines = self.textLines(from: descriptor)
         #expect(lines.contains("Account: snapshot@example.com"))

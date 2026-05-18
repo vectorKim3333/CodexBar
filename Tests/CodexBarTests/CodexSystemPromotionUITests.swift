@@ -98,8 +98,7 @@ struct CodexSystemPromotionUITests {
             account: UsageFetcher().loadAccountInfo(),
             managedCodexAccountCoordinator: ManagedCodexAccountCoordinator(),
             codexAccountPromotionCoordinator: CodexAccountPromotionCoordinator(
-                service: container.makeService()),
-            updateReady: false)
+                service: container.makeService()))
 
         let submenu = try #require(descriptor.sections
             .flatMap(\.entries)
@@ -138,8 +137,7 @@ struct CodexSystemPromotionUITests {
             account: UsageFetcher().loadAccountInfo(),
             managedCodexAccountCoordinator: ManagedCodexAccountCoordinator(),
             codexAccountPromotionCoordinator: CodexAccountPromotionCoordinator(
-                service: container.makeService()),
-            updateReady: false)
+                service: container.makeService()))
 
         let hasSystemAccountSubmenu = descriptor.sections
             .flatMap(\.entries)

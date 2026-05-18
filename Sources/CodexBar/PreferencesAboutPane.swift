@@ -3,9 +3,7 @@ import SwiftUI
 
 @MainActor
 struct AboutPane: View {
-    let updater: UpdaterProviding
     @State private var iconHover = false
-    @State private var didLoadUpdaterState = false
 
     private var versionString: String {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "–"
@@ -74,9 +72,6 @@ struct AboutPane: View {
             .multilineTextAlignment(.center)
 
             Divider()
-
-            Text(self.updater.unavailableReason ?? L("updates_unavailable"))
-                .foregroundStyle(.secondary)
 
             Text(L("copyright"))
                 .font(.footnote)

@@ -87,7 +87,6 @@ struct CodexBarApp: App {
             PreferencesView(
                 settings: self.settings,
                 store: self.store,
-                updater: self.appDelegate.updaterController,
                 selection: self.preferencesSelection,
                 managedCodexAccountCoordinator: self.managedCodexAccountCoordinator,
                 codexAccountPromotionCoordinator: self.codexAccountPromotionCoordinator,
@@ -115,49 +114,6 @@ struct CodexBarApp: App {
     }
 }
 
-// MARK: - Updater abstraction
-
-@MainActor
-protocol UpdaterProviding: AnyObject {
-    var automaticallyChecksForUpdates: Bool { get set }
-    var automaticallyDownloadsUpdates: Bool { get set }
-    var isAvailable: Bool { get }
-    var unavailableReason: String? { get }
-    var updateStatus: UpdateStatus { get }
-    func checkForUpdates(_ sender: Any?)
-    func installUpdate()
-}
-
-/// No-op updater used when auto-update is not available.
-final class DisabledUpdaterController: UpdaterProviding {
-    var automaticallyChecksForUpdates: Bool = false
-    var automaticallyDownloadsUpdates: Bool = false
-    let isAvailable: Bool = false
-    let unavailableReason: String?
-    let updateStatus = UpdateStatus()
-
-    init(unavailableReason: String? = nil) {
-        self.unavailableReason = unavailableReason
-    }
-
-    func checkForUpdates(_ sender: Any?) {}
-    func installUpdate() {}
-}
-
-@MainActor
-@Observable
-final class UpdateStatus {
-    static let disabled = UpdateStatus()
-    var isUpdateReady: Bool
-
-    init(isUpdateReady: Bool = false) {
-        self.isUpdateReady = isUpdateReady
-    }
-}
-
-private func makeUpdaterController() -> UpdaterProviding {
-    DisabledUpdaterController()
-}
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
@@ -170,7 +126,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let codexAccountPromotionCoordinator: CodexAccountPromotionCoordinator
     }
 
-    let updaterController: UpdaterProviding = makeUpdaterController()
     private let confettiOverlayController = ScreenConfettiOverlayController()
     private let confettiLogger = CodexBarLog.logger(LogCategories.confetti)
     private var statusController: StatusItemControlling?
@@ -277,7 +232,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 store,
                 settings,
                 account,
-                self.updaterController,
                 selection,
                 managedCodexAccountCoordinator,
                 codexAccountPromotionCoordinator)
@@ -302,7 +256,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             fallbackStore,
             fallbackSettings,
             fallbackAccount,
-            self.updaterController,
             PreferencesSelection(),
             fallbackManagedCodexAccountCoordinator,
             fallbackCodexAccountPromotionCoordinator)

@@ -191,7 +191,6 @@ extension StatusItemController {
             account: self.account,
             managedCodexAccountCoordinator: self.managedCodexAccountCoordinator,
             codexAccountPromotionCoordinator: self.codexAccountPromotionCoordinator,
-            updateReady: self.updater.updateStatus.isUpdateReady,
             includeContextualActions: !isOverviewSelected)
         let menuWidth = self.menuCardWidth(for: enabledProviders, sections: descriptor.sections)
 
@@ -373,7 +372,6 @@ extension StatusItemController {
                 account: self.account,
                 managedCodexAccountCoordinator: self.managedCodexAccountCoordinator,
                 codexAccountPromotionCoordinator: self.codexAccountPromotionCoordinator,
-                updateReady: self.updater.updateStatus.isUpdateReady,
                 includeContextualActions: context.switcherSelection != .overview)
 
             let menuContext = MenuCardContext(

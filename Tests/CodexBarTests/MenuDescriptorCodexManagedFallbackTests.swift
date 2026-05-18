@@ -53,9 +53,7 @@ struct MenuDescriptorCodexManagedFallbackTests {
             provider: .codex,
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updateReady: false,
-            includeContextualActions: false)
+            account: fetcher.loadAccountInfo(),            includeContextualActions: false)
 
         let lines = descriptor.sections
             .flatMap(\.entries)
@@ -110,9 +108,7 @@ struct MenuDescriptorCodexManagedFallbackTests {
             provider: .codex,
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updateReady: false,
-            includeContextualActions: false)
+            account: fetcher.loadAccountInfo(),            includeContextualActions: false)
 
         let lines = descriptor.sections
             .flatMap(\.entries)

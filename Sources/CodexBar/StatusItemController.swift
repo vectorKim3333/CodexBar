@@ -38,7 +38,6 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
         UsageStore,
         SettingsStore,
         AccountInfo,
-        UpdaterProviding,
         PreferencesSelection,
         ManagedCodexAccountCoordinator,
         CodexAccountPromotionCoordinator)
@@ -48,7 +47,6 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
         store: UsageStore,
         settings: SettingsStore,
         account: AccountInfo,
-        updater: UpdaterProviding,
         selection: PreferencesSelection,
         managedCodexAccountCoordinator: ManagedCodexAccountCoordinator,
         codexAccountPromotionCoordinator: CodexAccountPromotionCoordinator)
@@ -58,7 +56,6 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
             store: store,
             settings: settings,
             account: account,
-            updater: updater,
             preferencesSelection: selection,
             managedCodexAccountCoordinator: managedCodexAccountCoordinator,
             codexAccountPromotionCoordinator: codexAccountPromotionCoordinator)
@@ -71,7 +68,6 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
     let store: UsageStore
     let settings: SettingsStore
     let account: AccountInfo
-    let updater: UpdaterProviding
     let managedCodexAccountCoordinator: ManagedCodexAccountCoordinator
     let codexAccountPromotionCoordinator: CodexAccountPromotionCoordinator
     private let statusBar: NSStatusBar
@@ -244,7 +240,6 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
         store: UsageStore,
         settings: SettingsStore,
         account: AccountInfo,
-        updater: UpdaterProviding,
         preferencesSelection: PreferencesSelection,
         managedCodexAccountCoordinator: ManagedCodexAccountCoordinator = ManagedCodexAccountCoordinator(),
         codexAccountPromotionCoordinator: CodexAccountPromotionCoordinator? = nil,
@@ -257,7 +252,6 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
         self.store = store
         self.settings = settings
         self.account = account
-        self.updater = updater
         self.preferencesSelection = preferencesSelection
         self.managedCodexAccountCoordinator = managedCodexAccountCoordinator
         self.codexAccountPromotionCoordinator = codexAccountPromotionCoordinator
@@ -313,7 +307,6 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
         store: UsageStore,
         settings: SettingsStore,
         account: AccountInfo,
-        updater: UpdaterProviding,
         preferencesSelection: PreferencesSelection,
         statusBar: NSStatusBar = .system,
         observeProviderConfigNotifications: Bool = !SettingsStore.isRunningTests)
@@ -322,7 +315,6 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
             store: store,
             settings: settings,
             account: account,
-            updater: updater,
             preferencesSelection: preferencesSelection,
             managedCodexAccountCoordinator: ManagedCodexAccountCoordinator(),
             codexAccountPromotionCoordinator: nil,
@@ -335,7 +327,6 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
         self.observeStoreIconChanges()
         self.observeDebugForceAnimation()
         self.observeSettingsChanges()
-        self.observeUpdaterChanges()
         self.observeManagedCodexCoordinatorChanges()
     }
 
@@ -430,18 +421,6 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
                     self.quotaWarningFlashTasks.removeValue(forKey: provider)
                     self.updateIcons()
                 }
-            }
-        }
-    }
-
-    private func observeUpdaterChanges() {
-        withObservationTracking {
-            _ = self.updater.updateStatus.isUpdateReady
-        } onChange: { [weak self] in
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                self.observeUpdaterChanges()
-                self.invalidateMenus()
             }
         }
     }

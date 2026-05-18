@@ -153,8 +153,7 @@ struct StatusMenuCodexSwitcherTests {
             provider: .codex,
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updateReady: false)
+            account: fetcher.loadAccountInfo())
 
         #expect(projection.visibleAccounts.map(\.email) == ["live@example.com", "managed@example.com"])
         #expect(projection.activeVisibleAccountID == "live@example.com")
@@ -183,8 +182,7 @@ struct StatusMenuCodexSwitcherTests {
             provider: .codex,
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updateReady: false)
+            account: fetcher.loadAccountInfo())
 
         #expect(settings.codexVisibleAccountProjection.visibleAccounts.map(\.email) == ["solo@example.com"])
         #expect(self.actionLabels(in: descriptor).contains("Add Account..."))
@@ -227,9 +225,7 @@ struct StatusMenuCodexSwitcherTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
         defer { controller.releaseStatusItemsForTesting() }
 
@@ -289,9 +285,7 @@ struct StatusMenuCodexSwitcherTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
         defer { controller.releaseStatusItemsForTesting() }
 
@@ -403,9 +397,7 @@ struct StatusMenuCodexSwitcherTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
         defer { controller.releaseStatusItemsForTesting() }
 
@@ -454,9 +446,7 @@ struct StatusMenuCodexSwitcherTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
         defer { controller.releaseStatusItemsForTesting() }
 
@@ -926,9 +916,7 @@ extension StatusMenuCodexSwitcherTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
         defer { controller.releaseStatusItemsForTesting() }
 
