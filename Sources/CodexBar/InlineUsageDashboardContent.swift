@@ -105,7 +105,9 @@ extension UsageMenuCardView.Model {
         if let topModel = Self.topCostModel(from: snapshot.daily) {
             details.append(String(format: L("top_model_format"), Self.shortModelName(topModel)))
         }
-        details.append(L(UsageFormatter.costEstimateHint(provider: provider)))
+        // Cost-estimate caveat removed: text was getting truncated with no
+        // tooltip, so it added clutter instead of clarity. The "추정치"
+        // semantics are implied by the "비용" labeling.
         let providerName = ProviderDefaults.metadata[provider]?.displayName ?? provider.rawValue
         return InlineUsageDashboardModel(
             accessibilityLabel: "\(providerName) 30 day cost trend",
