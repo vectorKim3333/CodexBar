@@ -336,6 +336,12 @@ extension StatusItemController {
             let image = IconRenderer.makeMorphIcon(progress: morphProgress, style: style)
             self.setButtonImage(warningFlash ? Self.quotaWarningFlashImage(base: image) : image, for: button)
         } else {
+            // Compute fill + reset text up-front so they participate in the
+            // skip cache key. (Same reasoning as the per-provider path.)
+            let fillFraction: Double? = primary.map { max(0, min(1, $0 / 100)) }
+            let resetText = IconRenderer.shortResetText(
+                snapshot?.primary?.resetsAt,
+                format: self.settings.menuBarTimeFormat)
             let signature = [
                 "mode=icon",
                 "provider=\(primaryProvider.rawValue)",
@@ -351,19 +357,13 @@ extension StatusItemController {
                 "warningFlash=\(warningFlash ? "1" : "0")",
                 "anim=\(needsAnimation ? "1" : "0")",
                 "timeFmt=\(self.settings.menuBarTimeFormat.rawValue)",
+                "resetText=\(resetText ?? "")",
             ].joined(separator: "|")
             if self.shouldSkipMergedIconRender(signature) {
                 return true
             }
             // Battery-pill style for the merged status item. (Merge mode is
             // removed in this fork; path kept for completeness.)
-            // `primary` is already in the right semantics for `showUsed`
-            // because `IconRemainingResolver.resolvedPercents` applied the
-            // flag. Just convert 0–100 to a 0–1 fraction.
-            let fillFraction: Double? = primary.map { max(0, min(1, $0 / 100)) }
-            let resetText = IconRenderer.shortResetText(
-                snapshot?.primary?.resetsAt,
-                format: self.settings.menuBarTimeFormat)
             let image = IconRenderer.makeBatteryPillIcon(
                 remaining: fillFraction,
                 resetText: resetText,
@@ -485,6 +485,19 @@ extension StatusItemController {
             let image = IconRenderer.makeMorphIcon(progress: morphProgress, style: style)
             self.setButtonImage(warningFlash ? Self.quotaWarningFlashImage(base: image) : image, for: button)
         } else {
+            // Compute resolved window + display text BEFORE the signature so we
+            // can include `resetText` in the skip cache key. Without it, the
+            // pill text staleness goes unnoticed because percent doesn't budge
+            // between fetches.
+            let resolvedWindows = snapshot.map {
+                IconRemainingResolver.resolvedWindows(snapshot: $0, style: style)
+            }
+            let primaryWindow = resolvedWindows?.primary
+            let fillFraction: Double? = primary.map { max(0, min(1, $0 / 100)) }
+            let resetText = IconRenderer.shortResetText(
+                primaryWindow?.resetsAt,
+                format: self.settings.menuBarTimeFormat)
+
             let signature = [
                 "mode=icon",
                 "provider=\(provider.rawValue)",
@@ -500,6 +513,7 @@ extension StatusItemController {
                 "warningFlash=\(warningFlash ? "1" : "0")",
                 "loading=\(isLoading ? "1" : "0")",
                 "timeFmt=\(self.settings.menuBarTimeFormat.rawValue)",
+                "resetText=\(resetText ?? "")",
             ].joined(separator: "|")
             if self.shouldSkipProviderIconRender(provider: provider, signature: signature) {
                 return true
@@ -509,25 +523,9 @@ extension StatusItemController {
             // brand glyph on the left to identify Claude vs Codex at a glance.
             //
             // `primary` is already a 0–100 percent (from IconRemainingResolver).
-            // We need a 0–1 fraction for the pill fill, AND we want the reset
-            // timestamp from the *same* resolved window (different per
-            // IconStyle: Codex uses `codexVisibleWindows`, Claude uses
-            // `snapshot.primary`).
-            let resolvedWindows = snapshot.map {
-                IconRemainingResolver.resolvedWindows(snapshot: $0, style: style)
-            }
-            let primaryWindow = resolvedWindows?.primary
-            // `primary` already carries the right semantics for `showUsed`
-            // (IconRemainingResolver.resolvedPercents picks usedPercent or
-            // remainingPercent based on the flag). So:
-            //   showUsed = false → fillFraction tracks quota remaining
-            //                       (battery drains as you use)
-            //   showUsed = true  → fillFraction tracks quota used
-            //                       (pill fills up as you use)
-            let fillFraction: Double? = primary.map { max(0, min(1, $0 / 100)) }
-            let resetText = IconRenderer.shortResetText(
-                primaryWindow?.resetsAt,
-                format: self.settings.menuBarTimeFormat)
+            // `fillFraction` semantics:
+            //   showUsed = false → tracks quota remaining (battery drains)
+            //   showUsed = true  → tracks quota used (pill fills up)
             let brandImage = ProviderBrandIcon.image(for: provider)
             let image = IconRenderer.makeBatteryPillIcon(
                 remaining: fillFraction,

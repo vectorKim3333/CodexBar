@@ -148,6 +148,7 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
     var lastKnownScreenCount: Int
     var pendingScreenChangePreviousCount: Int?
     var screenChangeVisibilityTask: Task<Void, Never>?
+    var iconHeartbeatTask: Task<Void, Never>?
     let loginLogger = CodexBarLog.logger(LogCategories.login)
     let menuLogger = CodexBarLog.logger(LogCategories.app)
     var selectedMenuProvider: UsageProvider? {
@@ -326,6 +327,24 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
         self.observeDebugForceAnimation()
         self.observeSettingsChanges()
         self.observeManagedCodexCoordinatorChanges()
+        self.startIconHeartbeat()
+    }
+
+    /// Periodic icon re-evaluation so the menu-bar pill's countdown text
+    /// (e.g. "1h 45m" → "1h 44m") ticks even when no fetch is firing.
+    /// Re-runs `updateIcons()` once a minute; each provider's
+    /// `shouldSkipProviderIconRender` guard means an actual redraw only
+    /// happens when the resolved `resetText` (now part of the signature)
+    /// actually changes.
+    private func startIconHeartbeat() {
+        self.iconHeartbeatTask?.cancel()
+        self.iconHeartbeatTask = Task { @MainActor [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(60))
+                guard let self else { return }
+                self.updateIcons()
+            }
+        }
     }
 
     private func observeStoreChanges() {
@@ -777,6 +796,7 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
         self.blinkTask?.cancel()
         self.loginTask?.cancel()
         self.screenChangeVisibilityTask?.cancel()
+        self.iconHeartbeatTask?.cancel()
         self.pendingScreenChangePreviousCount = nil
         NotificationCenter.default.removeObserver(self)
     }
