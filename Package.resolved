@@ -1,5 +1,5 @@
 {
-  "originHash" : "8769c62f1335cbff2966ff30a17c6955f0ad285d382f23725187cfca0192f36b",
+  "originHash" : "d17a97c70d75dd4de3fc28deca8d37134273543601c7fba0ee06bc35ef17930c",
   "pins" : [
     {
       "identity" : "keyboardshortcuts",
@@ -53,14 +53,6 @@
       "state" : {
         "revision" : "0687f71944021d616d34d922343dcef086855920",
         "version" : "600.0.1"
-      }
-    },
-    {
-      "identity" : "vortex",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/zats/Vortex",
-      "state" : {
-        "revision" : "ef5392088d4aeb255c4eee83157dbdafcd31bf07"
       }
     }
   ],

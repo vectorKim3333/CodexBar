@@ -29,11 +29,8 @@ extension SettingsStore {
     }
 
     var debugMenuEnabled: Bool {
-        get { self.defaultsState.debugMenuEnabled }
-        set {
-            self.defaultsState.debugMenuEnabled = newValue
-            self.userDefaults.set(newValue, forKey: "debugMenuEnabled")
-        }
+        get { false }
+        set { /* dead feature — always false */ }
     }
 
     var debugDisableKeychainAccess: Bool {
@@ -70,11 +67,8 @@ extension SettingsStore {
     }
 
     var debugKeepCLISessionsAlive: Bool {
-        get { self.defaultsState.debugKeepCLISessionsAlive }
-        set {
-            self.defaultsState.debugKeepCLISessionsAlive = newValue
-            self.userDefaults.set(newValue, forKey: "debugKeepCLISessionsAlive")
-        }
+        get { false }
+        set { /* dead feature — always false */ }
     }
 
     var isVerboseLoggingEnabled: Bool {
@@ -279,19 +273,13 @@ extension SettingsStore {
     }
 
     var randomBlinkEnabled: Bool {
-        get { self.defaultsState.randomBlinkEnabled }
-        set {
-            self.defaultsState.randomBlinkEnabled = newValue
-            self.userDefaults.set(newValue, forKey: "randomBlinkEnabled")
-        }
+        get { false }
+        set { /* dead feature — always false */ }
     }
 
     var confettiOnWeeklyLimitResetsEnabled: Bool {
-        get { self.defaultsState.confettiOnWeeklyLimitResetsEnabled }
-        set {
-            self.defaultsState.confettiOnWeeklyLimitResetsEnabled = newValue
-            self.userDefaults.set(newValue, forKey: "confettiOnWeeklyLimitResetsEnabled")
-        }
+        get { false }
+        set { /* dead feature — always false */ }
     }
 
     var menuBarShowsHighestUsage: Bool {
@@ -392,14 +380,8 @@ extension SettingsStore {
     }
 
     var providerStorageFootprintsEnabled: Bool {
-        get { self.defaultsState.providerStorageFootprintsEnabled }
-        set {
-            self.defaultsState.providerStorageFootprintsEnabled = newValue
-            self.userDefaults.set(newValue, forKey: "providerStorageFootprintsEnabled")
-            CodexBarLog.logger(LogCategories.settings).info(
-                "Provider storage footprints updated",
-                metadata: ["enabled": newValue ? "1" : "0"])
-        }
+        get { false }
+        set { /* dead feature — always false */ }
     }
 
     var jetbrainsIDEBasePath: String {
@@ -634,8 +616,8 @@ extension SettingsStore {
     }
 
     var debugLoadingPattern: LoadingPattern? {
-        get { self.debugLoadingPatternRaw.flatMap(LoadingPattern.init(rawValue:)) }
-        set { self.debugLoadingPatternRaw = newValue?.rawValue }
+        get { nil }
+        set { /* dead feature — always nil */ }
     }
 }
 

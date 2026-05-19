@@ -61,7 +61,6 @@ extension UsageStore {
             _ = self.settings.quotaWarningSoundEnabled
             _ = self.settings.usageBarsShowUsed
             _ = self.settings.costUsageEnabled
-            _ = self.settings.randomBlinkEnabled
             _ = self.settings.configRevision
             for implementation in ProviderCatalog.all {
                 implementation.observeSettings(self.settings)
@@ -69,10 +68,7 @@ extension UsageStore {
             _ = self.settings.tokenAccountsByProvider
             _ = self.settings.mergeIcons
             _ = self.settings.selectedMenuProvider
-            _ = self.settings.debugLoadingPattern
-            _ = self.settings.debugKeepCLISessionsAlive
             _ = self.settings.historicalTrackingEnabled
-            _ = self.settings.providerStorageFootprintsEnabled
         } onChange: { [weak self] in
             Task { @MainActor [weak self] in
                 guard let self else { return }

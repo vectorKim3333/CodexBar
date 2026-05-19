@@ -124,8 +124,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let codexAccountPromotionCoordinator: CodexAccountPromotionCoordinator
     }
 
-    private let confettiOverlayController = ScreenConfettiOverlayController()
-    private let confettiLogger = CodexBarLog.logger(LogCategories.confetti)
     private var statusController: StatusItemControlling?
     private var store: UsageStore?
     private var settings: SettingsStore?
@@ -133,8 +131,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var preferencesSelection: PreferencesSelection?
     private var managedCodexAccountCoordinator: ManagedCodexAccountCoordinator?
     private var codexAccountPromotionCoordinator: CodexAccountPromotionCoordinator?
-    private var hasInstalledWeeklyLimitResetObserver = false
-
     func configure(_ dependencies: Dependencies) {
         self.store = dependencies.store
         self.settings = dependencies.settings
@@ -156,18 +152,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.statusController?.openMenuFromShortcut()
             }
         }
-        if !self.hasInstalledWeeklyLimitResetObserver {
-            NotificationCenter.default.addObserver(
-                self,
-                selector: #selector(self.handleWeeklyLimitResetNotification(_:)),
-                name: .codexbarWeeklyLimitReset,
-                object: nil)
-            self.hasInstalledWeeklyLimitResetObserver = true
-        }
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        self.confettiOverlayController.dismiss()
         TTYCommandRunner.terminateActiveProcessesForAppShutdown()
     }
 
@@ -175,20 +162,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.ensureStatusController()
         guard let statusController else { return }
         await statusController.runLoginFlowFromSettings(provider: provider)
-    }
-
-    @objc private func handleWeeklyLimitResetNotification(_ notification: Notification) {
-        guard let event = notification.object as? WeeklyLimitResetEvent else { return }
-        guard self.settings?.confettiOnWeeklyLimitResetsEnabled == true else { return }
-        let origin = self.statusController?.celebrationOriginPoint(for: event.provider)
-        self.confettiLogger.info(
-            "Triggering confetti",
-            metadata: [
-                "provider": event.provider.rawValue,
-                "accountIdentifier": event.accountIdentifier,
-                "originKnown": origin == nil ? "0" : "1",
-            ])
-        self.confettiOverlayController.play(originInScreen: origin)
     }
 
     /// Use the classic (non-Liquid Glass) app icon on macOS versions before 26.

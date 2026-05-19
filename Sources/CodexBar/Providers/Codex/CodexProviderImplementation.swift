@@ -219,7 +219,7 @@ struct CodexProviderImplementation: ProviderImplementation {
     func loginMenuAction(context _: ProviderMenuLoginContext)
         -> (label: String, action: MenuDescriptor.MenuAction)?
     {
-        (L("Add Account..."), .addCodexAccount)
+        nil
     }
 
     @MainActor

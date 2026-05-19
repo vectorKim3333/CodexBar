@@ -6,9 +6,7 @@ extension SettingsStore {
         _ = self.providerEnablement
         _ = self.refreshFrequency
         _ = self.launchAtLogin
-        _ = self.debugMenuEnabled
         _ = self.debugDisableKeychainAccess
-        _ = self.debugKeepCLISessionsAlive
         _ = self.statusChecksEnabled
         _ = self.sessionQuotaNotificationsEnabled
         _ = self.quotaWarningNotificationsEnabled
@@ -27,15 +25,12 @@ extension SettingsStore {
         _ = self.menuBarMetricPreferencesRaw
         _ = self.costUsageEnabled
         _ = self.hidePersonalInfo
-        _ = self.randomBlinkEnabled
-        _ = self.confettiOnWeeklyLimitResetsEnabled
         _ = self.claudeOAuthKeychainPromptMode
         _ = self.claudeOAuthKeychainReadStrategy
         _ = self.claudeWebExtrasEnabled
         _ = self.showOptionalCreditsAndExtraUsage
         _ = self.openAIWebAccessEnabled
         _ = self.openAIWebBatterySaverEnabled
-        _ = self.providerStorageFootprintsEnabled
         _ = self.codexUsageDataSource
         _ = self.codexActiveSource
         _ = self.claudeUsageDataSource
@@ -48,7 +43,6 @@ extension SettingsStore {
         _ = self.codexCookieHeader
         _ = self.claudeCookieHeader
         _ = self.tokenAccountsByProvider
-        _ = self.debugLoadingPattern
         _ = self.selectedMenuProvider
         _ = self.configRevision
         return 0

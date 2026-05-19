@@ -207,7 +207,6 @@
 "Picker subtitle" = "Picker subtitle";
 "Placeholder" = "Placeholder";
 "Plan" = "Plan";
-"Play full-screen confetti when weekly usage resets." = "Play full-screen confetti when weekly usage resets.";
 "Polls OpenAI/Claude status pages and Google Workspace for " = "Polls OpenAI/Claude status pages and Google Workspace for ";
 "Prevents any Keychain access while enabled." = "Prevents any Keychain access while enabled.";
 "Primary (API key limit)" = "Primary (API key limit)";
@@ -292,7 +291,6 @@
 "Wait for the current managed Codex login to finish before adding another account." = "Wait for the current managed Codex login to finish before adding another account.";
 "Waiting for Authentication..." = "Waiting for Authentication...";
 "Website" = "Website";
-"Weekly limit confetti" = "Weekly limit confetti";
 "Weekly token limit" = "Weekly token limit";
 "Weekly usage" = "Weekly usage";
 "Weekly usage unavailable for this account." = "Weekly usage unavailable for this account.";
@@ -386,7 +384,6 @@
 "tab_display" = "Display";
 "tab_advanced" = "Advanced";
 "tab_about" = "About";
-"tab_debug" = "Debug";
 
 /* Providers Pane */
 "select_a_provider" = "Select a provider";
@@ -438,16 +435,8 @@
 "section_keyboard_shortcut" = "Keyboard shortcut";
 "open_menu_shortcut_title" = "Open menu";
 "open_menu_shortcut_subtitle" = "Trigger the menu bar menu from anywhere.";
-"show_debug_settings_title" = "Show Debug Settings";
-"show_debug_settings_subtitle" = "Expose troubleshooting tools in the Debug tab.";
-"surprise_me_title" = "Surprise me";
-"surprise_me_subtitle" = "Check if you like your agents having some fun up there.";
-"weekly_limit_confetti_title" = "Weekly limit confetti";
-"weekly_limit_confetti_subtitle" = "Play full-screen confetti when weekly usage resets.";
 "hide_personal_info_title" = "Hide personal information";
 "hide_personal_info_subtitle" = "Obscure email addresses in the menu bar and menu UI.";
-"show_provider_storage_usage_title" = "Show provider storage usage";
-"show_provider_storage_usage_subtitle" = "Show local disk usage in menus. Scans known provider-owned paths in the background.";
 "section_keychain_access" = "Keychain access";
 "keychain_access_caption" = "Disable all Keychain reads and writes. Browser cookie import is unavailable; paste Cookie headers manually in Providers.";
 "disable_keychain_access_title" = "Disable Keychain access";
@@ -465,62 +454,6 @@
 "updates_unavailable" = "Updates unavailable in this build.";
 "copyright" = "© 2026 Peter Steinberger. MIT License.";
 
-/* Debug Pane */
-"section_logging" = "Logging";
-"enable_file_logging" = "Enable file logging";
-"enable_file_logging_subtitle" = "Write logs to %@ for debugging.";
-"verbosity_title" = "Verbosity";
-"verbosity_subtitle" = "Controls how much detail is logged.";
-"open_log_file" = "Open log file";
-"force_animation_next_refresh" = "Force animation on next refresh";
-"force_animation_next_refresh_subtitle" = "Temporarily shows the loading animation after the next refresh.";
-"section_loading_animations" = "Loading animations";
-"loading_animations_caption" = "Pick a pattern and replay it in the menu bar. \"Random\" keeps the existing behavior.";
-"animation_random_default" = "Random (default)";
-"replay_selected_animation" = "Replay selected animation";
-"blink_now" = "Blink now";
-"section_probe_logs" = "Probe logs";
-"probe_logs_caption" = "Fetch the latest probe output for debugging; Copy keeps the full text.";
-"fetch_log" = "Fetch log";
-"copy" = "Copy";
-"save_to_file" = "Save to file";
-"load_parse_dump" = "Load parse dump";
-"rerun_provider_autodetect" = "Re-run provider autodetect";
-"loading" = "Loading…";
-"no_log_yet_fetch" = "No log yet. Fetch to load.";
-"section_fetch_strategy" = "Fetch strategy attempts";
-"fetch_strategy_caption" = "Last fetch pipeline decisions and errors for a provider.";
-"section_openai_cookies" = "OpenAI cookies";
-"openai_cookies_caption" = "Cookie import + WebKit scrape logs from the last OpenAI cookies attempt.";
-"no_log_yet" = "No log yet. Update OpenAI cookies in Providers → Codex to run an import.";
-"section_caches" = "Caches";
-"caches_caption" = "Clear cached cost scan results or browser cookie caches.";
-"clear_cookie_cache" = "Clear cookie cache";
-"clear_cost_cache" = "Clear cost cache";
-"section_notifications" = "Notifications";
-"notifications_caption" = "Trigger test notifications for the 5-hour session window (depleted/restored).";
-"post_depleted" = "Post depleted";
-"post_restored" = "Post restored";
-"section_cli_sessions" = "CLI sessions";
-"cli_sessions_caption" = "Keep Codex/Claude CLI sessions alive after a probe. Default exits once data is captured.";
-"keep_cli_sessions_alive" = "Keep CLI sessions alive";
-"keep_cli_sessions_alive_subtitle" = "Skip teardown between probes (debug-only).";
-"reset_cli_sessions" = "Reset CLI sessions";
-"section_error_simulation" = "Error simulation";
-"error_simulation_caption" = "Inject a fake error message into the menu card for layout testing.";
-"set_menu_error" = "Set menu error";
-"clear_menu_error" = "Clear menu error";
-"set_cost_error" = "Set cost error";
-"clear_cost_error" = "Clear cost error";
-"section_cli_paths" = "CLI paths";
-"cli_paths_caption" = "Resolved Codex binary and PATH layers; startup login PATH capture (short timeout).";
-"codex_binary" = "Codex binary";
-"claude_binary" = "Claude binary";
-"effective_path" = "Effective PATH";
-"unavailable" = "Unavailable";
-"login_shell_path" = "Login shell PATH (startup capture)";
-"cleared" = "Cleared.";
-"no_fetch_attempts" = "No fetch attempts yet.";
 "macOS Tahoe can block menu bar apps in System Settings → Menu Bar → Allow in the Menu Bar. CodexBar is running, but macOS may be hiding its icon. Open Menu Bar settings and turn CodexBar on." = "macOS Tahoe can block menu bar apps in System Settings → Menu Bar → Allow in the Menu Bar. CodexBar is running, but macOS may be hiding its icon. Open Menu Bar settings and turn CodexBar on.";
 
 /* Metric preferences */

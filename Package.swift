@@ -22,7 +22,6 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-log", from: "1.12.0"),
         .package(url: "https://github.com/apple/swift-syntax", from: "600.0.1"),
         .package(url: "https://github.com/sindresorhus/KeyboardShortcuts", from: "2.4.0"),
-        .package(url: "https://github.com/zats/Vortex", revision: "ef5392088d4aeb255c4eee83157dbdafcd31bf07"),
         sweetCookieKitDependency,
     ],
     targets: {
@@ -65,7 +64,6 @@ let package = Package(
                 name: "CodexBar",
                 dependencies: [
                     .product(name: "KeyboardShortcuts", package: "KeyboardShortcuts"),
-                    .product(name: "Vortex", package: "Vortex"),
                     "CodexBarMacroSupport",
                     "CodexBarCore",
                 ],

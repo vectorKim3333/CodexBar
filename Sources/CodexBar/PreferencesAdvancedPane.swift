@@ -28,30 +28,9 @@ struct AdvancedPane: View {
 
                 SettingsSection(contentSpacing: 10) {
                     PreferenceToggleRow(
-                        title: L("show_debug_settings_title"),
-                        subtitle: L("show_debug_settings_subtitle"),
-                        binding: self.$settings.debugMenuEnabled)
-                    PreferenceToggleRow(
-                        title: L("surprise_me_title"),
-                        subtitle: L("surprise_me_subtitle"),
-                        binding: self.$settings.randomBlinkEnabled)
-                    PreferenceToggleRow(
-                        title: L("weekly_limit_confetti_title"),
-                        subtitle: L("weekly_limit_confetti_subtitle"),
-                        binding: self.$settings.confettiOnWeeklyLimitResetsEnabled)
-                }
-
-                Divider()
-
-                SettingsSection(contentSpacing: 10) {
-                    PreferenceToggleRow(
                         title: L("hide_personal_info_title"),
                         subtitle: L("hide_personal_info_subtitle"),
                         binding: self.$settings.hidePersonalInfo)
-                    PreferenceToggleRow(
-                        title: L("show_provider_storage_usage_title"),
-                        subtitle: L("show_provider_storage_usage_subtitle"),
-                        binding: self.$settings.providerStorageFootprintsEnabled)
                 }
 
                 Divider()

@@ -312,30 +312,6 @@ struct MenuDescriptor {
         let targetProvider = provider ?? store.enabledProviders().first
         let metadata = targetProvider.map { store.metadata(for: $0) }
         let fallbackAccount = targetProvider.map { store.accountInfo(for: $0) } ?? account
-        let loginContext = targetProvider.map {
-            ProviderMenuLoginContext(
-                provider: $0,
-                store: store,
-                settings: store.settings,
-                account: fallbackAccount)
-        }
-
-        // Show "Add Account" if no account, "Switch Account" if logged in
-        if let targetProvider,
-           let implementation = ProviderCatalog.implementation(for: targetProvider),
-           implementation.supportsLoginFlow
-        {
-            if let loginContext,
-               let override = implementation.loginMenuAction(context: loginContext)
-            {
-                entries.append(.action(override.label, override.action))
-            } else {
-                let loginAction = self.switchAccountTarget(for: provider, store: store)
-                let hasAccount = self.hasAccount(for: provider, store: store, account: fallbackAccount)
-                let accountLabel = hasAccount ? L("Switch Account...") : L("Add Account...")
-                entries.append(.action(accountLabel, loginAction))
-            }
-        }
 
         if let targetProvider {
             let actionContext = ProviderMenuActionContext(
@@ -386,29 +362,6 @@ struct MenuDescriptor {
             return "\(label) — \(freshness)"
         }
         return label
-    }
-
-    private static func switchAccountTarget(for provider: UsageProvider?, store: UsageStore) -> MenuAction {
-        if let provider { return .switchAccount(provider) }
-        if let enabled = store.enabledProviders().first { return .switchAccount(enabled) }
-        return .switchAccount(.codex)
-    }
-
-    private static func hasAccount(for provider: UsageProvider?, store: UsageStore, account: AccountInfo) -> Bool {
-        let target = provider ?? store.enabledProviders().first ?? .codex
-        if let email = store.snapshot(for: target)?.accountEmail(for: target),
-           !email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        {
-            return true
-        }
-        let metadata = store.metadata(for: target)
-        if metadata.usesAccountFallback,
-           let fallback = account.email?.trimmingCharacters(in: .whitespacesAndNewlines),
-           !fallback.isEmpty
-        {
-            return true
-        }
-        return false
     }
 
     private static func rateWindowLabels(
