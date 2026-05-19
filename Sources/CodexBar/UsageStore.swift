@@ -66,7 +66,6 @@ extension UsageStore {
             for implementation in ProviderCatalog.all {
                 implementation.observeSettings(self.settings)
             }
-            _ = self.settings.multiAccountMenuLayout
             _ = self.settings.tokenAccountsByProvider
             _ = self.settings.mergeIcons
             _ = self.settings.selectedMenuProvider

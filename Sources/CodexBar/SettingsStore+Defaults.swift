@@ -174,17 +174,16 @@ extension SettingsStore {
     }
 
     var quotaWarningMarkersVisible: Bool {
-        get { self.defaultsState.quotaWarningMarkersVisible }
-        set {
-            self.defaultsState.quotaWarningMarkersVisible = newValue
-            self.userDefaults.set(newValue, forKey: "quotaWarningMarkersVisible")
-        }
+        get { false }
+        set { /* dead feature — always false */ }
     }
 
     var usageBarsShowUsed: Bool {
         get { self.defaultsState.usageBarsShowUsed }
         set {
-            self.defaultsState.usageBarsShowUsed = newValue
+            var state = self.defaultsState
+            state.usageBarsShowUsed = newValue
+            self.defaultsState = state
             self.userDefaults.set(newValue, forKey: "usageBarsShowUsed")
         }
     }
@@ -192,23 +191,24 @@ extension SettingsStore {
     var resetTimesShowAbsolute: Bool {
         get { self.defaultsState.resetTimesShowAbsolute }
         set {
-            self.defaultsState.resetTimesShowAbsolute = newValue
+            var state = self.defaultsState
+            state.resetTimesShowAbsolute = newValue
+            self.defaultsState = state
             self.userDefaults.set(newValue, forKey: "resetTimesShowAbsolute")
         }
     }
 
     var providerChangelogLinksEnabled: Bool {
-        get { self.defaultsState.providerChangelogLinksEnabled }
-        set {
-            self.defaultsState.providerChangelogLinksEnabled = newValue
-            self.userDefaults.set(newValue, forKey: "providerChangelogLinksEnabled")
-        }
+        get { false }
+        set { /* dead feature — always false */ }
     }
 
     var menuBarShowsBrandIconWithPercent: Bool {
         get { self.defaultsState.menuBarShowsBrandIconWithPercent }
         set {
-            self.defaultsState.menuBarShowsBrandIconWithPercent = newValue
+            var state = self.defaultsState
+            state.menuBarShowsBrandIconWithPercent = newValue
+            self.defaultsState = state
             self.userDefaults.set(newValue, forKey: "menuBarShowsBrandIconWithPercent")
         }
     }
@@ -231,16 +231,13 @@ extension SettingsStore {
     }
 
     var multiAccountMenuLayout: MultiAccountMenuLayout {
-        get { MultiAccountMenuLayout(rawValue: self.defaultsState.multiAccountMenuLayoutRaw) ?? .segmented }
-        set {
-            self.defaultsState.multiAccountMenuLayoutRaw = newValue.rawValue
-            self.userDefaults.set(newValue.rawValue, forKey: "multiAccountMenuLayout")
-        }
+        get { .segmented }
+        set { /* dead feature — always segmented */ }
     }
 
     var showAllTokenAccountsInMenu: Bool {
-        get { self.multiAccountMenuLayout == .stacked }
-        set { self.multiAccountMenuLayout = newValue ? .stacked : .segmented }
+        get { false }
+        set { /* dead feature — always segmented layout */ }
     }
 
     var historicalTrackingEnabled: Bool {
@@ -359,7 +356,9 @@ extension SettingsStore {
     var showOptionalCreditsAndExtraUsage: Bool {
         get { self.defaultsState.showOptionalCreditsAndExtraUsage }
         set {
-            self.defaultsState.showOptionalCreditsAndExtraUsage = newValue
+            var state = self.defaultsState
+            state.showOptionalCreditsAndExtraUsage = newValue
+            self.defaultsState = state
             self.userDefaults.set(newValue, forKey: "showOptionalCreditsAndExtraUsage")
         }
     }

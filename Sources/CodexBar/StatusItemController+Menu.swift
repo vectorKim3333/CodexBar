@@ -189,10 +189,9 @@ extension StatusItemController {
                 menu: menu,
                 provider: currentProvider)
         let tokenAccountDisplay = isOverviewSelected ? nil : self.tokenAccountMenuDisplay(for: currentProvider)
-        let showAllAccounts = (tokenAccountDisplay?.showAll ?? false) || (codexAccountDisplay?.showAll ?? false)
         let openAIContext = self.openAIWebContext(
             currentProvider: currentProvider,
-            showAllAccounts: showAllAccounts)
+            showAllAccounts: false)
         let descriptor = MenuDescriptor.build(
             provider: selectedProvider,
             store: self.store,
@@ -549,25 +548,6 @@ extension StatusItemController {
     }
 
     private func addMenuCards(to menu: NSMenu, context: MenuCardContext) -> Bool {
-        if let codexAccountDisplay = context.codexAccountDisplay, codexAccountDisplay.showAll {
-            self.addStackedCodexMenuCards(codexAccountDisplay, to: menu, context: context)
-            return false
-        }
-
-        if let tokenAccountDisplay = context.tokenAccountDisplay, tokenAccountDisplay.showAll {
-            let accountSnapshots = tokenAccountDisplay.snapshots
-            let cards = accountSnapshots.isEmpty
-                ? []
-                : accountSnapshots.compactMap { accountSnapshot in
-                    self.menuCardModel(
-                        for: context.currentProvider,
-                        snapshotOverride: accountSnapshot.snapshot,
-                        errorOverride: accountSnapshot.error)
-                }
-            self.addStackedMenuCards(cards, to: menu, context: context)
-            return false
-        }
-
         guard let model = self.menuCardModel(for: context.selectedProvider) else { return false }
         if context.openAIContext.hasOpenAIWebMenuItems {
             let webItems = OpenAIWebMenuItems(
@@ -598,35 +578,7 @@ extension StatusItemController {
         return false
     }
 
-    private func addStackedMenuCards(
-        _ cards: [UsageMenuCardView.Model],
-        to menu: NSMenu,
-        context: MenuCardContext)
-    {
-        if cards.isEmpty, let model = self.menuCardModel(for: context.selectedProvider) {
-            menu.addItem(self.makeMenuCardItem(
-                UsageMenuCardView(model: model, width: context.menuWidth),
-                id: "menuCard",
-                width: context.menuWidth))
-            menu.addItem(.separator())
-        } else {
-            for (index, model) in cards.enumerated() {
-                menu.addItem(self.makeMenuCardItem(
-                    UsageMenuCardView(model: model, width: context.menuWidth),
-                    id: "menuCard-\(index)",
-                    width: context.menuWidth))
-                if index < cards.count - 1 {
-                    menu.addItem(.separator())
-                }
-            }
-            if !cards.isEmpty {
-                menu.addItem(.separator())
-            }
-        }
-        if self.addStorageMenuCardSection(to: menu, provider: context.currentProvider, width: context.menuWidth) {
-            menu.addItem(.separator())
-        }
-    }
+
 
     private func addOpenAIWebItemsIfNeeded(
         to menu: NSMenu,

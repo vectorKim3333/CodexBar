@@ -355,10 +355,6 @@ struct MenuDescriptor {
         if metadata?.statusPageURL != nil || metadata?.statusLinkURL != nil {
             entries.append(.action(L("Status Page"), .statusPage))
         }
-        if store.settings.providerChangelogLinksEnabled, metadata?.changelogURL != nil {
-            entries.append(.action(L("Changelog"), .changelog))
-        }
-
         if let statusLine = self.statusLine(for: provider, store: store) {
             entries.append(.text(statusLine, .secondary))
         }

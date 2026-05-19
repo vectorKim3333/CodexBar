@@ -32,39 +32,13 @@ struct DisplayPane: View {
                         subtitle: L("show_usage_as_used_subtitle"),
                         binding: self.$settings.usageBarsShowUsed)
                     PreferenceToggleRow(
-                        title: L("show_quota_warning_markers_title"),
-                        subtitle: L("show_quota_warning_markers_subtitle"),
-                        binding: self.$settings.quotaWarningMarkersVisible)
-                    PreferenceToggleRow(
                         title: L("show_reset_time_as_clock_title"),
                         subtitle: L("show_reset_time_as_clock_subtitle"),
                         binding: self.$settings.resetTimesShowAbsolute)
                     PreferenceToggleRow(
-                        title: L("show_provider_changelog_links_title"),
-                        subtitle: L("show_provider_changelog_links_subtitle"),
-                        binding: self.$settings.providerChangelogLinksEnabled)
-                    PreferenceToggleRow(
                         title: L("show_credits_extra_usage_title"),
                         subtitle: L("show_credits_extra_usage_subtitle"),
                         binding: self.$settings.showOptionalCreditsAndExtraUsage)
-                    HStack(alignment: .top, spacing: 12) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(L("multi_account_layout_title"))
-                                .font(.body)
-                            Text(L("multi_account_layout_subtitle"))
-                                .font(.footnote)
-                                .foregroundStyle(.tertiary)
-                        }
-                        Spacer()
-                        Picker(L("multi_account_layout_title"), selection: self.$settings.multiAccountMenuLayout) {
-                            ForEach(MultiAccountMenuLayout.allCases) { layout in
-                                Text(layout.label).tag(layout)
-                            }
-                        }
-                        .labelsHidden()
-                        .pickerStyle(.menu)
-                        .frame(maxWidth: 200)
-                    }
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)

@@ -18,15 +18,12 @@ extension SettingsStore {
         _ = self.quotaWarningWindowEnabled(.session)
         _ = self.quotaWarningWindowEnabled(.weekly)
         _ = self.quotaWarningSoundEnabled
-        _ = self.quotaWarningMarkersVisible
         _ = self.usageBarsShowUsed
         _ = self.resetTimesShowAbsolute
-        _ = self.providerChangelogLinksEnabled
         _ = self.menuBarShowsBrandIconWithPercent
         _ = self.menuBarShowsHighestUsage
         _ = self.menuBarDisplayMode
         _ = self.historicalTrackingEnabled
-        _ = self.multiAccountMenuLayout
         _ = self.menuBarMetricPreferencesRaw
         _ = self.costUsageEnabled
         _ = self.hidePersonalInfo
