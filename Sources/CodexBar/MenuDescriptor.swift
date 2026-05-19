@@ -332,7 +332,7 @@ struct MenuDescriptor {
             } else {
                 let loginAction = self.switchAccountTarget(for: provider, store: store)
                 let hasAccount = self.hasAccount(for: provider, store: store, account: fallbackAccount)
-                let accountLabel = hasAccount ? "Switch Account..." : "Add Account..."
+                let accountLabel = hasAccount ? L("Switch Account...") : L("Add Account...")
                 entries.append(.action(accountLabel, loginAction))
             }
         }
@@ -350,13 +350,13 @@ struct MenuDescriptor {
         }
 
         if metadata?.dashboardURL != nil {
-            entries.append(.action("Usage Dashboard", .dashboard))
+            entries.append(.action(L("Usage Dashboard"), .dashboard))
         }
         if metadata?.statusPageURL != nil || metadata?.statusLinkURL != nil {
-            entries.append(.action("Status Page", .statusPage))
+            entries.append(.action(L("Status Page"), .statusPage))
         }
         if store.settings.providerChangelogLinksEnabled, metadata?.changelogURL != nil {
-            entries.append(.action("Changelog", .changelog))
+            entries.append(.action(L("Changelog"), .changelog))
         }
 
         if let statusLine = self.statusLine(for: provider, store: store) {
@@ -369,10 +369,10 @@ struct MenuDescriptor {
     private static func metaSection() -> Section {
         var entries: [Entry] = []
         entries.append(contentsOf: [
-            .action("Refresh", .refresh),
-            .action("Settings...", .settings),
-            .action("About CodexBar", .about),
-            .action("Quit", .quit),
+            .action(L("Refresh"), .refresh),
+            .action(L("Settings..."), .settings),
+            .action(L("About CodexBar"), .about),
+            .action(L("Quit"), .quit),
         ])
         return Section(entries: entries)
     }

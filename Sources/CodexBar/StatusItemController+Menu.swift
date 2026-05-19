@@ -1385,7 +1385,7 @@ extension StatusItemController {
     }
 
     private func makeBuyCreditsItem() -> NSMenuItem {
-        let item = NSMenuItem(title: "Buy Credits...", action: #selector(self.openCreditsPurchase), keyEquivalent: "")
+        let item = NSMenuItem(title: L("Buy Credits..."), action: #selector(self.openCreditsPurchase), keyEquivalent: "")
         item.target = self
         if let image = NSImage(systemSymbolName: "plus.circle", accessibilityDescription: nil) {
             image.isTemplate = true
@@ -1399,7 +1399,7 @@ extension StatusItemController {
     private func addCreditsHistorySubmenu(to menu: NSMenu) -> Bool {
         guard let submenu = self.makeCreditsHistorySubmenu(width: self.renderedMenuWidth(for: menu))
         else { return false }
-        let item = NSMenuItem(title: "Credits history", action: nil, keyEquivalent: "")
+        let item = NSMenuItem(title: L("Credits history"), action: nil, keyEquivalent: "")
         item.isEnabled = true
         item.submenu = submenu
         menu.addItem(item)
@@ -1410,7 +1410,7 @@ extension StatusItemController {
     private func addUsageBreakdownSubmenu(to menu: NSMenu) -> Bool {
         guard let submenu = self.makeUsageBreakdownSubmenu(width: self.renderedMenuWidth(for: menu))
         else { return false }
-        let item = NSMenuItem(title: "Usage breakdown", action: nil, keyEquivalent: "")
+        let item = NSMenuItem(title: L("Usage breakdown"), action: nil, keyEquivalent: "")
         item.isEnabled = true
         item.submenu = submenu
         menu.addItem(item)
@@ -1421,7 +1421,7 @@ extension StatusItemController {
     private func addCostHistorySubmenu(to menu: NSMenu, provider: UsageProvider) -> Bool {
         guard let submenu = self.makeCostHistorySubmenu(provider: provider, width: self.renderedMenuWidth(for: menu))
         else { return false }
-        let item = NSMenuItem(title: "Usage history (30 days)", action: nil, keyEquivalent: "")
+        let item = NSMenuItem(title: L("Usage history (30 days)"), action: nil, keyEquivalent: "")
         item.isEnabled = true
         item.submenu = submenu
         menu.addItem(item)
