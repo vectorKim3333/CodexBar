@@ -141,6 +141,11 @@ final class UsageStore {
     var errors: [UsageProvider: String] = [:]
     var lastSourceLabels: [UsageProvider: String] = [:]
     var lastFetchAttempts: [UsageProvider: [ProviderFetchAttempt]] = [:]
+    /// When set, refreshProvider skips this provider until the stored Date.
+    /// Armed by HTTP 429 / rate_limit_error detection in the fetch outcome.
+    /// Cleared on the next successful fetch.
+    var rateLimitBackoffUntil: [UsageProvider: Date] = [:]
+    static let rateLimitBackoffSeconds: TimeInterval = 600  // 10 minutes
     var accountSnapshots: [UsageProvider: [TokenAccountUsageSnapshot]] = [:]
     var codexAccountSnapshots: [CodexAccountUsageSnapshot] = []
     var tokenSnapshots: [UsageProvider: CostUsageTokenSnapshot] = [:]

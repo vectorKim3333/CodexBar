@@ -1047,7 +1047,9 @@ extension StatusItemController {
     /// particular returns HTTP 429 if usage queries arrive too quickly).
     /// The background timer (Preferences → refreshFrequency) still runs at
     /// its own interval; manual ⌘R refresh bypasses this cooldown.
-    private static let menuOpenRefreshCooldown: TimeInterval = 60
+    /// Combined with `UsageStore.rateLimitBackoffSeconds` (10 min after a
+    /// 429), this should keep us well under Anthropic's quota.
+    private static let menuOpenRefreshCooldown: TimeInterval = 120
 
     private func scheduleOpenMenuRefresh(for menu: NSMenu) {
         // Kick off a refresh on open (non-forced) and re-check after a delay.
