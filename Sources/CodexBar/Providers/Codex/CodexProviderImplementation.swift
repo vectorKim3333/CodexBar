@@ -76,8 +76,8 @@ struct CodexProviderImplementation: ProviderImplementation {
         return [
             ProviderSettingsToggleDescriptor(
                 id: "codex-historical-tracking",
-                title: "Historical tracking",
-                subtitle: "Stores local Codex usage history (8 weeks) to personalize Pace predictions.",
+                title: L("Historical tracking"),
+                subtitle: L("Stores local Codex usage history (8 weeks) to personalize Pace predictions."),
                 binding: context.boolBinding(\.historicalTrackingEnabled),
                 statusText: nil,
                 actions: [],
@@ -87,11 +87,8 @@ struct CodexProviderImplementation: ProviderImplementation {
                 onAppearWhenEnabled: nil),
             ProviderSettingsToggleDescriptor(
                 id: "codex-openai-web-extras",
-                title: "OpenAI web extras",
-                subtitle: [
-                    "Optional.",
-                    "Turn this on to show code review, usage breakdown, and credits history via chatgpt.com.",
-                ].joined(separator: " "),
+                title: L("OpenAI web extras"),
+                subtitle: L("codex_openai_web_extras_subtitle"),
                 binding: extrasBinding,
                 statusText: nil,
                 actions: [],
@@ -101,11 +98,8 @@ struct CodexProviderImplementation: ProviderImplementation {
                 onAppearWhenEnabled: nil),
             ProviderSettingsToggleDescriptor(
                 id: "codex-openai-web-battery-saver",
-                title: "Battery Saver",
-                subtitle: [
-                    "Limits background chatgpt.com refreshes to reduce battery and network usage.",
-                    "Dashboard extras may stay stale until you refresh them manually.",
-                ].joined(separator: " "),
+                title: L("Battery Saver"),
+                subtitle: L("codex_battery_saver_subtitle"),
                 binding: batterySaverBinding,
                 statusText: nil,
                 actions: [],
@@ -129,8 +123,8 @@ struct CodexProviderImplementation: ProviderImplementation {
                 context.settings.codexCookieSource = ProviderCookieSource(rawValue: raw) ?? .auto
             })
 
-        let usageOptions = CodexUsageDataSource.allCases.map {
-            ProviderSettingsPickerOption(id: $0.rawValue, title: $0.displayName)
+        let usageOptions = CodexUsageDataSource.allCases.map { source in
+            ProviderSettingsPickerOption(id: source.rawValue, title: Self.localizedUsageSourceTitle(source))
         }
         let cookieOptions = ProviderCookieSourceUI.options(
             allowsOff: true,
@@ -140,16 +134,16 @@ struct CodexProviderImplementation: ProviderImplementation {
             ProviderCookieSourceUI.subtitle(
                 source: context.settings.codexCookieSource,
                 keychainDisabled: context.settings.debugDisableKeychainAccess,
-                auto: "Automatic imports browser cookies for dashboard extras.",
-                manual: "Paste a Cookie header from a chatgpt.com request.",
-                off: "Disable OpenAI dashboard cookie usage.")
+                auto: L("codex_cookie_auto_subtitle"),
+                manual: L("codex_cookie_manual_subtitle"),
+                off: L("codex_cookie_off_subtitle"))
         }
 
         return [
             ProviderSettingsPickerDescriptor(
                 id: "codex-usage-source",
-                title: "Usage source",
-                subtitle: "Auto falls back to the next source if the preferred one fails.",
+                title: L("Usage source"),
+                subtitle: L("Auto falls back to the next source if the preferred one fails."),
                 binding: usageBinding,
                 options: usageOptions,
                 isVisible: nil,
@@ -161,8 +155,8 @@ struct CodexProviderImplementation: ProviderImplementation {
                 }),
             ProviderSettingsPickerDescriptor(
                 id: "codex-cookie-source",
-                title: "OpenAI cookies",
-                subtitle: "Automatic imports browser cookies for dashboard extras.",
+                title: L("OpenAI cookies"),
+                subtitle: L("codex_cookie_auto_subtitle"),
                 dynamicSubtitle: cookieSubtitle,
                 binding: cookieBinding,
                 options: cookieOptions,
@@ -192,6 +186,15 @@ struct CodexProviderImplementation: ProviderImplementation {
                 },
                 onActivate: { context.settings.ensureCodexCookieLoaded() }),
         ]
+    }
+
+    @MainActor
+    private static func localizedUsageSourceTitle(_ source: CodexUsageDataSource) -> String {
+        switch source {
+        case .auto: L("Auto")
+        case .oauth: "OAuth"
+        case .cli: "CLI"
+        }
     }
 
     @MainActor

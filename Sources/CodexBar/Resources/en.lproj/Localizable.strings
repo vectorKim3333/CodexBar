@@ -471,6 +471,34 @@
 "cost_header_estimated" = "Cost (estimated)";
 "cost_estimate_hint" = "Estimated from local logs · may differ from your bill";
 
+/* Usage source picker options */
+"Auto" = "Auto";
+
+/* Provider detail panel — info grid labels */
+"State" = "State";
+"Source" = "Source";
+"Refreshing" = "Refreshing";
+"Unavailable" = "Unavailable";
+"Not fetched yet" = "Not fetched yet";
+"Disabled — no recent data" = "Disabled — no recent data";
+"No usage yet" = "No usage yet";
+"not detected" = "not detected";
+
+/* Claude provider settings */
+"claude_cookie_manual_subtitle" = "Paste a Cookie header from a claude.ai request.";
+"claude_cookie_off_subtitle" = "Claude cookies are disabled.";
+"keychain_prompt_avoid_subtitle" = "Use /usr/bin/security to read Claude credentials and avoid CodexBar keychain prompts.";
+"keychain_prompt_avoid_inactive" = "Inactive while \"Disable Keychain access\" is enabled in Advanced.";
+"keychain_prompt_policy_disabled" = "Global Keychain access is disabled in Advanced, so this setting is currently inactive.";
+"keychain_prompt_policy_subtitle" = "Controls Claude OAuth Keychain prompts when the standard reader is active. Choosing \"Never prompt\" can make OAuth unavailable; use Web/CLI when needed.";
+
+/* Codex provider settings */
+"codex_openai_web_extras_subtitle" = "Optional. Turn this on to show code review, usage breakdown, and credits history via chatgpt.com.";
+"codex_battery_saver_subtitle" = "Limits background chatgpt.com refreshes to reduce battery and network usage. Dashboard extras may stay stale until you refresh them manually.";
+"codex_cookie_auto_subtitle" = "Automatic imports browser cookies for dashboard extras.";
+"codex_cookie_manual_subtitle" = "Paste a Cookie header from a chatgpt.com request.";
+"codex_cookie_off_subtitle" = "Disable OpenAI dashboard cookie usage.";
+
 /* Menu bar time format picker */
 "time_format_title" = "Time display";
 "time_format_subtitle" = "How the countdown to the next reset is rendered";

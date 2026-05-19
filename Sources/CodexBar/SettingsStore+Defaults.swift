@@ -304,11 +304,8 @@ extension SettingsStore {
     }
 
     var claudePeakHoursEnabled: Bool {
-        get { self.defaultsState.claudePeakHoursEnabled }
-        set {
-            self.defaultsState.claudePeakHoursEnabled = newValue
-            self.userDefaults.set(newValue, forKey: "claudePeakHoursEnabled")
-        }
+        get { false }
+        set { /* dead feature — always false */ }
     }
 
     var showOptionalCreditsAndExtraUsage: Bool {

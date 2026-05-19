@@ -4,20 +4,28 @@ enum ProviderCookieSourceUI {
     static let keychainDisabledPrefix =
         "Keychain access is disabled in Advanced, so browser cookie import is unavailable."
 
+    private static func localizedTitle(for source: ProviderCookieSource) -> String {
+        switch source {
+        case .auto: L("Automatic")
+        case .manual: L("Manual")
+        case .off: L("Off")
+        }
+    }
+
     static func options(allowsOff: Bool, keychainDisabled: Bool) -> [ProviderSettingsPickerOption] {
         var options: [ProviderSettingsPickerOption] = []
         if !keychainDisabled {
             options.append(ProviderSettingsPickerOption(
                 id: ProviderCookieSource.auto.rawValue,
-                title: ProviderCookieSource.auto.displayName))
+                title: Self.localizedTitle(for: .auto)))
         }
         options.append(ProviderSettingsPickerOption(
             id: ProviderCookieSource.manual.rawValue,
-            title: ProviderCookieSource.manual.displayName))
+            title: Self.localizedTitle(for: .manual)))
         if allowsOff {
             options.append(ProviderSettingsPickerOption(
                 id: ProviderCookieSource.off.rawValue,
-                title: ProviderCookieSource.off.displayName))
+                title: Self.localizedTitle(for: .off)))
         }
         return options
     }
