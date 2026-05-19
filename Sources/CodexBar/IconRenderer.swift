@@ -738,8 +738,9 @@ extension IconRenderer {
         }
     }
 
-    /// `~` prefix + ceiling. 5-minute granularity below an hour; promotes to `~1h`
-    /// once 5-minute ceiling would land at 60m.
+    /// `~` prefix + hour-granularity ceiling. Anything from 1 second up to one
+    /// full hour rounds up to `~1h`; 1h 1m–2h → `~2h`; …; 24h+ uses days with
+    /// the same hour-rounding rule.
     private static func approximateText(
         totalSeconds: Int,
         totalMinutes: Int,
@@ -752,18 +753,11 @@ extension IconRenderer {
             let days = totalDays + (remainderHours > 0 || totalSeconds % 3600 > 0 ? 1 : 0)
             return "~\(days)d"
         }
-        // Hours: ceiling on partial-hour remainder.
-        if totalMinutes >= 60 {
-            let remainderMinutes = totalMinutes - totalHours * 60
-            let hours = totalHours + (remainderMinutes > 0 || totalSeconds % 60 > 0 ? 1 : 0)
-            return "~\(hours)h"
-        }
-        // Under 1 hour: 5-minute ceiling, but promote to `~1h` if it would land at 60m.
-        let remainderSeconds = totalSeconds - totalMinutes * 60
-        let exactMinutes = totalMinutes + (remainderSeconds > 0 ? 1 : 0)
-        let ceiled = ((exactMinutes + 4) / 5) * 5
-        if ceiled >= 60 { return "~1h" }
-        return "~\(ceiled)m"
+        // Hours: ceiling on partial-hour remainder (works for sub-hour intervals
+        // too — 1 second left → "~1h").
+        let remainderMinutes = totalMinutes - totalHours * 60
+        let hours = totalHours + (remainderMinutes > 0 || totalSeconds % 60 > 0 ? 1 : 0)
+        return "~\(hours)h"
     }
 
     /// Exact hours+minutes (or days+hours). No rounding hint.
