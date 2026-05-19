@@ -1042,10 +1042,28 @@ extension StatusItemController {
         #endif
     }
 
+    /// Cooldown between menu-open–triggered background refreshes. Prevents
+    /// rapid menu clicks from hammering provider APIs (Anthropic OAuth in
+    /// particular returns HTTP 429 if usage queries arrive too quickly).
+    /// The background timer (Preferences → refreshFrequency) still runs at
+    /// its own interval; manual ⌘R refresh bypasses this cooldown.
+    private static let menuOpenRefreshCooldown: TimeInterval = 60
+
     private func scheduleOpenMenuRefresh(for menu: NSMenu) {
         // Kick off a refresh on open (non-forced) and re-check after a delay.
         // NEVER block menu opening with network requests.
-        if !self.store.isRefreshing {
+        //
+        // Skip if every enabled provider already has a snapshot fresher than
+        // `menuOpenRefreshCooldown`. Without this, rapid menu re-opens stack
+        // up live HTTP calls and trip Anthropic's OAuth rate limit.
+        let now = Date()
+        let cooldown = Self.menuOpenRefreshCooldown
+        let enabledProviders = self.store.enabledProvidersForDisplay()
+        let allFresh = !enabledProviders.isEmpty && enabledProviders.allSatisfy { provider in
+            guard let updatedAt = self.store.snapshot(for: provider)?.updatedAt else { return false }
+            return now.timeIntervalSince(updatedAt) < cooldown
+        }
+        if !self.store.isRefreshing, !allFresh {
             self.refreshStore(forceTokenUsage: false, refreshOpenMenusWhenComplete: false)
         }
         let key = ObjectIdentifier(menu)
