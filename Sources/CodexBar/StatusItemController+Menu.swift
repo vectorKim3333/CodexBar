@@ -93,8 +93,15 @@ extension StatusItemController {
             // Snap the unified menu to that provider on open so clicking the
             // Claude pill always shows the Claude card (and Codex pill → Codex)
             // regardless of which tab was last selected.
+            //
+            // `resolvedMenuProvider` reads `selectedMenuProvider` (persisted
+            // in settings), so just touching `lastMenuProvider` is not enough.
+            // Also invalidate this menu's version cache so populateMenu re-runs
+            // even when the content version hasn't bumped.
             self.lastMenuProvider = registered
+            self.selectedMenuProvider = registered
             self.settings.mergedMenuLastSelectedWasOverview = false
+            self.menuVersions.removeValue(forKey: ObjectIdentifier(menu))
             provider = registered
         } else if self.shouldShowUnifiedMenu {
             let resolvedProvider = self.resolvedMenuProvider()
