@@ -60,9 +60,9 @@ extension UsageMenuCardView.Model {
     static func tokenUsageHint(provider: UsageProvider) -> String? {
         switch provider {
         case .codex:
-            "Estimated from local Codex logs for the selected account."
+            L("Estimated from local Codex logs for the selected account.")
         case .claude:
-            UsageFormatter.costEstimateHint(provider: provider)
+            L(UsageFormatter.costEstimateHint(provider: provider))
         }
     }
 

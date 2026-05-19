@@ -232,7 +232,7 @@ struct MenuDescriptor {
                 "\(UsageFormatter.tokenCountString(last30.totalTokens)) tokens",
             .secondary))
         if let topModel = usage.topModels.first?.name {
-            entries.append(.text("Top model: \(topModel)", .secondary))
+            entries.append(.text(String(format: L("top_model_format"), topModel), .secondary))
         }
     }
 

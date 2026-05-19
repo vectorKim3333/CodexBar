@@ -505,3 +505,6 @@
 "time_format_approximate" = "Approximate (~2h)";
 "time_format_precise" = "Precise (1h 45m)";
 "time_format_floor" = "Floor (1h+)";
+
+/* Cost / token chart hints */
+"top_model_format" = "Top model: %@";

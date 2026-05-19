@@ -67,7 +67,7 @@ extension UsageMenuCardView.Model {
             "Cache read: \(UsageFormatter.tokenCountString(last30.cacheReadInputTokens)) tokens",
         ]
         if let topModel = usage.topModels.first {
-            details.append("Top model: \(Self.shortModelName(topModel.name))")
+            details.append(String(format: L("top_model_format"), Self.shortModelName(topModel.name)))
         }
         return InlineUsageDashboardModel(
             accessibilityLabel: "Claude Admin API 30 day spend trend",
@@ -103,9 +103,9 @@ extension UsageMenuCardView.Model {
         let latest = snapshot.daily.max { lhs, rhs in lhs.date < rhs.date }
         var details: [String] = []
         if let topModel = Self.topCostModel(from: snapshot.daily) {
-            details.append("Top model: \(Self.shortModelName(topModel))")
+            details.append(String(format: L("top_model_format"), Self.shortModelName(topModel)))
         }
-        details.append(UsageFormatter.costEstimateHint(provider: provider))
+        details.append(L(UsageFormatter.costEstimateHint(provider: provider)))
         let providerName = ProviderDefaults.metadata[provider]?.displayName ?? provider.rawValue
         return InlineUsageDashboardModel(
             accessibilityLabel: "\(providerName) 30 day cost trend",
