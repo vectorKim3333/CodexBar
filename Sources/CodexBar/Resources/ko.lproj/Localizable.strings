@@ -496,7 +496,7 @@
 /* Claude provider settings */
 "claude_cookie_manual_subtitle" = "claude.ai 요청에서 Cookie 헤더를 붙여넣으세요.";
 "claude_cookie_off_subtitle" = "Claude Cookie가 비활성화되었습니다.";
-"keychain_prompt_avoid_subtitle" /usr/bin/security를 사용하여 Claude 자격 증명을 읽고 ClCoBar Keychain 프롬프트를 방지합니다.";
+"keychain_prompt_avoid_subtitle" = "/usr/bin/security를 사용하여 Claude 자격 증명을 읽고 ClCoBar Keychain 프롬프트를 방지합니다.";
 "keychain_prompt_avoid_inactive" = "고급 설정에서 \"Keychain 접근 비활성화\"가 켜져 있어 이 설정은 비활성 상태입니다.";
 "keychain_prompt_policy_disabled" = "고급 설정에서 전역 Keychain 접근이 비활성화되어 이 설정은 현재 비활성 상태입니다.";
 "keychain_prompt_policy_subtitle" = "표준 리더가 활성화된 경우 Claude OAuth Keychain 프롬프트를 제어합니다. '항상 차단'을 선택하면 OAuth를 사용할 수 없게 됩니다. 필요 시 Web/CLI를 사용하세요.";
