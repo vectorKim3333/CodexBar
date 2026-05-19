@@ -64,7 +64,6 @@ private struct ProviderSidebarRowView: View {
 
     var body: some View {
         let isRefreshing = self.store.refreshingProviders.contains(self.provider)
-        let showStatus = self.store.statusChecksEnabled
         let statusText = self.statusText
 
         HStack(alignment: .center, spacing: 10) {
@@ -85,10 +84,6 @@ private struct ProviderSidebarRowView: View {
                     Text(self.store.metadata(for: self.provider).displayName)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.primary)
-
-                    if showStatus {
-                        ProviderStatusDot(indicator: self.store.statusIndicator(for: self.provider))
-                    }
 
                     if isRefreshing {
                         ProgressView()
@@ -197,24 +192,3 @@ private struct ProviderSidebarDropDelegate: DropDelegate {
     }
 }
 
-private struct ProviderStatusDot: View {
-    let indicator: ProviderStatusIndicator
-
-    var body: some View {
-        Circle()
-            .fill(self.statusColor)
-            .frame(width: 6, height: 6)
-            .accessibilityHidden(true)
-    }
-
-    private var statusColor: Color {
-        switch self.indicator {
-        case .none: .green
-        case .minor: .yellow
-        case .major: .orange
-        case .critical: .red
-        case .maintenance: .gray
-        case .unknown: .gray
-        }
-    }
-}

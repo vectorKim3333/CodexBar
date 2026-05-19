@@ -88,11 +88,8 @@ extension SettingsStore {
     }
 
     var statusChecksEnabled: Bool {
-        get { self.defaultsState.statusChecksEnabled }
-        set {
-            self.defaultsState.statusChecksEnabled = newValue
-            self.userDefaults.set(newValue, forKey: "statusChecksEnabled")
-        }
+        get { false }
+        set { /* dead feature — always false */ }
     }
 
     var sessionQuotaNotificationsEnabled: Bool {
@@ -104,73 +101,26 @@ extension SettingsStore {
     }
 
     var quotaWarningNotificationsEnabled: Bool {
-        get { self.defaultsState.quotaWarningNotificationsEnabled }
-        set {
-            self.defaultsState.quotaWarningNotificationsEnabled = newValue
-            self.userDefaults.set(newValue, forKey: "quotaWarningNotificationsEnabled")
-        }
+        get { false }
+        set { /* dead feature — always false */ }
     }
 
     var quotaWarningThresholds: [Int] {
-        get { QuotaWarningThresholds.sanitized(self.defaultsState.quotaWarningThresholdsRaw) }
-        set {
-            let sanitized = QuotaWarningThresholds.sanitized(newValue)
-            self.defaultsState.quotaWarningThresholdsRaw = sanitized
-            self.defaultsState.quotaWarningSessionThresholdsRaw = sanitized
-            self.defaultsState.quotaWarningWeeklyThresholdsRaw = sanitized
-            self.userDefaults.set(sanitized, forKey: "quotaWarningThresholds")
-            self.userDefaults.set(sanitized, forKey: "quotaWarningSessionThresholds")
-            self.userDefaults.set(sanitized, forKey: "quotaWarningWeeklyThresholds")
-        }
+        get { [] }
+        set { /* dead feature — no-op */ }
     }
 
-    func quotaWarningThresholds(_ window: QuotaWarningWindow) -> [Int] {
-        switch window {
-        case .session:
-            QuotaWarningThresholds.sanitized(self.defaultsState.quotaWarningSessionThresholdsRaw)
-        case .weekly:
-            QuotaWarningThresholds.sanitized(self.defaultsState.quotaWarningWeeklyThresholdsRaw)
-        }
-    }
+    func quotaWarningThresholds(_ window: QuotaWarningWindow) -> [Int] { [] }
 
-    func setQuotaWarningThresholds(_ window: QuotaWarningWindow, thresholds: [Int]) {
-        let sanitized = QuotaWarningThresholds.sanitized(thresholds)
-        switch window {
-        case .session:
-            self.defaultsState.quotaWarningSessionThresholdsRaw = sanitized
-            self.userDefaults.set(sanitized, forKey: "quotaWarningSessionThresholds")
-        case .weekly:
-            self.defaultsState.quotaWarningWeeklyThresholdsRaw = sanitized
-            self.userDefaults.set(sanitized, forKey: "quotaWarningWeeklyThresholds")
-        }
-    }
+    func setQuotaWarningThresholds(_ window: QuotaWarningWindow, thresholds: [Int]) { /* dead feature — no-op */ }
 
-    func quotaWarningWindowEnabled(_ window: QuotaWarningWindow) -> Bool {
-        switch window {
-        case .session:
-            self.defaultsState.quotaWarningSessionEnabled
-        case .weekly:
-            self.defaultsState.quotaWarningWeeklyEnabled
-        }
-    }
+    func quotaWarningWindowEnabled(_ window: QuotaWarningWindow) -> Bool { false }
 
-    func setQuotaWarningWindowEnabled(_ window: QuotaWarningWindow, enabled: Bool) {
-        switch window {
-        case .session:
-            self.defaultsState.quotaWarningSessionEnabled = enabled
-            self.userDefaults.set(enabled, forKey: "quotaWarningSessionEnabled")
-        case .weekly:
-            self.defaultsState.quotaWarningWeeklyEnabled = enabled
-            self.userDefaults.set(enabled, forKey: "quotaWarningWeeklyEnabled")
-        }
-    }
+    func setQuotaWarningWindowEnabled(_ window: QuotaWarningWindow, enabled: Bool) { /* dead feature — no-op */ }
 
     var quotaWarningSoundEnabled: Bool {
-        get { self.defaultsState.quotaWarningSoundEnabled }
-        set {
-            self.defaultsState.quotaWarningSoundEnabled = newValue
-            self.userDefaults.set(newValue, forKey: "quotaWarningSoundEnabled")
-        }
+        get { false }
+        set { /* dead feature — always false */ }
     }
 
     var quotaWarningMarkersVisible: Bool {

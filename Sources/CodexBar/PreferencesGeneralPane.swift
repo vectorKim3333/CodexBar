@@ -88,20 +88,9 @@ struct GeneralPane: View {
                         }
                     }
                     PreferenceToggleRow(
-                        title: L("check_provider_status_title"),
-                        subtitle: L("check_provider_status_subtitle"),
-                        binding: self.$settings.statusChecksEnabled)
-                    PreferenceToggleRow(
                         title: L("session_quota_notifications_title"),
                         subtitle: L("session_quota_notifications_subtitle"),
                         binding: self.$settings.sessionQuotaNotificationsEnabled)
-                    PreferenceToggleRow(
-                        title: L("quota_warning_notifications_title"),
-                        subtitle: L("quota_warning_notifications_subtitle"),
-                        binding: self.$settings.quotaWarningNotificationsEnabled)
-                    if self.settings.quotaWarningNotificationsEnabled {
-                        GlobalQuotaWarningSettingsView(settings: self.settings)
-                    }
                 }
 
                 Divider()

@@ -52,13 +52,7 @@ extension UsageStore {
     func observeSettingsChanges() {
         withObservationTracking {
             _ = self.settings.refreshFrequency
-            _ = self.settings.statusChecksEnabled
             _ = self.settings.sessionQuotaNotificationsEnabled
-            _ = self.settings.quotaWarningNotificationsEnabled
-            _ = self.settings.quotaWarningThresholds
-            _ = self.settings.quotaWarningThresholds(.session)
-            _ = self.settings.quotaWarningThresholds(.weekly)
-            _ = self.settings.quotaWarningSoundEnabled
             _ = self.settings.usageBarsShowUsed
             _ = self.settings.costUsageEnabled
             _ = self.settings.configRevision

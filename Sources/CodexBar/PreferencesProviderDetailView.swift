@@ -127,8 +127,6 @@ struct ProviderDetailView<SupplementaryContent: View>: View {
                     self.supplementarySettingsContent
                 }
 
-                ProviderQuotaWarningSettingsView(provider: self.provider, settings: self.store.settings)
-
                 if !self.settingsToggles.isEmpty {
                     ProviderSettingsSection(title: "Options") {
                         ForEach(self.settingsToggles) { toggle in

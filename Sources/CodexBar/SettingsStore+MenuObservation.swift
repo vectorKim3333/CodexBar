@@ -7,15 +7,7 @@ extension SettingsStore {
         _ = self.refreshFrequency
         _ = self.launchAtLogin
         _ = self.debugDisableKeychainAccess
-        _ = self.statusChecksEnabled
         _ = self.sessionQuotaNotificationsEnabled
-        _ = self.quotaWarningNotificationsEnabled
-        _ = self.quotaWarningThresholds
-        _ = self.quotaWarningThresholds(.session)
-        _ = self.quotaWarningThresholds(.weekly)
-        _ = self.quotaWarningWindowEnabled(.session)
-        _ = self.quotaWarningWindowEnabled(.weekly)
-        _ = self.quotaWarningSoundEnabled
         _ = self.usageBarsShowUsed
         _ = self.resetTimesShowAbsolute
         _ = self.menuBarShowsBrandIconWithPercent
