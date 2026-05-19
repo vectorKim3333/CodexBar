@@ -350,6 +350,7 @@ extension StatusItemController {
                 "tilt=\(debugDouble(Double(tilt)))",
                 "warningFlash=\(warningFlash ? "1" : "0")",
                 "anim=\(needsAnimation ? "1" : "0")",
+                "timeFmt=\(self.settings.menuBarTimeFormat.rawValue)",
             ].joined(separator: "|")
             if self.shouldSkipMergedIconRender(signature) {
                 return true
@@ -498,6 +499,7 @@ extension StatusItemController {
                 "tilt=\(Self.iconSignatureValue(Double(tilt)))",
                 "warningFlash=\(warningFlash ? "1" : "0")",
                 "loading=\(isLoading ? "1" : "0")",
+                "timeFmt=\(self.settings.menuBarTimeFormat.rawValue)",
             ].joined(separator: "|")
             if self.shouldSkipProviderIconRender(provider: provider, signature: signature) {
                 return true
