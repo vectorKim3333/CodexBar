@@ -8,7 +8,11 @@ extension SettingsStore {
     var refreshFrequency: RefreshFrequency {
         get { self.defaultsState.refreshFrequency }
         set {
-            self.defaultsState.refreshFrequency = newValue
+            // @Observable needs full-struct reassignment to fire withMutation;
+            // see usageBarsShowUsed for the underlying bug.
+            var state = self.defaultsState
+            state.refreshFrequency = newValue
+            self.defaultsState = state
             self.userDefaults.set(newValue.rawValue, forKey: "refreshFrequency")
         }
     }
@@ -16,7 +20,9 @@ extension SettingsStore {
     var launchAtLogin: Bool {
         get { self.defaultsState.launchAtLogin }
         set {
-            self.defaultsState.launchAtLogin = newValue
+            var state = self.defaultsState
+            state.launchAtLogin = newValue
+            self.defaultsState = state
             self.userDefaults.set(newValue, forKey: "launchAtLogin")
             LaunchAtLoginManager.setEnabled(newValue)
         }

@@ -354,18 +354,15 @@ extension StatusItemController {
             if self.shouldSkipMergedIconRender(signature) {
                 return true
             }
-            // Battery-pill style for the merged status item. Shows the primary
-            // provider's remaining quota + countdown to its next reset.
-            // (Merge mode is removed in this fork, so this path is dead in
-            // practice — kept for completeness.) Convert 0–100 percent to a
-            // 0–1 fraction for the pill fill.
-            let remainingFraction: Double? = primary.map {
-                let raw = showUsed ? (100 - $0) : $0
-                return max(0, min(1, raw / 100))
-            }
+            // Battery-pill style for the merged status item. (Merge mode is
+            // removed in this fork; path kept for completeness.)
+            // `primary` is already in the right semantics for `showUsed`
+            // because `IconRemainingResolver.resolvedPercents` applied the
+            // flag. Just convert 0–100 to a 0–1 fraction.
+            let fillFraction: Double? = primary.map { max(0, min(1, $0 / 100)) }
             let resetText = IconRenderer.shortResetText(snapshot?.primary?.resetsAt)
             let image = IconRenderer.makeBatteryPillIcon(
-                remaining: remainingFraction,
+                remaining: fillFraction,
                 resetText: resetText,
                 stale: stale)
             self.setButtonImage(warningFlash ? Self.quotaWarningFlashImage(base: image) : image, for: button)
@@ -516,14 +513,18 @@ extension StatusItemController {
                 IconRemainingResolver.resolvedWindows(snapshot: $0, style: style)
             }
             let primaryWindow = resolvedWindows?.primary
-            let remainingFraction: Double? = primary.map {
-                let raw = showUsed ? (100 - $0) : $0
-                return max(0, min(1, raw / 100))
-            }
+            // `primary` already carries the right semantics for `showUsed`
+            // (IconRemainingResolver.resolvedPercents picks usedPercent or
+            // remainingPercent based on the flag). So:
+            //   showUsed = false → fillFraction tracks quota remaining
+            //                       (battery drains as you use)
+            //   showUsed = true  → fillFraction tracks quota used
+            //                       (pill fills up as you use)
+            let fillFraction: Double? = primary.map { max(0, min(1, $0 / 100)) }
             let resetText = IconRenderer.shortResetText(primaryWindow?.resetsAt)
             let brandImage = ProviderBrandIcon.image(for: provider)
             let image = IconRenderer.makeBatteryPillIcon(
-                remaining: remainingFraction,
+                remaining: fillFraction,
                 resetText: resetText,
                 stale: stale,
                 brand: brandImage)
