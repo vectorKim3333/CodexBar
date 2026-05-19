@@ -4,14 +4,14 @@ Personal fork of `steipete/CodexBar`. Tracks **only Claude + Codex** usage in th
 
 ## 핵심 규칙
 
-- **표시명 ClCoBar**, **내부명 CodexBar 유지**. Info.plist `CFBundleDisplayName/Name` 만 ClCoBar. Swift 모듈명 (`CodexBar`, `CodexBarCore`, `CodexBarClaudeWatchdog`, `CodexBarClaudeWebProbe`, `CodexBarMacros`, `CodexBarMacroSupport`) · 파일 경로 (`/Applications/CodexBar.app`, `~/.codexbar/`, `~/Library/Application Support/CodexBar/`) · UserDefaults suite · Keychain entry 는 전부 `CodexBar`. 변경 시 Keychain ACL / 캐시가 풀린다.
+- **표시명 ClCoBar**, **내부명 CodexBar 유지**. Info.plist `CFBundleDisplayName/Name` 만 ClCoBar. Swift 모듈명 (`CodexBar`, `CodexBarCore`, `CodexBarClaudeWatchdog`, `CodexBarClaudeWebProbe`, `CodexBarMacros`, `CodexBarMacroSupport`) · 파일 경로 (`/Applications/ClCoBar.app`, `~/.codexbar/`, `~/Library/Application Support/CodexBar/`) · UserDefaults suite · Keychain entry 는 전부 `CodexBar`. 변경 시 Keychain ACL / 캐시가 풀린다.
 - **한국어 전용.** `Sources/CodexBar/Localization.swift` 가 항상 `ko.lproj` 우선, `en.lproj` 폴백. 언어 picker UI 없음. `CodexbarApp.applyLanguagePreference` 가 `AppleLanguages=["ko"]` 강제. 영어로 둘 용어: `Claude`, `Codex`, `ClCoBar`, `API`, `OAuth`, `CLI`, `PTY`, `Cookie`, `Token`, `Keychain`, `MCP`, `Chrome/Safari/Firefox`, `GitHub`, 플랜명 `Pro/Max/Team/Enterprise`.
 
 ## 빌드 / 배포
 
-- **Xcode 없이도 빌드 가능.** `./Scripts/build_for_distribution.sh` 가 자동으로 KeyboardShortcuts/Recorder.swift 의 `#Preview` 블록을 패치(매크로 플러그인 회피) 후 ad-hoc 서명 zip 생성 → `dist/CodexBar-<ver>-<arch>.zip`. SKIP_TEST=1 로 swift test 건너뛰기 (PreviewsMacros 가 test 도 막음).
-- **배포된 zip 내부 .app 이름은 `CodexBar.app`** (Finder 에서는 ClCoBar 로 표시). 팀원 안내: `docs/install-guide-ko.md`. 첫 실행은 우클릭→열기 (ad-hoc 서명이라 Gatekeeper 경고).
-- **사용자 코드 변경 후 재설치**: `pkill -x CodexBar; rm -rf /Applications/CodexBar.app; ditto -x -k dist/CodexBar-*.zip /tmp/cb && mv /tmp/cb/CodexBar.app /Applications/ && xattr -dr com.apple.quarantine /Applications/CodexBar.app && open /Applications/CodexBar.app`.
+- **Xcode 없이도 빌드 가능.** `./Scripts/build_for_distribution.sh` 가 자동으로 KeyboardShortcuts/Recorder.swift 의 `#Preview` 블록을 패치(매크로 플러그인 회피) 후 ad-hoc 서명 zip 생성 → `dist/ClCoBar-<ver>-<arch>.zip`. SKIP_TEST=1 로 swift test 건너뛰기 (PreviewsMacros 가 test 도 막음).
+- **배포된 zip 내부 .app 이름은 `ClCoBar.app`** (Finder 에서는 ClCoBar 로 표시). 팀원 안내: `docs/install-guide-ko.md`. 첫 실행은 우클릭→열기 (ad-hoc 서명이라 Gatekeeper 경고).
+- **사용자 코드 변경 후 재설치**: `pkill -x CodexBar; rm -rf /Applications/ClCoBar.app; ditto -x -k dist/ClCoBar-*.zip /tmp/cb && mv /tmp/cb/ClCoBar.app /Applications/ && xattr -dr com.apple.quarantine /Applications/ClCoBar.app && open /Applications/ClCoBar.app`.
 
 ## 알려진 함정
 

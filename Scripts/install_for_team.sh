@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install CodexBar.app from a downloaded zip.
+# Install ClCoBar.app from a downloaded zip.
 #
 # Usage:
 #   curl -L <link> -o ~/Downloads/CodexBar.zip
@@ -36,32 +36,32 @@ trap 'rm -rf "$STAGE"' EXIT
 echo "→ 압축 풀기"
 ditto -x -k "$ZIP_PATH" "$STAGE"
 
-APP_PATH=$(find "$STAGE" -maxdepth 3 -name 'CodexBar.app' -type d | head -1)
+APP_PATH=$(find "$STAGE" -maxdepth 3 -name 'ClCoBar.app' -type d | head -1)
 if [[ -z "$APP_PATH" ]]; then
-  echo "ERROR: zip 안에서 CodexBar.app 을 못 찾았습니다." >&2
+  echo "ERROR: zip 안에서 ClCoBar.app 을 못 찾았습니다." >&2
   exit 1
 fi
 
-if [[ -d /Applications/CodexBar.app ]]; then
-  echo "→ 기존 /Applications/CodexBar.app 종료 시도"
+if [[ -d /Applications/ClCoBar.app ]]; then
+  echo "→ 기존 /Applications/ClCoBar.app 종료 시도"
   pkill -x CodexBar 2>/dev/null || true
   sleep 1
   echo "→ 기존 앱 제거"
-  rm -rf /Applications/CodexBar.app
+  rm -rf /Applications/ClCoBar.app
 fi
 
 echo "→ /Applications 로 이동"
-mv "$APP_PATH" /Applications/CodexBar.app
+mv "$APP_PATH" /Applications/ClCoBar.app
 
 echo "→ Gatekeeper quarantine 속성 제거 (서명되지 않은 앱이라도 바로 실행 가능하게)"
-xattr -dr com.apple.quarantine /Applications/CodexBar.app 2>/dev/null || true
+xattr -dr com.apple.quarantine /Applications/ClCoBar.app 2>/dev/null || true
 
 echo "→ Ad-hoc 재서명 (개발자 ID 없이도 macOS Gatekeeper 통과)"
-codesign --force --deep --sign - /Applications/CodexBar.app 2>/dev/null || \
+codesign --force --deep --sign - /Applications/ClCoBar.app 2>/dev/null || \
   echo "  WARN: codesign 실패 — 보안 정책에 따라 첫 실행 시 우클릭→열기 가 필요할 수 있습니다."
 
 echo "→ 실행"
-open /Applications/CodexBar.app
+open /Applications/ClCoBar.app
 
 cat <<'EOF'
 

@@ -33,7 +33,7 @@ ad-hoc 서명된 공유용 zip:
 ARCHES="arm64 x86_64" ./Scripts/build_for_distribution.sh    # universal
 ```
 
-`dist/CodexBar-<version>-<arch>.zip` 이 만들어집니다 (내부 번들 이름은 `CodexBar` 유지, 사용자에게 표시되는 이름은 `ClCoBar`). Slack/Drive 등에 공유하고 동료에게는 [`docs/install-guide-ko.md`](docs/install-guide-ko.md) 안내.
+`dist/ClCoBar-<version>-<arch>.zip` 이 만들어집니다 (내부 번들 이름은 `CodexBar` 유지, 사용자에게 표시되는 이름은 `ClCoBar`). Slack/Drive 등에 공유하고 동료에게는 [`docs/install-guide-ko.md`](docs/install-guide-ko.md) 안내.
 
 ## 개발
 

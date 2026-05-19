@@ -21,7 +21,7 @@ cd /Users/madup/Developer/CodexBar
 
 ```
 ✅ Distribution build ready:
-   dist/CodexBar-0.27.0-arm64.zip  (5.4M)
+   dist/ClCoBar-0.27.0-arm64.zip  (5.4M)
 ```
 
 기본은 **현재 빌드 머신 아키텍처만** 빌드합니다 (대부분 `arm64`).
@@ -36,7 +36,7 @@ ARCHES="arm64 x86_64" ./Scripts/build_for_distribution.sh
 
 ### 1-3. 팀에 공유
 
-`dist/CodexBar-<version>-<arch>.zip` 파일을 다음 중 하나로 공유:
+`dist/ClCoBar-<version>-<arch>.zip` 파일을 다음 중 하나로 공유:
 
 - 사내 Slack / 채팅 채널에 직접 업로드
 - Google Drive / Dropbox / Notion 첨부
@@ -64,9 +64,9 @@ BUILD_NUMBER=66
 
 **3 단계로 끝:**
 
-1. **zip 다운로드** — 받은 `CodexBar-*.zip` 을 더블클릭해서 압축 풀기 (`CodexBar.app` 이 생김)
+1. **zip 다운로드** — 받은 `ClCoBar-*.zip` 을 더블클릭해서 압축 풀기 (`ClCoBar.app` 이 생김)
 
-2. **응용 프로그램 폴더로 드래그** — `CodexBar.app` 을 `Applications` 폴더로 끌어다 놓기
+2. **응용 프로그램 폴더로 드래그** — `ClCoBar.app` 을 `Applications` 폴더로 끌어다 놓기
 
 3. **첫 실행** — 응용 프로그램에서 ClCoBar 우클릭 → "**열기**" → 보안 경고 창이 뜨면 "**열기**" 한 번 더 클릭
    - ⚠️ 그냥 더블클릭하면 "확인되지 않은 개발자" 라며 차단됩니다. **반드시 첫 실행은 우클릭 → 열기**.
@@ -80,7 +80,7 @@ zip 을 `~/Downloads` 에 받은 후, 터미널에서:
 
 ```bash
 # 다운로드 받은 zip 이름은 환경에 맞게 변경
-ZIP="$HOME/Downloads/CodexBar-0.27.0-arm64.zip"
+ZIP="$HOME/Downloads/ClCoBar-0.27.0-arm64.zip"
 bash <(cat <<'INSTALL'
 set -e
 ZIP="${ZIP:?}"
@@ -88,11 +88,11 @@ STAGE=$(mktemp -d)
 trap 'rm -rf "$STAGE"' EXIT
 ditto -x -k "$ZIP" "$STAGE"
 pkill -x CodexBar 2>/dev/null || true
-rm -rf /Applications/CodexBar.app
-mv "$STAGE/CodexBar.app" /Applications/
-xattr -dr com.apple.quarantine /Applications/CodexBar.app 2>/dev/null || true
-codesign --force --deep --sign - /Applications/CodexBar.app 2>/dev/null || true
-open /Applications/CodexBar.app
+rm -rf /Applications/ClCoBar.app
+mv "$STAGE/ClCoBar.app" /Applications/
+xattr -dr com.apple.quarantine /Applications/ClCoBar.app 2>/dev/null || true
+codesign --force --deep --sign - /Applications/ClCoBar.app 2>/dev/null || true
+open /Applications/ClCoBar.app
 echo "✅ 설치 완료. 메뉴바 아이콘을 확인하세요."
 INSTALL
 )
@@ -104,7 +104,7 @@ INSTALL
 
 ```bash
 chmod +x ~/Downloads/install_for_team.sh
-~/Downloads/install_for_team.sh ~/Downloads/CodexBar-0.27.0-arm64.zip
+~/Downloads/install_for_team.sh ~/Downloads/ClCoBar-0.27.0-arm64.zip
 ```
 
 스크립트 없이 zip 만 받았는데 터미널을 쓰고 싶다면 **방법 B** 사용.
@@ -153,7 +153,7 @@ A. 회사 내부 빌드라 Apple 정식 서명이 없어서 그렇습니다. **�
 A. macOS Gatekeeper 의 quarantine 이 걸린 상태입니다. 터미널에서:
 
 ```bash
-xattr -dr com.apple.quarantine /Applications/CodexBar.app
+xattr -dr com.apple.quarantine /Applications/ClCoBar.app
 ```
 
 실행 후 다시 시도. (방법 B / C 스크립트는 이걸 자동으로 해줍니다.)
@@ -175,7 +175,7 @@ A. 다음 순서로 확인:
 3. 강제 재시작:
    ```bash
    pkill -x CodexBar || true
-   open -n /Applications/CodexBar.app
+   open -n /Applications/ClCoBar.app
    ```
 
 ### Q. 인증/Keychain 프롬프트가 자주 뜸
@@ -200,7 +200,7 @@ A. 이 슬림 포크는 자동 업데이트(Sparkle) 가 비활성화되어 있�
 
 ```bash
 pkill -x CodexBar 2>/dev/null || true
-rm -rf /Applications/CodexBar.app
+rm -rf /Applications/ClCoBar.app
 # (선택) 설정 / 캐시도 함께 삭제 — 내부 디렉토리명은 모두 CodexBar
 rm -rf ~/Library/Application\ Support/CodexBar
 rm -rf ~/Library/Caches/CodexBar

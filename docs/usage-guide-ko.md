@@ -20,10 +20,10 @@ cd /Users/madup/Developer/CodexBar
 
 이 스크립트가 하는 일:
 
-1. 기존에 떠 있는 `CodexBar.app` 을 종료
+1. 기존에 떠 있는 `ClCoBar.app` 을 종료
 2. `swift build` + `swift test`
 3. `Scripts/package_app.sh` 로 `.app` 번들 생성
-4. `CodexBar.app` 재실행 + 정상 기동 확인
+4. `ClCoBar.app` 재실행 + 정상 기동 확인
 
 성공하면 메뉴바 우측 상단에 **ClCoBar 아이콘**이 보입니다.
 
@@ -185,11 +185,11 @@ Preferences → Providers → Claude → Keychain prompt policy 를 `Only on use
 ### 메뉴바 아이콘이 안 보임
 
 1. 메뉴바 공간 부족 — 시계나 알림 옆 아이콘을 정리
-2. `CodexBar.app` 이 정말 실행 중인지 확인: `pgrep -lf CodexBar`
+2. `ClCoBar.app` 이 정말 실행 중인지 확인: `pgrep -lf CodexBar`
 3. 강제 재실행:
    ```bash
-   pkill -x CodexBar || pkill -f CodexBar.app || true
-   open -n /path/to/CodexBar.app
+   pkill -x CodexBar || pkill -f ClCoBar.app || true
+   open -n /path/to/ClCoBar.app
    ```
 
 ### 사용량이 갱신 안 됨
@@ -242,8 +242,8 @@ grep -rn "MenuCardView\|UsageMenuCardView" Sources/
 
 ### 빌드 산출물
 
-- 디버그: `.build/debug/CodexBar.app` (스크립트가 패키징)
-- 릴리스: `.build/release/CodexBar.app`
+- 디버그: `.build/debug/ClCoBar.app` (스크립트가 패키징)
+- 릴리스: `.build/release/ClCoBar.app`
 - 메인 실행파일: `Sources/CodexBar/` 타겟 → `.build/<config>/ClCoBar`
 
 ---

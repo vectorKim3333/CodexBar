@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build a teammate-ready CodexBar.app.zip with ad-hoc signing.
+# Build a teammate-ready ClCoBar.app.zip with ad-hoc signing.
 #
 # Output: dist/CodexBar-<version>-<arch>.zip
 #
@@ -28,7 +28,7 @@ else
   ARCH_TAG="$(uname -m)"
 fi
 
-ZIP_NAME="CodexBar-${VERSION}-${ARCH_TAG}.zip"
+ZIP_NAME="ClCoBar-${VERSION}-${ARCH_TAG}.zip"
 ZIP_PATH="$DIST_DIR/$ZIP_NAME"
 
 echo "→ Building CodexBar ${VERSION} (build ${BUILD}) for ${ARCH_TAG}…"
@@ -82,7 +82,7 @@ fi
 echo "→ Packaging release build with ad-hoc signing"
 CODEXBAR_SIGNING=adhoc CONF=release ./Scripts/package_app.sh release
 
-APP="$ROOT/CodexBar.app"
+APP="$ROOT/ClCoBar.app"
 if [[ ! -d "$APP" ]]; then
   echo "ERROR: $APP was not produced by package_app.sh" >&2
   exit 1
@@ -112,6 +112,6 @@ Next steps:
 
 Quick smoke test before sharing:
    unzip -q "$ZIP_PATH" -d /tmp/codexbar-smoke && \\
-     /tmp/codexbar-smoke/CodexBar.app/Contents/MacOS/CodexBar --help 2>&1 | head -5
+     /tmp/codexbar-smoke/ClCoBar.app/Contents/MacOS/CodexBar --help 2>&1 | head -5
 
 EOF

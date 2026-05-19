@@ -263,8 +263,8 @@ for ARCH in "${ARCH_LIST[@]}"; do
   swift build -c "$CONF" --arch "$ARCH"
 done
 
-APP_FINAL="$ROOT/CodexBar.app"
-APP_STAGE="$ROOT/.build/package/CodexBar.app"
+APP_FINAL="$ROOT/ClCoBar.app"
+APP_STAGE="$ROOT/.build/package/ClCoBar.app"
 rm -rf "$APP_STAGE"
 APP="$APP_STAGE"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" "$APP/Contents/Frameworks"
