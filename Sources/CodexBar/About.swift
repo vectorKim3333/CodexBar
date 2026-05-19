@@ -10,10 +10,6 @@ func showAbout() {
     let buildTimestamp = Bundle.main.object(forInfoDictionaryKey: "CodexBuildTimestamp") as? String
     let gitCommit = Bundle.main.object(forInfoDictionaryKey: "CodexGitCommit") as? String
 
-    let separator = NSAttributedString(string: " · ", attributes: [
-        .font: NSFont.systemFont(ofSize: NSFont.smallSystemFontSize),
-    ])
-
     func makeLink(_ title: String, urlString: String) -> NSAttributedString {
         NSAttributedString(string: title, attributes: [
             .link: URL(string: urlString) as Any,
@@ -22,13 +18,7 @@ func showAbout() {
     }
 
     let credits = NSMutableAttributedString(string: "Peter Steinberger — MIT License\n")
-    credits.append(makeLink("GitHub", urlString: "https://github.com/steipete/CodexBar"))
-    credits.append(separator)
-    credits.append(makeLink("Website", urlString: "https://codexbar.app"))
-    credits.append(separator)
-    credits.append(makeLink("Twitter", urlString: "https://twitter.com/steipete"))
-    credits.append(separator)
-    credits.append(makeLink("Email", urlString: "mailto:peter@steipete.me"))
+    credits.append(makeLink("GitHub", urlString: "https://github.com/vectorKim3333/CodexBar"))
     if let buildTimestamp, let formatted = formattedBuildTimestamp(buildTimestamp) {
         var builtLine = "Built \(formatted)"
         if let gitCommit, !gitCommit.isEmpty, gitCommit != "unknown" {
