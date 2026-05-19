@@ -15,26 +15,41 @@ struct DisplayPane: View {
                         .foregroundStyle(.secondary)
                         .textCase(.uppercase)
                     PreferenceToggleRow(
-                        title: L("menu_bar_shows_percent_title"),
-                        subtitle: L("menu_bar_shows_percent_subtitle"),
-                        binding: self.$settings.menuBarShowsBrandIconWithPercent)
-                    HStack(alignment: .top, spacing: 12) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(L("time_format_title"))
-                                .font(.body)
-                            Text(L("time_format_subtitle"))
-                                .font(.footnote)
-                                .foregroundStyle(.tertiary)
-                        }
-                        Spacer()
-                        Picker(L("time_format_title"), selection: self.$settings.menuBarTimeFormat) {
-                            ForEach(MenuBarTimeFormat.allCases) { option in
-                                Text(option.label).tag(option)
+                        title: "아이콘 표시",
+                        subtitle: "메뉴바에 Claude/Codex 브랜드 글리프를 표시합니다.",
+                        binding: self.$settings.menuBarShowsBrandIcon)
+                    PreferenceToggleRow(
+                        title: "퍼센트 표시",
+                        subtitle: "남은(또는 사용한) 사용량을 % 숫자로 표시합니다.",
+                        binding: self.$settings.menuBarShowsPercent)
+                    PreferenceToggleRow(
+                        title: "배터리 표시",
+                        subtitle: "사용량을 배터리 모양의 게이지로 표시합니다.",
+                        binding: self.$settings.menuBarShowsBatteryShell)
+                    PreferenceToggleRow(
+                        title: "시간 표시",
+                        subtitle: "리셋까지 남은 시간을 표시합니다.",
+                        binding: self.$settings.menuBarShowsResetTime)
+                    if self.settings.menuBarShowsResetTime {
+                        HStack(alignment: .top, spacing: 12) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(L("time_format_title"))
+                                    .font(.body)
+                                Text(L("time_format_subtitle"))
+                                    .font(.footnote)
+                                    .foregroundStyle(.tertiary)
                             }
+                            Spacer()
+                            Picker(L("time_format_title"), selection: self.$settings.menuBarTimeFormat) {
+                                ForEach(MenuBarTimeFormat.allCases) { option in
+                                    Text(option.label).tag(option)
+                                }
+                            }
+                            .labelsHidden()
+                            .pickerStyle(.menu)
+                            .frame(maxWidth: 200)
                         }
-                        .labelsHidden()
-                        .pickerStyle(.menu)
-                        .frame(maxWidth: 200)
+                        .padding(.leading, 16)
                     }
                 }
 

@@ -789,13 +789,16 @@ extension IconRenderer {
     ///   - resetText: Short countdown string from `shortResetText(_:)`. `nil` = no text.
     ///   - stale: If `true`, dim the icon to indicate stale data.
     ///   - brand: Optional template brand image (e.g. Claude/Codex logo). Drawn at 14×14 to the left of the pill.
+    ///   - showShell: If `false`, the pill outline + cap are omitted and the result is just brand glyph + text.
+    ///   - percentText: Optional `"47%"`-style text shown to the right of the pill. Combined with `resetText` via `·`.
     static func makeBatteryPillIcon(
         remaining: Double?,
         resetText: String?,
         stale: Bool = false,
-        brand: NSImage? = nil) -> NSImage
+        brand: NSImage? = nil,
+        showShell: Bool = true,
+        percentText: String? = nil) -> NSImage
     {
-        // Layout (pt). Width grows when text or brand image are present.
         let height: CGFloat = 18
         let brandSize: CGFloat = 14
         let brandGap: CGFloat = 3
@@ -804,15 +807,35 @@ extension IconRenderer {
         let capWidth: CGFloat = 2
         let capGap: CGFloat = 0.5
         let textGap: CGFloat = 3
-        let textWidth: CGFloat = {
-            guard let resetText else { return 0 }
-            let font = NSFont.monospacedDigitSystemFont(ofSize: 10, weight: .semibold)
-            let size = (resetText as NSString).size(withAttributes: [.font: font])
-            // Round up so we don't clip.
-            return ceil(size.width)
+
+        // Combined right-side text: "47% · 2h" / "47%" / "2h" / nil
+        let combinedText: String? = {
+            let parts = [percentText, resetText].compactMap { $0 }.filter { !$0.isEmpty }
+            return parts.isEmpty ? nil : parts.joined(separator: " · ")
         }()
-        let totalWidth = brandTotal + pillWidth + capGap + capWidth
-            + (resetText != nil ? textGap + textWidth : 0)
+
+        let font = NSFont.monospacedDigitSystemFont(ofSize: 10, weight: .semibold)
+        let textWidth: CGFloat = {
+            guard let combinedText else { return 0 }
+            return ceil((combinedText as NSString).size(withAttributes: [.font: font]).width)
+        }()
+
+        let shellPortion: CGFloat = showShell ? (pillWidth + capGap + capWidth) : 0
+        let shellTextGap: CGFloat = (showShell && combinedText != nil) ? textGap : 0
+        let standaloneTextGap: CGFloat = (!showShell && brand != nil && combinedText != nil) ? textGap : 0
+        let totalWidth = brandTotal + shellPortion + shellTextGap + standaloneTextGap + textWidth
+
+        // No visual content at all: return a tiny placeholder so the status item remains clickable.
+        if totalWidth <= 0 {
+            let placeholder = NSImage(size: NSSize(width: 8, height: height))
+            placeholder.lockFocus()
+            NSColor.black.withAlphaComponent(0.35).setFill()
+            NSBezierPath(roundedRect: CGRect(x: 1, y: height / 2 - 1, width: 6, height: 2),
+                         xRadius: 1, yRadius: 1).fill()
+            placeholder.unlockFocus()
+            placeholder.isTemplate = true
+            return placeholder
+        }
 
         let image = NSImage(size: NSSize(width: totalWidth, height: height))
         image.lockFocus()
@@ -822,7 +845,6 @@ extension IconRenderer {
         let strokeColor = NSColor.black.withAlphaComponent(strokeAlpha)
         let fillColor = NSColor.black.withAlphaComponent(fillAlpha)
 
-        // Brand glyph on the left.
         if let brand {
             let brandRect = CGRect(
                 x: 0,
@@ -838,56 +860,57 @@ extension IconRenderer {
 
         let pillOriginX: CGFloat = brandTotal
 
-        // Battery shell.
-        let shellRect = CGRect(x: pillOriginX + 0.5, y: 3, width: pillWidth - 1, height: height - 6)
-        let shellPath = NSBezierPath(roundedRect: shellRect, xRadius: 3, yRadius: 3)
-        shellPath.lineWidth = 1.0
-        strokeColor.setStroke()
-        shellPath.stroke()
+        if showShell {
+            let shellRect = CGRect(x: pillOriginX + 0.5, y: 3, width: pillWidth - 1, height: height - 6)
+            let shellPath = NSBezierPath(roundedRect: shellRect, xRadius: 3, yRadius: 3)
+            shellPath.lineWidth = 1.0
+            strokeColor.setStroke()
+            shellPath.stroke()
 
-        // Battery cap (small nub on right).
-        let capRect = CGRect(
-            x: pillOriginX + pillWidth + capGap,
-            y: shellRect.midY - 2.5,
-            width: capWidth,
-            height: 5)
-        strokeColor.setFill()
-        NSBezierPath(roundedRect: capRect, xRadius: 0.6, yRadius: 0.6).fill()
+            let capRect = CGRect(
+                x: pillOriginX + pillWidth + capGap,
+                y: shellRect.midY - 2.5,
+                width: capWidth,
+                height: 5)
+            strokeColor.setFill()
+            NSBezierPath(roundedRect: capRect, xRadius: 0.6, yRadius: 0.6).fill()
 
-        // Inner fill — proportional to `remaining`.
-        if let remaining {
-            let clamped = max(0, min(1, remaining))
-            let innerInset: CGFloat = 1.5
-            let innerWidth = shellRect.width - innerInset * 2
-            let innerHeight = shellRect.height - innerInset * 2
-            let fillWidth = innerWidth * clamped
-            if fillWidth > 0.5 {
-                let fillRect = CGRect(
-                    x: shellRect.minX + innerInset,
-                    y: shellRect.minY + innerInset,
-                    width: fillWidth,
-                    height: innerHeight)
-                fillColor.setFill()
-                NSBezierPath(roundedRect: fillRect, xRadius: 1.2, yRadius: 1.2).fill()
+            if let remaining {
+                let clamped = max(0, min(1, remaining))
+                let innerInset: CGFloat = 1.5
+                let innerWidth = shellRect.width - innerInset * 2
+                let innerHeight = shellRect.height - innerInset * 2
+                let fillWidth = innerWidth * clamped
+                if fillWidth > 0.5 {
+                    let fillRect = CGRect(
+                        x: shellRect.minX + innerInset,
+                        y: shellRect.minY + innerInset,
+                        width: fillWidth,
+                        height: innerHeight)
+                    fillColor.setFill()
+                    NSBezierPath(roundedRect: fillRect, xRadius: 1.2, yRadius: 1.2).fill()
+                }
             }
         }
 
-        // Countdown text.
-        if let resetText {
-            let font = NSFont.monospacedDigitSystemFont(ofSize: 10, weight: .semibold)
+        if let combinedText {
             let attrs: [NSAttributedString.Key: Any] = [
                 .font: font,
                 .foregroundColor: fillColor,
             ]
-            let str = NSAttributedString(string: resetText, attributes: attrs)
+            let str = NSAttributedString(string: combinedText, attributes: attrs)
             let textSize = str.size()
-            let drawX = pillOriginX + pillWidth + capGap + capWidth + textGap
+            let drawX: CGFloat = {
+                if showShell {
+                    return pillOriginX + pillWidth + capGap + capWidth + textGap
+                }
+                return brandTotal + (brand != nil ? textGap : 0)
+            }()
             let drawY = (height - textSize.height) / 2
             str.draw(at: NSPoint(x: drawX, y: drawY))
         }
 
         image.unlockFocus()
-        // Template = system handles light/dark + menu-bar selection tinting.
         image.isTemplate = true
         return image
     }

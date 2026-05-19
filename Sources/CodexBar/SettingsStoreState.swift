@@ -27,6 +27,12 @@ struct SettingsDefaultsState {
     /// Display style for the menu-bar pill countdown (`~2h` / `1h 45m` / `1h+`).
     var menuBarTimeFormatRaw: String
 
+    /// Independent toggles for status-bar visual parts. All four can be combined freely.
+    var menuBarShowsBrandIcon: Bool
+    var menuBarShowsPercent: Bool
+    var menuBarShowsBatteryShell: Bool
+    var menuBarShowsResetTime: Bool
+
     var historicalTrackingEnabled: Bool
     var multiAccountMenuLayoutRaw: String
     var menuBarMetricPreferencesRaw: [String: String]

@@ -228,7 +228,10 @@ extension StatusItemController {
 
         let style = self.store.iconStyle
         let showUsed = self.settings.usageBarsShowUsed
-        let showBrandPercent = self.settings.menuBarShowsBrandIconWithPercent
+        let showBrandIcon = self.settings.menuBarShowsBrandIcon
+        let showPercent = self.settings.menuBarShowsPercent
+        let showBatteryShell = self.settings.menuBarShowsBatteryShell
+        let showResetTime = self.settings.menuBarShowsResetTime
         let primaryProvider = self.primaryProviderForUnifiedIcon()
         let snapshot = self.store.snapshot(for: primaryProvider)
         let warningFlash = self.quotaWarningFlashActive(provider: primaryProvider)
@@ -294,31 +297,6 @@ extension StatusItemController {
             return String(format: "%.3f", value)
         }
 
-        if showBrandPercent,
-           let brand = ProviderBrandIcon.image(for: primaryProvider)
-        {
-            let displayText = self.menuBarDisplayText(for: primaryProvider, snapshot: snapshot)
-            let signature = [
-                "mode=brandPercent",
-                "provider=\(primaryProvider.rawValue)",
-                "style=\(String(describing: style))",
-                "primary=\(debugDouble(primary))",
-                "weekly=\(debugDouble(weekly))",
-                "credits=\(debugDouble(credits))",
-                "stale=\(stale ? "1" : "0")",
-                "status=\(statusIndicator.rawValue)",
-                "text=\(displayText ?? "nil")",
-                "warningFlash=\(warningFlash ? "1" : "0")",
-                "anim=\(needsAnimation ? "1" : "0")",
-            ].joined(separator: "|")
-            if self.shouldSkipMergedIconRender(signature) {
-                return true
-            }
-            self.setButtonImage(warningFlash ? Self.quotaWarningFlashImage(base: brand) : brand, for: button)
-            self.setButtonTitle(displayText, for: button)
-            return false
-        }
-
         self.setButtonTitle(nil, for: button)
         if let morphProgress {
             let signature = [
@@ -339,9 +317,16 @@ extension StatusItemController {
             // Compute fill + reset text up-front so they participate in the
             // skip cache key. (Same reasoning as the per-provider path.)
             let fillFraction: Double? = primary.map { max(0, min(1, $0 / 100)) }
-            let resetText = IconRenderer.shortResetText(
-                snapshot?.primary?.resetsAt,
-                format: self.settings.menuBarTimeFormat)
+            let resetText = showResetTime
+                ? IconRenderer.shortResetText(
+                    snapshot?.primary?.resetsAt,
+                    format: self.settings.menuBarTimeFormat)
+                : nil
+            let percentText: String? = {
+                guard showPercent, let value = primary else { return nil }
+                return String(format: "%.0f%%", max(0, min(100, value)))
+            }()
+            let brandImage = showBrandIcon ? ProviderBrandIcon.image(for: primaryProvider) : nil
             let signature = [
                 "mode=icon",
                 "provider=\(primaryProvider.rawValue)",
@@ -358,16 +343,20 @@ extension StatusItemController {
                 "anim=\(needsAnimation ? "1" : "0")",
                 "timeFmt=\(self.settings.menuBarTimeFormat.rawValue)",
                 "resetText=\(resetText ?? "")",
+                "percentText=\(percentText ?? "")",
+                "showBrand=\(showBrandIcon ? "1" : "0")",
+                "showShell=\(showBatteryShell ? "1" : "0")",
             ].joined(separator: "|")
             if self.shouldSkipMergedIconRender(signature) {
                 return true
             }
-            // Battery-pill style for the merged status item. (Merge mode is
-            // removed in this fork; path kept for completeness.)
             let image = IconRenderer.makeBatteryPillIcon(
-                remaining: fillFraction,
+                remaining: showBatteryShell ? fillFraction : nil,
                 resetText: resetText,
-                stale: stale)
+                stale: stale,
+                brand: brandImage,
+                showShell: showBatteryShell,
+                percentText: percentText)
             self.setButtonImage(warningFlash ? Self.quotaWarningFlashImage(base: image) : image, for: button)
         }
         return false
@@ -400,28 +389,12 @@ extension StatusItemController {
         // IconRenderer treats these values as a left-to-right "progress fill" percentage; depending on the
         // user setting we pass either "percent left" or "percent used".
         let showUsed = self.settings.usageBarsShowUsed
-        let showBrandPercent = self.settings.menuBarShowsBrandIconWithPercent
+        let showBrandIcon = self.settings.menuBarShowsBrandIcon
+        let showPercent = self.settings.menuBarShowsPercent
+        let showBatteryShell = self.settings.menuBarShowsBatteryShell
+        let showResetTime = self.settings.menuBarShowsResetTime
         let style: IconStyle = self.store.style(for: provider)
         let warningFlash = self.quotaWarningFlashActive(provider: provider)
-
-        if showBrandPercent,
-           let brand = ProviderBrandIcon.image(for: provider)
-        {
-            let displayText = self.menuBarDisplayText(for: provider, snapshot: snapshot)
-            let signature = [
-                "mode=brandPercent",
-                "provider=\(provider.rawValue)",
-                "style=\(String(describing: style))",
-                "text=\(displayText ?? "nil")",
-                "warningFlash=\(warningFlash ? "1" : "0")",
-            ].joined(separator: "|")
-            if self.shouldSkipProviderIconRender(provider: provider, signature: signature) {
-                return true
-            }
-            self.setButtonImage(warningFlash ? Self.quotaWarningFlashImage(base: brand) : brand, for: button)
-            self.setButtonTitle(displayText, for: button)
-            return false
-        }
 
         let resolved = snapshot.map {
             IconRemainingResolver.resolvedPercents(
@@ -494,9 +467,16 @@ extension StatusItemController {
             }
             let primaryWindow = resolvedWindows?.primary
             let fillFraction: Double? = primary.map { max(0, min(1, $0 / 100)) }
-            let resetText = IconRenderer.shortResetText(
-                primaryWindow?.resetsAt,
-                format: self.settings.menuBarTimeFormat)
+            let resetText = showResetTime
+                ? IconRenderer.shortResetText(
+                    primaryWindow?.resetsAt,
+                    format: self.settings.menuBarTimeFormat)
+                : nil
+            let percentText: String? = {
+                guard showPercent, let value = primary else { return nil }
+                return String(format: "%.0f%%", max(0, min(100, value)))
+            }()
+            let brandImage = showBrandIcon ? ProviderBrandIcon.image(for: provider) : nil
 
             let signature = [
                 "mode=icon",
@@ -514,24 +494,21 @@ extension StatusItemController {
                 "loading=\(isLoading ? "1" : "0")",
                 "timeFmt=\(self.settings.menuBarTimeFormat.rawValue)",
                 "resetText=\(resetText ?? "")",
+                "percentText=\(percentText ?? "")",
+                "showBrand=\(showBrandIcon ? "1" : "0")",
+                "showShell=\(showBatteryShell ? "1" : "0")",
             ].joined(separator: "|")
             if self.shouldSkipProviderIconRender(provider: provider, signature: signature) {
                 return true
             }
             self.setButtonTitle(nil, for: button)
-            // Battery-pill style: % remaining fill + reset countdown text +
-            // brand glyph on the left to identify Claude vs Codex at a glance.
-            //
-            // `primary` is already a 0–100 percent (from IconRemainingResolver).
-            // `fillFraction` semantics:
-            //   showUsed = false → tracks quota remaining (battery drains)
-            //   showUsed = true  → tracks quota used (pill fills up)
-            let brandImage = ProviderBrandIcon.image(for: provider)
             let image = IconRenderer.makeBatteryPillIcon(
-                remaining: fillFraction,
+                remaining: showBatteryShell ? fillFraction : nil,
                 resetText: resetText,
                 stale: stale,
-                brand: brandImage)
+                brand: brandImage,
+                showShell: showBatteryShell,
+                percentText: percentText)
             self.setButtonImage(warningFlash ? Self.quotaWarningFlashImage(base: image) : image, for: button)
         }
         return false

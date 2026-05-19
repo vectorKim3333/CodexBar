@@ -163,6 +163,46 @@ extension SettingsStore {
         }
     }
 
+    var menuBarShowsBrandIcon: Bool {
+        get { self.defaultsState.menuBarShowsBrandIcon }
+        set {
+            var state = self.defaultsState
+            state.menuBarShowsBrandIcon = newValue
+            self.defaultsState = state
+            self.userDefaults.set(newValue, forKey: "menuBarShowsBrandIcon")
+        }
+    }
+
+    var menuBarShowsPercent: Bool {
+        get { self.defaultsState.menuBarShowsPercent }
+        set {
+            var state = self.defaultsState
+            state.menuBarShowsPercent = newValue
+            self.defaultsState = state
+            self.userDefaults.set(newValue, forKey: "menuBarShowsPercent")
+        }
+    }
+
+    var menuBarShowsBatteryShell: Bool {
+        get { self.defaultsState.menuBarShowsBatteryShell }
+        set {
+            var state = self.defaultsState
+            state.menuBarShowsBatteryShell = newValue
+            self.defaultsState = state
+            self.userDefaults.set(newValue, forKey: "menuBarShowsBatteryShell")
+        }
+    }
+
+    var menuBarShowsResetTime: Bool {
+        get { self.defaultsState.menuBarShowsResetTime }
+        set {
+            var state = self.defaultsState
+            state.menuBarShowsResetTime = newValue
+            self.defaultsState = state
+            self.userDefaults.set(newValue, forKey: "menuBarShowsResetTime")
+        }
+    }
+
     private var menuBarDisplayModeRaw: String? {
         get { self.defaultsState.menuBarDisplayModeRaw }
         set {
@@ -184,7 +224,7 @@ extension SettingsStore {
     /// Uses copy-modify-reassign for `@Observable` propagation (see usageBarsShowUsed).
     var menuBarTimeFormat: MenuBarTimeFormat {
         get {
-            MenuBarTimeFormat(rawValue: self.defaultsState.menuBarTimeFormatRaw) ?? .approximate
+            MenuBarTimeFormat(rawValue: self.defaultsState.menuBarTimeFormatRaw) ?? .precise
         }
         set {
             var state = self.defaultsState

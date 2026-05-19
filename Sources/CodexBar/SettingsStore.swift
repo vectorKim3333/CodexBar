@@ -267,7 +267,11 @@ extension SettingsStore {
         let menuBarDisplayModeRaw = userDefaults.string(forKey: "menuBarDisplayMode")
             ?? MenuBarDisplayMode.percent.rawValue
         let menuBarTimeFormatRaw = userDefaults.string(forKey: "menuBarTimeFormat")
-            ?? MenuBarTimeFormat.approximate.rawValue
+            ?? MenuBarTimeFormat.precise.rawValue
+        let menuBarShowsBrandIcon = userDefaults.object(forKey: "menuBarShowsBrandIcon") as? Bool ?? true
+        let menuBarShowsPercent = userDefaults.object(forKey: "menuBarShowsPercent") as? Bool ?? false
+        let menuBarShowsBatteryShell = userDefaults.object(forKey: "menuBarShowsBatteryShell") as? Bool ?? true
+        let menuBarShowsResetTime = userDefaults.object(forKey: "menuBarShowsResetTime") as? Bool ?? true
         let historicalTrackingEnabled = userDefaults.object(forKey: "historicalTrackingEnabled") as? Bool ?? false
         let multiAccountMenuLayoutRaw = userDefaults.string(forKey: "multiAccountMenuLayout") ?? {
             let legacyShowAll = userDefaults.object(forKey: "showAllTokenAccountsInMenu") as? Bool ?? false
@@ -340,6 +344,10 @@ extension SettingsStore {
             menuBarShowsBrandIconWithPercent: menuBarShowsBrandIconWithPercent,
             menuBarDisplayModeRaw: menuBarDisplayModeRaw,
             menuBarTimeFormatRaw: menuBarTimeFormatRaw,
+            menuBarShowsBrandIcon: menuBarShowsBrandIcon,
+            menuBarShowsPercent: menuBarShowsPercent,
+            menuBarShowsBatteryShell: menuBarShowsBatteryShell,
+            menuBarShowsResetTime: menuBarShowsResetTime,
             historicalTrackingEnabled: historicalTrackingEnabled,
             multiAccountMenuLayoutRaw: multiAccountMenuLayoutRaw,
             menuBarMetricPreferencesRaw: resolvedPreferences,

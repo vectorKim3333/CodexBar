@@ -11,6 +11,10 @@ extension SettingsStore {
         _ = self.usageBarsShowUsed
         _ = self.resetTimesShowAbsolute
         _ = self.menuBarShowsBrandIconWithPercent
+        _ = self.menuBarShowsBrandIcon
+        _ = self.menuBarShowsPercent
+        _ = self.menuBarShowsBatteryShell
+        _ = self.menuBarShowsResetTime
         _ = self.menuBarShowsHighestUsage
         _ = self.menuBarDisplayMode
         _ = self.menuBarTimeFormat
