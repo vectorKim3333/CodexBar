@@ -72,7 +72,7 @@ BUILD_NUMBER=66
    - ⚠️ 그냥 더블클릭하면 "확인되지 않은 개발자" 라며 차단됩니다. **반드시 첫 실행은 우클릭 → 열기**.
    - 한 번만 이렇게 열면 그 다음부터는 일반적으로 더블클릭으로 실행됩니다.
 
-성공하면 메뉴바 우측 상단에 **ClCoBar 아이콘** 이 나타납니다.
+성공하면 메뉴바 우측 상단에 **Claude / Codex 두 개의 pill 아이콘** 이 나란히 나타납니다. 각 pill 은 배터리처럼 잔여량(또는 사용량) 을 시각화하고 옆에 다음 리셋까지 남은 시간(예: `5h`) 을 표시합니다.
 
 ### 방법 B — 터미널 한 번에 (편한 사람용)
 
@@ -115,26 +115,28 @@ chmod +x ~/Downloads/install_for_team.sh
 
 ### 3-1. Claude 로그인
 
-1. 메뉴바 ClCoBar 아이콘 클릭 → "**Preferences…**" 또는 ⌘,
-2. 왼쪽 사이드바에서 **Providers → Claude** 선택
-3. 인증 방법 선택 (편한 거 하나):
-   - **OAuth** *(권장)* — "Sign in with OAuth" 버튼 클릭 → 브라우저에서 Claude 로그인
-   - **Web cookies (Automatic)** — claude.ai 에 이미 로그인된 브라우저 쿠키 자동 import
-   - **CLI fallback** — `claude` CLI 가 설치되어 있으면 자동 인식
-4. 닫고 메뉴바 아이콘 다시 클릭 → Claude 카드에 사용량이 나오면 성공
+가장 쉬운 방법은 터미널에서 `claude` CLI 한 번 실행해 OAuth 로그인하기 — ClCoBar 가 macOS Keychain 의 `Claude Code-credentials` 를 자동으로 읽습니다.
+
+만약 ad-hoc 서명 빌드라 Keychain 접근이 거부되면:
+1. 메뉴바 pill 클릭 → "**환경설정...**" 또는 ⌘,
+2. 좌측 **Providers → Claude** 선택
+3. 인증 경로 중 하나 선택:
+   - **OAuth** *(권장)* — Sign in 버튼으로 브라우저 OAuth (ClCoBar 자체 캐시)
+   - **Web cookies (Automatic)** — claude.ai 브라우저 쿠키 자동 import
+   - **CLI fallback** — `claude` CLI 가 설치되어 있으면 자동 fallback
+4. 메뉴 다시 열어 Claude pill 이 잔여량을 표시하면 성공
 
 ### 3-2. Codex 로그인
 
-1. Preferences → Providers → **Codex**
-2. 가장 쉬운 방법: 터미널에서 `codex` 한 번 실행해서 로그인 → `~/.codex/auth.json` 생성
-3. ClCoBar 가 자동으로 인식 — 메뉴 새로고침 (메뉴 바닥의 "Refresh all")
-4. 카드에 사용량이 나오면 성공
+1. 터미널에서 `codex` 한 번 실행해서 로그인 → `~/.codex/auth.json` 생성
+2. ClCoBar 가 자동으로 인식 — 메뉴 바닥의 **"새로고침"** (⌘R) 한 번 클릭
+3. Codex pill 이 잔여량을 표시하면 성공
 
 ### 3-3. 자동 시작 (선택)
 
 매번 컴퓨터 켤 때 자동 실행되게 하려면:
 
-- Preferences → **General** → "**Launch at login**" 체크
+- 환경설정 → **일반** → "**로그인 시 시작**" 체크
 
 ---
 
@@ -158,10 +160,10 @@ xattr -dr com.apple.quarantine /Applications/CodexBar.app
 
 ### Q. 빌드 담당이 ARM 빌드만 줬는데 내 맥은 Intel 임
 
-A. 빌드 담당에게 `ARCHES="arm64 x86_64"` 옵션으로 universal 빌드 요청. 또는 본인 머신에서 직접 빌드 (`Xcode 16+` 설치 필요):
+A. 빌드 담당에게 `ARCHES="arm64 x86_64"` 옵션으로 universal 빌드 요청. 또는 본인 머신에서 직접 빌드 (Xcode 정식판 없이 Command Line Tools + Swift 6 만 있어도 가능 — 스크립트가 KeyboardShortcuts 의 `#Preview` 매크로 이슈를 자동 패치):
 
 ```bash
-git clone <repo-url> ClCoBar && cd ClCoBar
+git clone <repo-url> CodexBar && cd CodexBar
 ./Scripts/build_for_distribution.sh
 ```
 
@@ -182,7 +184,11 @@ A. Preferences → Providers → Claude → **Keychain prompt policy** 를 `Only
 
 ### Q. 사용량이 갱신 안 됨
 
-A. 메뉴 바닥의 "**Refresh all**" 클릭. 그래도 안 되면 해당 provider 의 인증이 만료된 것일 수 있으니 Preferences 에서 재로그인.
+A. 메뉴 바닥의 "**새로고침**" (⌘R) 클릭. 그래도 안 되면 해당 provider 의 인증이 만료된 것일 수 있으니 환경설정에서 재로그인.
+
+### Q. 갑자기 사용량이 멈춰있고 "Rate limited" 비슷한 메시지가 보임
+
+A. Anthropic OAuth API 의 rate limit (HTTP 429) 에 걸린 상태. ClCoBar 가 자동으로 **10 분 backoff** 를 적용하므로 그 사이 메뉴를 여러 번 열어도 추가 호출은 발생하지 않습니다. 10 분 후 자동으로 정상화됩니다. 자주 발생하면 환경설정 → 일반 → **새로고침 주기** 를 `15분` 또는 `30분` 으로 늘리세요.
 
 ### Q. 업데이트는 어떻게 받음?
 
@@ -195,8 +201,8 @@ A. 이 슬림 포크는 자동 업데이트(Sparkle) 가 비활성화되어 있�
 ```bash
 pkill -x CodexBar 2>/dev/null || true
 rm -rf /Applications/CodexBar.app
-# (선택) 설정 / 캐시도 함께 삭제
-rm -rf ~/Library/Application\ Support/ClCoBar
+# (선택) 설정 / 캐시도 함께 삭제 — 내부 디렉토리명은 모두 CodexBar
+rm -rf ~/Library/Application\ Support/CodexBar
 rm -rf ~/Library/Caches/CodexBar
 rm -rf ~/.codexbar
 ```
