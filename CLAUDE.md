@@ -13,6 +13,23 @@ Personal fork of `steipete/CodexBar`. Tracks **only Claude + Codex** usage in th
 - **배포된 zip 내부 .app 이름은 `ClCoBar.app`** (Finder 에서는 ClCoBar 로 표시). 팀원 안내: `docs/install-guide-ko.md`. 첫 실행은 우클릭→열기 (ad-hoc 서명이라 Gatekeeper 경고).
 - **사용자 코드 변경 후 재설치**: `pkill -x CodexBar; rm -rf /Applications/ClCoBar.app; ditto -x -k dist/ClCoBar-*.zip /tmp/cb && mv /tmp/cb/ClCoBar.app /Applications/ && xattr -dr com.apple.quarantine /Applications/ClCoBar.app && open /Applications/ClCoBar.app`.
 
+## 버전 관리 (자동)
+
+코드 작업이 끝나면 변경 범위를 보고 **`version.env`** 의 `MARKETING_VERSION` 을 다음 기준으로 올린다. `BUILD_NUMBER` 는 항상 +1.
+
+- **PATCH (1.1.0 → 1.1.1)** — 버그 수정 / 문구·번역 변경 / 로컬라이제이션 / 작은 UI 보정 / 리팩토링만. 외부에서 보이는 동작이 거의 그대로일 때.
+- **MINOR (1.1.0 → 1.2.0)** — 새 기능·옵션·토글 추가 / 메뉴 항목 추가 / 설정 화면에 새 섹션 / 의미 있는 UX 변화. 호환은 깨지 않는 추가성 변경.
+- **MAJOR (1.1.0 → 2.0.0)** — 설정/UserDefaults 키 구조 변경으로 마이그레이션 필요 / 모듈/타겟 추가·제거 / 기능 대규모 재설계나 제거. 팀원이 재설치 후 설정을 다시 해야 하는 수준일 때.
+
+판단 애매하면 보수적으로 한 단계 아래(예: MINOR ↔ PATCH 사이면 PATCH).
+
+**버전을 올리면 같이 갱신해야 하는 파일** (한 군데라도 빠지면 안내가 어긋남):
+- `version.env` — `MARKETING_VERSION`, `BUILD_NUMBER`
+- `docs/install-guide-ko.md` — zip 파일명 예시 (`ClCoBar-<v>-arm64.zip`) + 1-4 절의 "다음 버전 예시" 도 한 칸씩 위로
+- `Scripts/install_for_team.sh` — 주석의 사용 예시
+
+버전 올린 후엔 기존 `dist/ClCoBar-<이전버전>-arm64.zip` 을 지우고 `./Scripts/build_for_distribution.sh` 로 새 zip 만든 뒤 본인 환경에도 재설치(`pkill ... && ditto ... && open ...`)까지 한 번에 끝낸다.
+
 ## 알려진 함정
 
 - **`@Observable` nested-struct setter 버그.** `SettingsStore.defaultsState.X = newValue` 직접 변형은 `withMutation` 을 발화시키지 못해 SwiftUI 관찰자가 못 본다. 새 setter 추가 시 **반드시** copy-modify-reassign:
