@@ -33,9 +33,9 @@ extension UsageMenuCardView.Model {
         let sessionTokens = snapshot.sessionTokens.map { UsageFormatter.tokenCountString($0) }
         let sessionLine: String = {
             if let sessionTokens {
-                return "Today: \(sessionCost) · \(sessionTokens) tokens"
+                return "오늘: \(sessionCost) · 토큰 \(sessionTokens)"
             }
-            return "Today: \(sessionCost)"
+            return "오늘: \(sessionCost)"
         }()
 
         let monthCost = snapshot.last30DaysCostUSD.map { UsageFormatter.usdString($0) } ?? "—"
@@ -44,9 +44,9 @@ extension UsageMenuCardView.Model {
         let monthTokens = monthTokensValue.map { UsageFormatter.tokenCountString($0) }
         let monthLine: String = {
             if let monthTokens {
-                return "Last 30 days: \(monthCost) · \(monthTokens) tokens"
+                return "지난 30일: \(monthCost) · 토큰 \(monthTokens)"
             }
-            return "Last 30 days: \(monthCost)"
+            return "지난 30일: \(monthCost)"
         }()
         let err = (error?.isEmpty ?? true) ? nil : error
         return TokenUsageSection(
@@ -60,9 +60,9 @@ extension UsageMenuCardView.Model {
     static func tokenUsageHint(provider: UsageProvider) -> String? {
         switch provider {
         case .codex:
-            L("Estimated from local Codex logs for the selected account.")
+            "선택한 계정의 로컬 Codex 로그 기준 추정치."
         case .claude:
-            L(UsageFormatter.costEstimateHint(provider: provider))
+            UsageFormatter.costEstimateHint(provider: provider)
         }
     }
 
@@ -74,9 +74,9 @@ extension UsageMenuCardView.Model {
 
         if provider == .claude, cost.limit <= 0 {
             let spend = UsageFormatter.currencyString(cost.used, currencyCode: cost.currencyCode)
-            let periodLabel = cost.period ?? "Last 30 days"
+            let periodLabel = cost.period ?? "지난 30일"
             return ProviderCostSection(
-                title: "API spend",
+                title: "API 지출",
                 percentUsed: nil,
                 spendLine: "\(periodLabel): \(spend)",
                 percentLine: nil)
@@ -89,23 +89,23 @@ extension UsageMenuCardView.Model {
         let title: String
 
         if cost.currencyCode == "Quota" {
-            title = "Quota usage"
+            title = "할당량 사용"
             used = String(format: "%.0f", cost.used)
             limit = String(format: "%.0f", cost.limit)
         } else {
-            title = "Extra usage"
+            title = "추가 사용량"
             used = UsageFormatter.currencyString(cost.used, currencyCode: cost.currencyCode)
             limit = UsageFormatter.currencyString(cost.limit, currencyCode: cost.currencyCode)
         }
 
         let percentUsed = Self.clamped((cost.used / cost.limit) * 100)
-        let periodLabel = cost.period ?? "This month"
+        let periodLabel = cost.period ?? "이번 달"
 
         return ProviderCostSection(
             title: title,
             percentUsed: percentUsed,
             spendLine: "\(periodLabel): \(used) / \(limit)",
-            percentLine: String(format: "%.0f%% used", min(100, max(0, percentUsed))))
+            percentLine: String(format: "%.0f%% 사용", min(100, max(0, percentUsed))))
     }
 
     static func clamped(_ value: Double) -> Double {

@@ -11,15 +11,15 @@ struct UsageMenuCardView: View {
 
             var labelSuffix: String {
                 switch self {
-                case .left: "left"
-                case .used: "used"
+                case .left: "남음"
+                case .used: "사용"
                 }
             }
 
             var accessibilityLabel: String {
                 switch self {
-                case .left: "Usage remaining"
-                case .used: "Usage used"
+                case .left: "사용량 남음"
+                case .used: "사용한 사용량"
                 }
             }
         }

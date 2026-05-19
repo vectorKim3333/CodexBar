@@ -73,14 +73,14 @@ extension UsageMenuCardView.Model {
             accessibilityLabel: "Claude Admin API 30 day spend trend",
             valueStyle: .currencyUSD,
             kpis: [
-                .init(title: "Today", value: UsageFormatter.usdString(today.costUSD), emphasis: true),
-                .init(title: "7d spend", value: UsageFormatter.usdString(last7.costUSD), emphasis: false),
+                .init(title: "오늘", value: UsageFormatter.usdString(today.costUSD), emphasis: true),
+                .init(title: "7일 지출", value: UsageFormatter.usdString(last7.costUSD), emphasis: false),
                 .init(
-                    title: "30d spend",
+                    title: "30일 지출",
                     value: UsageFormatter.usdString(last30.costUSD),
                     emphasis: false),
                 .init(
-                    title: "Today tokens",
+                    title: "오늘 토큰",
                     value: UsageFormatter.tokenCountString(today.totalTokens),
                     emphasis: false),
             ],
@@ -114,19 +114,19 @@ extension UsageMenuCardView.Model {
             valueStyle: .currencyUSD,
             kpis: [
                 .init(
-                    title: "Today",
+                    title: "오늘",
                     value: latest?.costUSD.map(UsageFormatter.usdString) ?? "—",
                     emphasis: true),
                 .init(
-                    title: "30d cost",
+                    title: "30일 비용",
                     value: snapshot.last30DaysCostUSD.map(UsageFormatter.usdString) ?? "—",
                     emphasis: false),
                 .init(
-                    title: "30d tokens",
+                    title: "30일 토큰",
                     value: snapshot.last30DaysTokens.map(UsageFormatter.tokenCountString) ?? "—",
                     emphasis: false),
                 .init(
-                    title: "Latest tokens",
+                    title: "최근 토큰",
                     value: latest?.totalTokens.map(UsageFormatter.tokenCountString) ?? "—",
                     emphasis: false),
             ],

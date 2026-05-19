@@ -183,7 +183,7 @@ public struct ClaudeAdminAPIUsageSnapshot: Codable, Equatable, Sendable {
                 used: total.costUSD,
                 limit: 0,
                 currencyCode: "USD",
-                period: "Last 30 days",
+                period: "지난 30일",
                 updatedAt: self.updatedAt),
             claudeAdminAPIUsage: self,
             updatedAt: self.updatedAt,

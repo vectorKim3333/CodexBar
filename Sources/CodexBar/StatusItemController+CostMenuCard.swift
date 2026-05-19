@@ -1,7 +1,7 @@
 import AppKit
 
 extension StatusItemController {
-    static let costMenuTitle = "Cost"
+    static let costMenuTitle = "비용"
 
     func makeCostMenuCardItem(model: UsageMenuCardView.Model, submenu: NSMenu?) -> NSMenuItem {
         let tooltipLines = Self.costMenuTooltipLines(tokenUsage: model.tokenUsage)

@@ -10,8 +10,8 @@ public enum ClaudeProviderDescriptor {
             metadata: ProviderMetadata(
                 id: .claude,
                 displayName: "Claude",
-                sessionLabel: "Session",
-                weeklyLabel: "Weekly",
+                sessionLabel: "세션",
+                weeklyLabel: "주간",
                 opusLabel: "Sonnet",
                 supportsOpus: true,
                 supportsCredits: false,
