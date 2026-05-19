@@ -385,8 +385,16 @@ final class UsageStore {
     }
 
     /// Providers that should actually participate in background refresh/status/token work.
+    ///
+    /// Mirrors the user's toggle (display set), NOT availability-filtered. Letting
+    /// availability gate background work caused a nasty bug after toggling a provider
+    /// OFF→ON: the cached availability could still be `false` for a few seconds, the
+    /// refresh loop would silently skip the provider, and `clearUnavailableProviderState`
+    /// would wipe its snapshot — surfacing as "Not fetched yet" with no recovery path.
+    /// The fetch itself is allowed to fail with a user-visible error, which is the right
+    /// signal for "you toggled this on but can't reach it".
     func enabledProvidersForBackgroundWork() -> [UsageProvider] {
-        self.enabledProviders()
+        self.enabledProvidersForDisplay()
     }
 
     var statusChecksEnabled: Bool {
@@ -530,9 +538,10 @@ final class UsageStore {
             }
 
             self.clearDisabledProviderState(enabledProviders: enabledProviderSet)
-            self.clearUnavailableProviderState(
-                displayEnabledProviders: enabledProviderSet,
-                availableProviders: availableRefreshProviders)
+            // `clearUnavailableProviderState` removed: clearing toggled-on providers
+            // just because availability cache says "no" wiped fresh snapshots
+            // immediately after toggling. The fetcher surfaces failures via
+            // `errors[provider]` if data really can't be retrieved.
             self.scheduleStorageFootprintRefresh(for: displayEnabledProviders)
 
             await withTaskGroup(of: Void.self) { group in
