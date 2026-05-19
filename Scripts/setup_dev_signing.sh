@@ -50,12 +50,18 @@ openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 \
     -config "$TEMP_CONFIG" 2>/dev/null
 
 # Convert to PKCS12 format
+# Use legacy cipher (PBE-SHA1-3DES + SHA1 mac) because macOS's `security` tool
+# can't import OpenSSL 3.x's default AES-256-CBC PBE format. Empty password
+# wouldn't work for the same reason, so we set a throwaway one.
 openssl pkcs12 -export -out /tmp/codexbar-dev.p12 \
     -inkey /tmp/codexbar-dev.key -in /tmp/codexbar-dev.crt \
-    -passout pass: 2>/dev/null
+    -name "$CERT_NAME" \
+    -passout pass:dev \
+    -keypbe PBE-SHA1-3DES -certpbe PBE-SHA1-3DES -macalg sha1 \
+    2>/dev/null
 
 # Import into keychain
-security import /tmp/codexbar-dev.p12 -k ~/Library/Keychains/login.keychain-db -T /usr/bin/codesign -T /usr/bin/security
+security import /tmp/codexbar-dev.p12 -k ~/Library/Keychains/login.keychain-db -P dev -T /usr/bin/codesign -T /usr/bin/security
 
 # Clean up temporary files
 rm -f /tmp/codexbar-dev.{key,crt,p12}

@@ -79,8 +79,22 @@ if [[ "$SKIP_TEST" != "1" ]]; then
   }
 fi
 
-echo "→ Packaging release build with ad-hoc signing"
-CODEXBAR_SIGNING=adhoc CONF=release ./Scripts/package_app.sh release
+# If the user has set up a stable self-signed dev cert
+# (via Scripts/setup_dev_signing.sh), prefer it over ad-hoc signing.
+# A stable signature keeps the same identity across rebuilds, so macOS
+# TCC consent + Keychain ACLs are remembered and don't re-prompt every
+# time. Falls back to ad-hoc when the cert isn't present (e.g. CI or a
+# fresh checkout). Recipients of the dist zip re-sign with ad-hoc via
+# install_for_team.sh anyway, so the dev cert is purely a local
+# convenience.
+DEV_CERT_NAME="${APP_IDENTITY:-CodexBar Development}"
+if security find-certificate -c "$DEV_CERT_NAME" >/dev/null 2>&1; then
+  echo "→ Packaging release build with stable dev cert ($DEV_CERT_NAME)"
+  APP_IDENTITY="$DEV_CERT_NAME" CONF=release ./Scripts/package_app.sh release
+else
+  echo "→ Packaging release build with ad-hoc signing (no dev cert found; run Scripts/setup_dev_signing.sh to suppress per-build prompts)"
+  CODEXBAR_SIGNING=adhoc CONF=release ./Scripts/package_app.sh release
+fi
 
 APP="$ROOT/ClCoBar.app"
 if [[ ! -d "$APP" ]]; then
