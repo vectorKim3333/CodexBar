@@ -24,7 +24,7 @@ enum KeychainPromptCoordinator {
     private static func presentBrowserCookiePrompt(_ context: BrowserCookieKeychainPromptContext) {
         let title = "Keychain Access Required"
         let message = [
-            "CodexBar will ask macOS Keychain for “\(context.label)” so it can decrypt browser cookies",
+            "ClCoBar will ask macOS Keychain for “\(context.label)” so it can decrypt browser cookies",
             "and authenticate your account. Click OK to continue.",
         ].joined(separator: " ")
         self.log.info("Browser cookie keychain prompt requested", metadata: ["label": context.label])
@@ -36,17 +36,17 @@ enum KeychainPromptCoordinator {
         switch context.kind {
         case .claudeOAuth:
             return (title, [
-                "CodexBar will ask macOS Keychain for the Claude Code OAuth token",
+                "ClCoBar will ask macOS Keychain for the Claude Code OAuth token",
                 "so it can fetch your Claude usage. Click OK to continue.",
             ].joined(separator: " "))
         case .codexCookie:
             return (title, [
-                "CodexBar will ask macOS Keychain for your OpenAI cookie header",
+                "ClCoBar will ask macOS Keychain for your OpenAI cookie header",
                 "so it can fetch Codex dashboard extras. Click OK to continue.",
             ].joined(separator: " "))
         case .claudeCookie:
             return (title, [
-                "CodexBar will ask macOS Keychain for your Claude cookie header",
+                "ClCoBar will ask macOS Keychain for your Claude cookie header",
                 "so it can fetch Claude web usage. Click OK to continue.",
             ].joined(separator: " "))
         }

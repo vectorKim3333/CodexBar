@@ -29,7 +29,7 @@
 "Automatic imports browser cookies for the web API." = "Automatic imports browser cookies for the web API.";
 "Automatic imports browser cookies." = "Automatic imports browser cookies.";
 "Automatically imports browser session cookie." = "Automatically imports browser session cookie.";
-"Automatically opens CodexBar when you start your Mac." = "Automatically opens CodexBar when you start your Mac.";
+"Automatically opens CodexBar when you start your Mac." Automatically opens ClCoBar when you start your Mac.";
 "Automation" = "Automation";
 "Average (\\(label1) + \\(label2))" = "Average (\\(label1) + \\(label2))";
 "Average (\\(metadata.sessionLabel) + \\(metadata.weeklyLabel))" = "Average (\\(metadata.sessionLabel) + \\(metadata.weeklyLabel))";
@@ -54,7 +54,7 @@
 "Choose up to \\(Self.maxOverviewProviders) providers" = "Choose up to \\(Self.maxOverviewProviders) providers";
 "Choose up to \\(count) providers" = "Choose up to \\(count) providers";
 "Choose what to show in the menu bar (Pace shows usage vs. expected)." = "Choose what to show in the menu bar (Pace shows usage vs. expected).";
-"Choose which Codex account CodexBar should follow." = "Choose which Codex account CodexBar should follow.";
+"Choose which Codex account CodexBar should follow." Choose which Codex account ClCoBar should follow.";
 "Choose which window drives the menu bar percent." = "Choose which window drives the menu bar percent.";
 "Chrome" = "Chrome";
 "Claude CLI not found" = "Claude CLI not found";
@@ -69,9 +69,9 @@
 "Codex binary" = "Codex binary";
 "Codex login failed" = "Codex login failed";
 "Codex login timed out" = "Codex login timed out";
-"CodexBar Lifecycle Keepalive" = "CodexBar Lifecycle Keepalive";
-"CodexBar can't show its menu bar icon" = "CodexBar can't show its menu bar icon";
-"CodexBar could not read managed account storage. " = "CodexBar could not read managed account storage. ";
+"CodexBar Lifecycle Keepalive" ClCoBar Lifecycle Keepalive";
+"CodexBar can't show its menu bar icon" ClCoBar can't show its menu bar icon";
+"CodexBar could not read managed account storage. " ClCoBar could not read managed account storage. ";
 "Configure…" = "Configure…";
 "Connected" = "Connected";
 "Controls how much detail is logged." = "Controls how much detail is logged.";
@@ -122,7 +122,7 @@
 "Hide details" = "Hide details";
 "Hide personal information" = "Hide personal information";
 "Historical tracking" = "Historical tracking";
-"How often CodexBar polls providers in the background." = "How often CodexBar polls providers in the background.";
+"How often CodexBar polls providers in the background." How often ClCoBar polls providers in the background.";
 "Inactive" = "Inactive";
 "Install CLI" = "Install CLI";
 "Install the Claude CLI (npm i -g @anthropic-ai/claude-code) and try again." = "Install the Claude CLI (npm i -g @anthropic-ai/claude-code) and try again.";
@@ -216,7 +216,7 @@
 "Progress bars fill as you consume quota (instead of showing remaining)." = "Progress bars fill as you consume quota (instead of showing remaining).";
 "Provider" = "Provider";
 "Providers" = "Providers";
-"Quit CodexBar" = "Quit CodexBar";
+"Quit CodexBar" Quit ClCoBar";
 "Random (default)" = "Random (default)";
 "Reads local usage logs. Shows today + last 30 days cost in the menu." = "Reads local usage logs. Shows today + last 30 days cost in the menu.";
 "Refresh" = "Refresh";
@@ -224,8 +224,8 @@
 "Remote" = "Remote";
 "Remove" = "Remove";
 "Remove Codex account?" = "Remove Codex account?";
-"Remove \\(account.email) from CodexBar? Its managed Codex home will be deleted." = "Remove \\(account.email) from CodexBar? Its managed Codex home will be deleted.";
-"Remove \\(email) from CodexBar? Its managed Codex home will be deleted." = "Remove \\(email) from CodexBar? Its managed Codex home will be deleted.";
+"Remove \\(account.email) from CodexBar? Its managed Codex home will be deleted." Remove \\(account.email) from ClCoBar? Its managed Codex home will be deleted.";
+"Remove \\(email) from CodexBar? Its managed Codex home will be deleted." Remove \\(email) from ClCoBar? Its managed Codex home will be deleted.";
 "Remove selected account" = "Remove selected account";
 "Replace critter bars with provider branding icons and a percentage." = "Replace critter bars with provider branding icons and a percentage.";
 "Replay selected animation" = "Replay selected animation";
@@ -257,7 +257,7 @@
 "Start at Login" = "Start at Login";
 "Status" = "Status";
 "Store Claude sessionKey cookies or OAuth access tokens." = "Store Claude sessionKey cookies or OAuth access tokens.";
-"Stored in the CodexBar config file." = "Stored in the CodexBar config file.";
+"Stored in the CodexBar config file." Stored in the ClCoBar config file.";
 "Stored in ~/.codexbar/config.json. " = "Stored in ~/.codexbar/config.json. ";
 "Stores local Codex usage history (8 weeks) to personalize Pace predictions." = "Stores local Codex usage history (8 weeks) to personalize Pace predictions.";
 "Subscription Utilization" = "Subscription Utilization";
@@ -324,13 +324,13 @@
 "metric_primary" = "Primary (%@)";
 "metric_secondary" = "Secondary (%@)";
 "metric_tertiary" = "Tertiary (%@)";
-"multiple_workspaces_found" = "CodexBar found multiple workspaces for %@. Please choose the workspace to add.";
+"multiple_workspaces_found" ClCoBar found multiple workspaces for %@. Please choose the workspace to add.";
 "off_peak" = "Off-peak";
 "off_peak_peak_in" = "Off-peak · peak in %@";
 "ory_session_…=…; csrftoken=…" = "ory_session_…=…; csrftoken=…";
 "overview_choose_providers" = "Choose up to %@ providers";
 "peak_ends_in" = "Peak ends in %@";
-"remove_account_message" = "Remove %@ from CodexBar? Its managed Codex home will be deleted.";
+"remove_account_message" Remove %@ from ClCoBar? Its managed Codex home will be deleted.";
 "version_format" = "Version %@";
 "© 2026 Peter Steinberger. MIT License." = "© 2026 Peter Steinberger. MIT License.";
 
@@ -345,17 +345,17 @@
 "language_chinese_simplified" = "简体中文";
 "language_portuguese_brazilian" = "Português (Brasil)";
 "start_at_login_title" = "Start at Login";
-"start_at_login_subtitle" = "Automatically opens CodexBar when you start your Mac.";
+"start_at_login_subtitle" Automatically opens ClCoBar when you start your Mac.";
 "show_cost_summary" = "Show cost summary";
 "show_cost_summary_subtitle" = "Reads local usage logs. Shows today + last 30 days cost in the menu.";
 "cost_auto_refresh_info" = "Auto-refresh: hourly · Timeout: 10m";
 "refresh_cadence_title" = "Refresh cadence";
-"refresh_cadence_subtitle" = "How often CodexBar polls providers in the background.";
+"refresh_cadence_subtitle" How often ClCoBar polls providers in the background.";
 "manual_refresh_hint" = "Auto-refresh is off; use the menu's Refresh command.";
 "session_quota_notifications_title" = "Session quota notifications";
 "session_quota_notifications_subtitle" = "Notifies when the 5-hour session quota hits 0% and when it becomes available again.";
 "apply" = "Apply";
-"quit_app" = "Quit CodexBar";
+"quit_app" Quit ClCoBar";
 
 /* Tab titles */
 "tab_general" = "General";
@@ -375,8 +375,8 @@
 "managed_login_already_running" = "A managed Codex login is already running. Wait for it to finish before adding or re-authenticating another account.";
 "managed_login_failed" = "Managed Codex login did not complete. Verify that `codex --version` works in Terminal. If macOS blocked or moved `codex` to Trash, remove stale duplicate installs, run `npm install -g --include=optional @openai/codex@latest`, then try again.";
 "managed_login_missing_email" = "Codex login completed, but no account email was available. Try again after confirming the account is fully signed in.";
-"workspace_selection_cancelled" = "CodexBar found multiple workspaces, but no workspace was selected.";
-"unsafe_managed_home" = "CodexBar refused to modify an unexpected managed home path: %@";
+"workspace_selection_cancelled" ClCoBar found multiple workspaces, but no workspace was selected.";
+"unsafe_managed_home" ClCoBar refused to modify an unexpected managed home path: %@";
 "menu_bar_metric_title" = "Menu bar metric";
 "menu_bar_metric_subtitle" = "Choose which window drives the menu bar percent.";
 "automatic" = "Automatic";
@@ -433,7 +433,7 @@
 "updates_unavailable" = "Updates unavailable in this build.";
 "copyright" = "© 2026 Peter Steinberger. MIT License.";
 
-"macOS Tahoe can block menu bar apps in System Settings → Menu Bar → Allow in the Menu Bar. CodexBar is running, but macOS may be hiding its icon. Open Menu Bar settings and turn CodexBar on." = "macOS Tahoe can block menu bar apps in System Settings → Menu Bar → Allow in the Menu Bar. CodexBar is running, but macOS may be hiding its icon. Open Menu Bar settings and turn CodexBar on.";
+"macOS Tahoe can block menu bar apps in System Settings → Menu Bar → Allow in the Menu Bar. CodexBar is running, but macOS may be hiding its icon. Open Menu Bar settings and turn CodexBar on." macOS Tahoe can block menu bar apps in System Settings → Menu Bar → Allow in the Menu Bar. ClCoBar is running, but macOS may be hiding its icon. Open Menu Bar settings and turn ClCoBar on.";
 
 /* Metric preferences */
 "metric_pref_automatic" = "Automatic";
@@ -487,7 +487,7 @@
 /* Claude provider settings */
 "claude_cookie_manual_subtitle" = "Paste a Cookie header from a claude.ai request.";
 "claude_cookie_off_subtitle" = "Claude cookies are disabled.";
-"keychain_prompt_avoid_subtitle" = "Use /usr/bin/security to read Claude credentials and avoid CodexBar keychain prompts.";
+"keychain_prompt_avoid_subtitle" Use /usr/bin/security to read Claude credentials and avoid ClCoBar keychain prompts.";
 "keychain_prompt_avoid_inactive" = "Inactive while \"Disable Keychain access\" is enabled in Advanced.";
 "keychain_prompt_policy_disabled" = "Global Keychain access is disabled in Advanced, so this setting is currently inactive.";
 "keychain_prompt_policy_subtitle" = "Controls Claude OAuth Keychain prompts when the standard reader is active. Choosing \"Never prompt\" can make OAuth unavailable; use Web/CLI when needed.";
