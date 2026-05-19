@@ -101,39 +101,9 @@ struct ProviderDetailView<SupplementaryContent: View>: View {
                         onCopy: { self.onCopyError(errorDisplay.full) })
                 }
 
-                if self.hasSettings {
-                    ProviderSettingsSection(title: L("Settings")) {
-                        ForEach(self.settingsPickers) { picker in
-                            ProviderSettingsPickerRowView(picker: picker)
-                        }
-                        if let tokenAccounts = self.settingsTokenAccounts,
-                           tokenAccounts.isVisible?() ?? true
-                        {
-                            ProviderSettingsTokenAccountsRowView(descriptor: tokenAccounts)
-                        }
-                        ForEach(self.settingsFields) { field in
-                            ProviderSettingsFieldRowView(field: field)
-                        }
-                        ForEach(self.settingsActions) { descriptor in
-                            ProviderSettingsActionsRowView(descriptor: descriptor)
-                        }
-                        if let organizations = self.settingsOrganizations {
-                            ProviderSettingsOrganizationsRowView(descriptor: organizations)
-                        }
-                    }
-                }
-
-                if self.showsSupplementarySettingsContent {
-                    self.supplementarySettingsContent
-                }
-
-                if !self.settingsToggles.isEmpty {
-                    ProviderSettingsSection(title: L("Options")) {
-                        ForEach(self.settingsToggles) { toggle in
-                            ProviderSettingsToggleRowView(toggle: toggle)
-                        }
-                    }
-                }
+                // 설정(Settings) / 옵션(Options) / 보조 설정 패널은 모두 숨김.
+                // 모든 picker/토글/필드는 디폴트(Auto/OFF)로 동작.
+                // descriptor 매개변수는 호출처에서 여전히 생성되지만 여기서는 렌더링하지 않음.
             }
             .frame(maxWidth: ProviderSettingsMetrics.detailMaxWidth, alignment: .leading)
             .padding(.vertical, 12)

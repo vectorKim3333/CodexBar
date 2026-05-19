@@ -855,9 +855,6 @@ extension StatusItemController {
             iconProvider: { [weak self] provider in
                 self?.switcherIcon(for: provider) ?? NSImage()
             },
-            weeklyRemainingProvider: { [weak self] provider in
-                self?.switcherWeeklyRemaining(for: provider)
-            },
             onSelect: { [weak self, weak menu] selection in
                 guard let self, let menu else { return }
                 let provider: UsageProvider?
