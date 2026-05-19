@@ -1,6 +1,6 @@
-# CodexBar 팀 배포 / 설치 가이드 (한글)
+# ClCoBar 팀 배포 / 설치 가이드 (한글)
 
-이 문서는 **팀원에게 CodexBar 슬림 빌드를 배포하고 설치하는 방법** 을 안내합니다.
+이 문서는 **팀원에게 ClCoBar 슬림 빌드를 배포하고 설치하는 방법** 을 안내합니다.
 
 - macOS 14 (Sonoma) 이상이면 누구나 설치 가능
 - Xcode 나 개발 도구 설치 필요 없음 (받아서 드래그하면 끝)
@@ -68,11 +68,11 @@ BUILD_NUMBER=66
 
 2. **응용 프로그램 폴더로 드래그** — `CodexBar.app` 을 `Applications` 폴더로 끌어다 놓기
 
-3. **첫 실행** — 응용 프로그램에서 CodexBar 우클릭 → "**열기**" → 보안 경고 창이 뜨면 "**열기**" 한 번 더 클릭
+3. **첫 실행** — 응용 프로그램에서 ClCoBar 우클릭 → "**열기**" → 보안 경고 창이 뜨면 "**열기**" 한 번 더 클릭
    - ⚠️ 그냥 더블클릭하면 "확인되지 않은 개발자" 라며 차단됩니다. **반드시 첫 실행은 우클릭 → 열기**.
    - 한 번만 이렇게 열면 그 다음부터는 일반적으로 더블클릭으로 실행됩니다.
 
-성공하면 메뉴바 우측 상단에 **CodexBar 아이콘** 이 나타납니다.
+성공하면 메뉴바 우측 상단에 **ClCoBar 아이콘** 이 나타납니다.
 
 ### 방법 B — 터미널 한 번에 (편한 사람용)
 
@@ -115,7 +115,7 @@ chmod +x ~/Downloads/install_for_team.sh
 
 ### 3-1. Claude 로그인
 
-1. 메뉴바 CodexBar 아이콘 클릭 → "**Preferences…**" 또는 ⌘,
+1. 메뉴바 ClCoBar 아이콘 클릭 → "**Preferences…**" 또는 ⌘,
 2. 왼쪽 사이드바에서 **Providers → Claude** 선택
 3. 인증 방법 선택 (편한 거 하나):
    - **OAuth** *(권장)* — "Sign in with OAuth" 버튼 클릭 → 브라우저에서 Claude 로그인
@@ -127,7 +127,7 @@ chmod +x ~/Downloads/install_for_team.sh
 
 1. Preferences → Providers → **Codex**
 2. 가장 쉬운 방법: 터미널에서 `codex` 한 번 실행해서 로그인 → `~/.codex/auth.json` 생성
-3. CodexBar 가 자동으로 인식 — 메뉴 새로고침 (메뉴 바닥의 "Refresh all")
+3. ClCoBar 가 자동으로 인식 — 메뉴 새로고침 (메뉴 바닥의 "Refresh all")
 4. 카드에 사용량이 나오면 성공
 
 ### 3-3. 자동 시작 (선택)
@@ -161,7 +161,7 @@ xattr -dr com.apple.quarantine /Applications/CodexBar.app
 A. 빌드 담당에게 `ARCHES="arm64 x86_64"` 옵션으로 universal 빌드 요청. 또는 본인 머신에서 직접 빌드 (`Xcode 16+` 설치 필요):
 
 ```bash
-git clone <repo-url> CodexBar && cd CodexBar
+git clone <repo-url> ClCoBar && cd ClCoBar
 ./Scripts/build_for_distribution.sh
 ```
 
@@ -196,7 +196,7 @@ A. 이 슬림 포크는 자동 업데이트(Sparkle) 가 비활성화되어 있�
 pkill -x CodexBar 2>/dev/null || true
 rm -rf /Applications/CodexBar.app
 # (선택) 설정 / 캐시도 함께 삭제
-rm -rf ~/Library/Application\ Support/CodexBar
+rm -rf ~/Library/Application\ Support/ClCoBar
 rm -rf ~/Library/Caches/CodexBar
 rm -rf ~/.codexbar
 ```

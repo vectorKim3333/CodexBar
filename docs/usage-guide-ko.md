@@ -1,4 +1,4 @@
-# CodexBar 사용 가이드 (Claude + Codex slim fork)
+# ClCoBar 사용 가이드 (Claude + Codex slim fork)
 
 > 이 문서는 슬림화된 개인 포크를 위한 빠른 사용 안내입니다. 원본의 다중 provider 안내는 모두 제거되었습니다.
 
@@ -25,7 +25,7 @@ cd /Users/madup/Developer/CodexBar
 3. `Scripts/package_app.sh` 로 `.app` 번들 생성
 4. `CodexBar.app` 재실행 + 정상 기동 확인
 
-성공하면 메뉴바 우측 상단에 **CodexBar 아이콘**이 보입니다.
+성공하면 메뉴바 우측 상단에 **ClCoBar 아이콘**이 보입니다.
 
 ### 디버그 빌드만 빠르게
 
@@ -152,15 +152,15 @@ Preferences → General → "Open menu shortcut" 에서 단축키 지정. (`Keyb
 
 ### Claude 가 OAuth 실패할 때
 
-1. Claude CLI 가 설치되어 있다면: 터미널에서 `claude` → 로그인 → 다시 CodexBar 새로고침
+1. Claude CLI 가 설치되어 있다면: 터미널에서 `claude` → 로그인 → 다시 ClCoBar 새로고침
 2. 또는 Preferences → Claude → Cookie source: Automatic 으로 fallback 활성화 + claude.ai 브라우저 로그인
 3. 최후 수단: Admin API key 발급해서 등록 (조직 단위 사용량만 보임)
 
 ### Codex 가 OAuth 인식 못 할 때
 
 - `~/.codex/auth.json` 파일 존재 여부 확인 (`ls ~/.codex/`)
-- 없으면 터미널에서 `codex` 한 번 실행 → 로그인 완료 후 CodexBar 새로고침
-- `auth.json` 의 `last_refresh` 가 8일 이상 지났으면 CodexBar 가 자동 갱신 시도
+- 없으면 터미널에서 `codex` 한 번 실행 → 로그인 완료 후 ClCoBar 새로고침
+- `auth.json` 의 `last_refresh` 가 8일 이상 지났으면 ClCoBar 가 자동 갱신 시도
 
 ---
 
@@ -196,7 +196,7 @@ Preferences → Providers → Claude → Keychain prompt policy 를 `Only on use
 
 1. 메뉴 바닥 "Refresh all" 한 번 클릭
 2. 인증 상태 확인 — 카드에 "Login required" 또는 비슷한 배지 떠 있으면 해당 provider 의 인증 경로 재설정 필요
-3. macOS 네트워크 권한 확인 — 시스템 설정 → 개인정보 보호 → 네트워크에서 CodexBar 가 차단되어 있는지
+3. macOS 네트워크 권한 확인 — 시스템 설정 → 개인정보 보호 → 네트워크에서 ClCoBar 가 차단되어 있는지
 
 ### 비용/시간 계산이 이상함
 
@@ -244,13 +244,13 @@ grep -rn "MenuCardView\|UsageMenuCardView" Sources/
 
 - 디버그: `.build/debug/CodexBar.app` (스크립트가 패키징)
 - 릴리스: `.build/release/CodexBar.app`
-- 메인 실행파일: `Sources/CodexBar/` 타겟 → `.build/<config>/CodexBar`
+- 메인 실행파일: `Sources/CodexBar/` 타겟 → `.build/<config>/ClCoBar`
 
 ---
 
 ## 9. 슬림화로 변경된 부분 요약
 
-원본 `steipete/CodexBar` 대비:
+원본 `steipete/ClCoBar` 대비:
 
 | 항목 | 상태 |
 |---|---|

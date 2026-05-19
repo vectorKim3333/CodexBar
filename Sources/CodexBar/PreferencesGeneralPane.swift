@@ -2,26 +2,6 @@ import AppKit
 import CodexBarCore
 import SwiftUI
 
-enum AppLanguage: String, CaseIterable, Identifiable {
-    case system = ""
-    case english = "en"
-    case chineseSimplified = "zh-Hans"
-    case portugueseBrazilian = "pt-BR"
-
-    var id: String {
-        self.rawValue
-    }
-
-    var label: String {
-        switch self {
-        case .system: L("language_system")
-        case .english: L("language_english")
-        case .chineseSimplified: L("language_chinese_simplified")
-        case .portugueseBrazilian: L("language_portuguese_brazilian")
-        }
-    }
-}
-
 @MainActor
 struct GeneralPane: View {
     @Bindable var settings: SettingsStore
@@ -35,28 +15,6 @@ struct GeneralPane: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .textCase(.uppercase)
-
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack(alignment: .top, spacing: 12) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(L("language_title"))
-                                    .font(.body)
-                                Text(L("language_subtitle"))
-                                    .font(.footnote)
-                                    .foregroundStyle(.tertiary)
-                                    .fixedSize(horizontal: false, vertical: true)
-                            }
-                            Spacer()
-                            Picker(L("language_title"), selection: self.$settings.appLanguage) {
-                                ForEach(AppLanguage.allCases) { option in
-                                    Text(option.label).tag(option.rawValue)
-                                }
-                            }
-                            .labelsHidden()
-                            .pickerStyle(.menu)
-                            .frame(maxWidth: 200)
-                        }
-                    }
 
                     PreferenceToggleRow(
                         title: L("start_at_login_title"),

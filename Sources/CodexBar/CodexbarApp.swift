@@ -105,12 +105,10 @@ struct CodexBarApp: App {
     }
 
     private static func applyLanguagePreference(from settings: SettingsStore) {
-        let language = settings.appLanguage
-        if language.isEmpty {
-            UserDefaults.standard.removeObject(forKey: "AppleLanguages")
-        } else {
-            UserDefaults.standard.set([language], forKey: "AppleLanguages")
-        }
+        // ClCoBar is Korean-only. Force the AppleLanguages preference so any
+        // system-localized APIs (formatters, etc.) also speak Korean.
+        _ = settings
+        UserDefaults.standard.set(["ko"], forKey: "AppleLanguages")
     }
 }
 
