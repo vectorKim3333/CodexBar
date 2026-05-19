@@ -360,7 +360,9 @@ extension StatusItemController {
             // because `IconRemainingResolver.resolvedPercents` applied the
             // flag. Just convert 0–100 to a 0–1 fraction.
             let fillFraction: Double? = primary.map { max(0, min(1, $0 / 100)) }
-            let resetText = IconRenderer.shortResetText(snapshot?.primary?.resetsAt)
+            let resetText = IconRenderer.shortResetText(
+                snapshot?.primary?.resetsAt,
+                format: self.settings.menuBarTimeFormat)
             let image = IconRenderer.makeBatteryPillIcon(
                 remaining: fillFraction,
                 resetText: resetText,
@@ -521,7 +523,9 @@ extension StatusItemController {
             //   showUsed = true  → fillFraction tracks quota used
             //                       (pill fills up as you use)
             let fillFraction: Double? = primary.map { max(0, min(1, $0 / 100)) }
-            let resetText = IconRenderer.shortResetText(primaryWindow?.resetsAt)
+            let resetText = IconRenderer.shortResetText(
+                primaryWindow?.resetsAt,
+                format: self.settings.menuBarTimeFormat)
             let brandImage = ProviderBrandIcon.image(for: provider)
             let image = IconRenderer.makeBatteryPillIcon(
                 remaining: fillFraction,

@@ -266,6 +266,8 @@ extension SettingsStore {
             forKey: "menuBarShowsBrandIconWithPercent") as? Bool ?? false
         let menuBarDisplayModeRaw = userDefaults.string(forKey: "menuBarDisplayMode")
             ?? MenuBarDisplayMode.percent.rawValue
+        let menuBarTimeFormatRaw = userDefaults.string(forKey: "menuBarTimeFormat")
+            ?? MenuBarTimeFormat.approximate.rawValue
         let historicalTrackingEnabled = userDefaults.object(forKey: "historicalTrackingEnabled") as? Bool ?? false
         let multiAccountMenuLayoutRaw = userDefaults.string(forKey: "multiAccountMenuLayout") ?? {
             let legacyShowAll = userDefaults.object(forKey: "showAllTokenAccountsInMenu") as? Bool ?? false
@@ -337,6 +339,7 @@ extension SettingsStore {
             providerChangelogLinksEnabled: providerChangelogLinksEnabled,
             menuBarShowsBrandIconWithPercent: menuBarShowsBrandIconWithPercent,
             menuBarDisplayModeRaw: menuBarDisplayModeRaw,
+            menuBarTimeFormatRaw: menuBarTimeFormatRaw,
             historicalTrackingEnabled: historicalTrackingEnabled,
             multiAccountMenuLayoutRaw: multiAccountMenuLayoutRaw,
             menuBarMetricPreferencesRaw: resolvedPreferences,

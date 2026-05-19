@@ -24,6 +24,9 @@ struct SettingsDefaultsState {
     var providerChangelogLinksEnabled: Bool
     var menuBarShowsBrandIconWithPercent: Bool
     var menuBarDisplayModeRaw: String?
+    /// Display style for the menu-bar pill countdown (`~2h` / `1h 45m` / `1h+`).
+    var menuBarTimeFormatRaw: String
+
     var historicalTrackingEnabled: Bool
     var multiAccountMenuLayoutRaw: String
     var menuBarMetricPreferencesRaw: [String: String]

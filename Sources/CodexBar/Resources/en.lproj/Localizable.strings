@@ -470,3 +470,10 @@
 /* Cost estimation */
 "cost_header_estimated" = "Cost (estimated)";
 "cost_estimate_hint" = "Estimated from local logs · may differ from your bill";
+
+/* Menu bar time format picker */
+"time_format_title" = "Time display";
+"time_format_subtitle" = "How the countdown to the next reset is rendered";
+"time_format_approximate" = "Approximate (~2h)";
+"time_format_precise" = "Precise (1h 45m)";
+"time_format_floor" = "Floor (1h+)";

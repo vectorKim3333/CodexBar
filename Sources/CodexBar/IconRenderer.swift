@@ -701,17 +701,89 @@ extension CGFloat {
 
 extension IconRenderer {
     /// Format a `resetsAt` date into a compact countdown string for the menu bar.
-    /// - Examples: `"5h"`, `"2d"`, `"42m"`, `"<1m"`, or `nil` if the input is `nil` / already past.
-    static func shortResetText(_ resetsAt: Date?, now: Date = Date()) -> String? {
+    ///
+    /// - Parameters:
+    ///   - resetsAt: Target date. `nil` or past → returns `nil`.
+    ///   - format: User-selected display style. Default `.approximate`.
+    /// - Returns: `"~2h"` / `"1h 45m"` / `"1h+"` / `"<1m"` etc. depending on format + interval.
+    static func shortResetText(
+        _ resetsAt: Date?,
+        format: MenuBarTimeFormat = .approximate,
+        now: Date = Date()) -> String?
+    {
         guard let resetsAt, resetsAt > now else { return nil }
         let totalSeconds = Int(resetsAt.timeIntervalSince(now))
+        if totalSeconds < 60 { return "<1m" }
         let totalMinutes = totalSeconds / 60
         let totalHours = totalMinutes / 60
         let totalDays = totalHours / 24
-        if totalDays >= 1 { return "\(totalDays)d" }
-        if totalHours >= 1 { return "\(totalHours)h" }
-        if totalMinutes >= 1 { return "\(totalMinutes)m" }
-        return "<1m"
+
+        switch format {
+        case .approximate:
+            return Self.approximateText(
+                totalSeconds: totalSeconds,
+                totalMinutes: totalMinutes,
+                totalHours: totalHours,
+                totalDays: totalDays)
+        case .precise:
+            return Self.preciseText(
+                totalMinutes: totalMinutes,
+                totalHours: totalHours,
+                totalDays: totalDays)
+        case .floor:
+            return Self.floorText(
+                totalMinutes: totalMinutes,
+                totalHours: totalHours,
+                totalDays: totalDays)
+        }
+    }
+
+    /// `~` prefix + ceiling. 5-minute granularity below an hour; promotes to `~1h`
+    /// once 5-minute ceiling would land at 60m.
+    private static func approximateText(
+        totalSeconds: Int,
+        totalMinutes: Int,
+        totalHours: Int,
+        totalDays: Int) -> String
+    {
+        // Days: ceiling on partial-day remainder.
+        if totalHours >= 24 {
+            let remainderHours = totalHours - totalDays * 24
+            let days = totalDays + (remainderHours > 0 || totalSeconds % 3600 > 0 ? 1 : 0)
+            return "~\(days)d"
+        }
+        // Hours: ceiling on partial-hour remainder.
+        if totalMinutes >= 60 {
+            let remainderMinutes = totalMinutes - totalHours * 60
+            let hours = totalHours + (remainderMinutes > 0 || totalSeconds % 60 > 0 ? 1 : 0)
+            return "~\(hours)h"
+        }
+        // Under 1 hour: 5-minute ceiling, but promote to `~1h` if it would land at 60m.
+        let remainderSeconds = totalSeconds - totalMinutes * 60
+        let exactMinutes = totalMinutes + (remainderSeconds > 0 ? 1 : 0)
+        let ceiled = ((exactMinutes + 4) / 5) * 5
+        if ceiled >= 60 { return "~1h" }
+        return "~\(ceiled)m"
+    }
+
+    /// Exact hours+minutes (or days+hours). No rounding hint.
+    private static func preciseText(totalMinutes: Int, totalHours: Int, totalDays: Int) -> String {
+        if totalHours >= 24 {
+            let remainderHours = totalHours - totalDays * 24
+            return remainderHours == 0 ? "\(totalDays)d" : "\(totalDays)d \(remainderHours)h"
+        }
+        if totalMinutes >= 60 {
+            let remainderMinutes = totalMinutes - totalHours * 60
+            return remainderMinutes == 0 ? "\(totalHours)h" : "\(totalHours)h \(remainderMinutes)m"
+        }
+        return "\(totalMinutes)m"
+    }
+
+    /// Floor with `+` suffix at hour/day boundaries. Minutes have no suffix.
+    private static func floorText(totalMinutes: Int, totalHours: Int, totalDays: Int) -> String {
+        if totalHours >= 24 { return "\(totalDays)d+" }
+        if totalMinutes >= 60 { return "\(totalHours)h+" }
+        return "\(totalMinutes)m"
     }
 
     /// Battery-style pill icon: rounded rectangle "shell" with proportional fill, optional reset countdown text alongside.

@@ -18,6 +18,24 @@ struct DisplayPane: View {
                         title: L("menu_bar_shows_percent_title"),
                         subtitle: L("menu_bar_shows_percent_subtitle"),
                         binding: self.$settings.menuBarShowsBrandIconWithPercent)
+                    HStack(alignment: .top, spacing: 12) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(L("time_format_title"))
+                                .font(.body)
+                            Text(L("time_format_subtitle"))
+                                .font(.footnote)
+                                .foregroundStyle(.tertiary)
+                        }
+                        Spacer()
+                        Picker(L("time_format_title"), selection: self.$settings.menuBarTimeFormat) {
+                            ForEach(MenuBarTimeFormat.allCases) { option in
+                                Text(option.label).tag(option)
+                            }
+                        }
+                        .labelsHidden()
+                        .pickerStyle(.menu)
+                        .frame(maxWidth: 200)
+                    }
                 }
 
                 Divider()

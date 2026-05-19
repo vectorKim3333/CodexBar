@@ -13,6 +13,7 @@ extension SettingsStore {
         _ = self.menuBarShowsBrandIconWithPercent
         _ = self.menuBarShowsHighestUsage
         _ = self.menuBarDisplayMode
+        _ = self.menuBarTimeFormat
         _ = self.historicalTrackingEnabled
         _ = self.menuBarMetricPreferencesRaw
         _ = self.costUsageEnabled

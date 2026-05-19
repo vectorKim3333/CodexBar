@@ -180,6 +180,20 @@ extension SettingsStore {
         set { self.menuBarDisplayModeRaw = newValue.rawValue }
     }
 
+    /// Display style for the menu-bar pill countdown.
+    /// Uses copy-modify-reassign for `@Observable` propagation (see usageBarsShowUsed).
+    var menuBarTimeFormat: MenuBarTimeFormat {
+        get {
+            MenuBarTimeFormat(rawValue: self.defaultsState.menuBarTimeFormatRaw) ?? .approximate
+        }
+        set {
+            var state = self.defaultsState
+            state.menuBarTimeFormatRaw = newValue.rawValue
+            self.defaultsState = state
+            self.userDefaults.set(newValue.rawValue, forKey: "menuBarTimeFormat")
+        }
+    }
+
     var multiAccountMenuLayout: MultiAccountMenuLayout {
         get { .segmented }
         set { /* dead feature — always segmented */ }

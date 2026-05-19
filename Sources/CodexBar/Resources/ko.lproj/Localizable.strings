@@ -479,3 +479,10 @@
 "Settings..." = "환경설정...";
 "About CodexBar" = "ClCoBar 정보";
 "Quit" = "종료";
+
+/* Menu bar time format picker (ClCoBar) */
+"time_format_title" = "시간 표시";
+"time_format_subtitle" = "다음 리셋까지 남은 시간을 표시하는 방식";
+"time_format_approximate" = "근사치 (~2h)";
+"time_format_precise" = "정확 (1h 45m)";
+"time_format_floor" = "올림 (1h+)";
