@@ -173,10 +173,6 @@ public struct UsageSnapshot: Codable, Sendable {
         return identity
     }
 
-    public func switcherWeeklyWindow(for provider: UsageProvider, showUsed: Bool) -> RateWindow? {
-        self.primary ?? self.secondary
-    }
-
     public func accountEmail(for provider: UsageProvider) -> String? {
         self.identity(for: provider)?.accountEmail
     }

@@ -234,7 +234,6 @@ struct StatusMenuSwitcherClickTests {
             width: 300,
             showsIcons: true,
             iconProvider: { _ in NSImage(size: NSSize(width: 16, height: 16)) },
-            weeklyRemainingProvider: { _ in nil },
             onSelect: { _ in })
 
         let initialSize = view.intrinsicContentSize
@@ -246,32 +245,6 @@ struct StatusMenuSwitcherClickTests {
 
         #expect(view.intrinsicContentSize == initialSize)
         #expect(view._test_buttonFrames() == initialFrames)
-    }
-
-    @Test
-    func `switcher quota indicator preserves remaining percentage`() throws {
-        let view = ProviderSwitcherView(
-            providers: [.claude, .codex],
-            selected: .provider(.claude),
-            includesOverview: false,
-            width: 180,
-            showsIcons: true,
-            iconProvider: { _ in NSImage(size: NSSize(width: 16, height: 16)) },
-            weeklyRemainingProvider: { provider in
-                switch provider {
-                case .claude:
-                    5
-                case .codex:
-                    95
-                }
-            },
-            onSelect: { _ in })
-
-        let fillWidths = view._test_quotaIndicatorFillWidths()
-        #expect(fillWidths.count == 2)
-        let lowRemainingWidth = try #require(fillWidths.first)
-        let highRemainingWidth = try #require(fillWidths.last)
-        #expect(lowRemainingWidth < highRemainingWidth)
     }
 
     private static func arrowKeyEvent(keyCode: UInt16) throws -> NSEvent {

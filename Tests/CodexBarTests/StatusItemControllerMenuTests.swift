@@ -21,48 +21,6 @@ struct StatusItemControllerMenuTests {
     }
 
     @Test
-    func `switcher uses primary when showing used`() {
-        let primary = RateWindow(usedPercent: 100, windowMinutes: nil, resetsAt: nil, resetDescription: nil)
-        let secondary = RateWindow(usedPercent: 36, windowMinutes: nil, resetsAt: nil, resetDescription: nil)
-        let snapshot = self.makeSnapshot(primary: primary, secondary: secondary)
-
-        let percent = StatusItemController.switcherWeeklyMetricPercent(
-            for: .codex,
-            snapshot: snapshot,
-            showUsed: true)
-
-        #expect(percent == 100)
-    }
-
-    @Test
-    func `switcher keeps primary when remaining is positive`() {
-        let primary = RateWindow(usedPercent: 20, windowMinutes: nil, resetsAt: nil, resetDescription: nil)
-        let secondary = RateWindow(usedPercent: 40, windowMinutes: nil, resetsAt: nil, resetDescription: nil)
-        let snapshot = self.makeSnapshot(primary: primary, secondary: secondary)
-
-        let percent = StatusItemController.switcherWeeklyMetricPercent(
-            for: .codex,
-            snapshot: snapshot,
-            showUsed: false)
-
-        #expect(percent == 80)
-    }
-
-    @Test
-    func `switcher returns zero remaining when primary is exhausted and no secondary`() {
-        let primary = RateWindow(usedPercent: 100, windowMinutes: nil, resetsAt: nil, resetDescription: nil)
-        let secondary = RateWindow(usedPercent: 36, windowMinutes: nil, resetsAt: nil, resetDescription: nil)
-        let snapshot = self.makeSnapshot(primary: primary, secondary: secondary)
-
-        let percent = StatusItemController.switcherWeeklyMetricPercent(
-            for: .codex,
-            snapshot: snapshot,
-            showUsed: false)
-
-        #expect(percent == 0)
-    }
-
-    @Test
     @MainActor
     func `menu card width stays at base width when menu accessories are present`() {
         let shortcutMenu = NSMenu()
