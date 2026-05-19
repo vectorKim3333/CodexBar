@@ -598,39 +598,31 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
         #if DEBUG
         guard !self.isReleasedForTesting else { return }
         #endif
-        let anyEnabled = !self.store.enabledProvidersForDisplay().isEmpty
         let force = self.store.debugForceAnimation
-        let mergeIcons = self.shouldMergeIcons
-        if mergeIcons {
-            self.statusItem.isVisible = anyEnabled || force
-            for provider in Array(self.statusItems.keys) {
+        let enabledForDisplay = Set(self.store.enabledProvidersForDisplay())
+        // Menu-bar items strictly mirror the Provider toggles — no fallback,
+        // no availability filter. If both providers are unchecked, nothing
+        // shows. The legacy single-status-item path (`self.statusItem`) is
+        // unused (merge mode is removed) so we keep it permanently hidden.
+        self.statusItem.isVisible = false
+        for provider in self.settings.orderedProviders() {
+            let shouldBeVisible = enabledForDisplay.contains(provider) || force
+            if shouldBeVisible {
+                let item = self.lazyStatusItem(for: provider)
+                item.isVisible = true
+            } else {
                 self.removeProviderStatusItem(for: provider)
             }
-            self.attachMenus()
-        } else {
-            self.statusItem.isVisible = false
-            let fallback = self.fallbackProvider
-            for provider in self.settings.orderedProviders() {
-                let isEnabled = self.isEnabled(provider)
-                let shouldBeVisible = isEnabled || fallback == provider || force
-                if shouldBeVisible {
-                    let item = self.lazyStatusItem(for: provider)
-                    item.isVisible = true
-                } else {
-                    self.removeProviderStatusItem(for: provider)
-                }
-            }
-            self.attachMenus(fallback: fallback)
         }
+        self.attachMenus(fallback: nil)
         self.updateAnimationState()
         self.updateBlinkingState()
     }
 
-    var fallbackProvider: UsageProvider? {
-        // Intentionally uses availability-filtered list: fallback activates when no provider
-        // can actually work, ensuring at least a codex icon is always visible.
-        self.store.enabledProviders().isEmpty ? .codex : nil
-    }
+    /// Returned `nil` permanently — fallback codex display was confusing
+    /// users who turned everything off. Kept as a property because a few
+    /// call sites still reference it; remove later if/when those go.
+    var fallbackProvider: UsageProvider? { nil }
 
     func isEnabled(_ provider: UsageProvider) -> Bool {
         self.store.isEnabled(provider)
@@ -659,17 +651,15 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
     }
 
     private func attachMenus(fallback: UsageProvider? = nil) {
-        // Non-merged mode: every status item still shows the same unified menu
-        // (Claude card + Codex card + Overview switcher), but the menu opens
-        // *pre-focused* on the provider whose pill was clicked. We use
-        // `makeMenu(for: provider)` instead of `makeMenu()` so the resulting
-        // NSMenu is registered in `menuProviders[menu] = provider`. The
-        // `menuWillOpen` handler reads that registration and snaps the
-        // switcher selection to that provider before populating.
+        _ = fallback // kept for ABI; fallback display is removed.
+        // Each enabled provider's status item gets its own NSMenu instance
+        // registered in `menuProviders[menu] = provider` so `menuWillOpen`
+        // snaps the unified-menu switcher to the clicked pill's provider.
+        // Source of truth is the toggle (enabledProvidersForDisplay), NOT the
+        // availability-filtered isEnabled — what's checked is what shows.
+        let enabledForDisplay = Set(self.store.enabledProvidersForDisplay())
         for provider in UsageProvider.allCases {
-            let shouldHaveItem = self.isEnabled(provider) || fallback == provider
-
-            if shouldHaveItem {
+            if enabledForDisplay.contains(provider) {
                 let item = self.lazyStatusItem(for: provider)
                 if self.providerMenus[provider] == nil {
                     self.providerMenus[provider] = self.makeMenu(for: provider)
