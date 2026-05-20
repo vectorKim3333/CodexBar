@@ -584,9 +584,9 @@ struct PlanUtilizationHistoryChartMenuView: View {
     {
         switch name {
         case .session:
-            metadata?.sessionLabel ?? "Session"
+            metadata?.sessionLabel ?? "세션"
         case .weekly:
-            metadata?.weeklyLabel ?? "Weekly"
+            metadata?.weeklyLabel ?? "주간"
         case .opus:
             metadata?.opusLabel ?? "Opus"
         default:

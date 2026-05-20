@@ -18,8 +18,6 @@ struct StatusItemAnimationCodexCreditsTests {
     func `codex icon keeps credits only rendering when usage is missing`() {
         let settings = SettingsStore(
             configStore: testConfigStore(suiteName: "StatusItemAnimationTests-credits-only-icon"),
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
         settings.statusChecksEnabled = false
         settings.refreshFrequency = .manual
         settings.mergeIcons = false
@@ -38,9 +36,7 @@ struct StatusItemAnimationCodexCreditsTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
 
         controller.applyIcon(for: .codex, phase: nil)

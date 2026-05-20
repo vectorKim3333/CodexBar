@@ -10,8 +10,8 @@ public enum CodexProviderDescriptor {
             metadata: ProviderMetadata(
                 id: .codex,
                 displayName: "Codex",
-                sessionLabel: "Session",
-                weeklyLabel: "Weekly",
+                sessionLabel: "세션",
+                weeklyLabel: "주간",
                 opusLabel: nil,
                 supportsOpus: false,
                 supportsCredits: true,

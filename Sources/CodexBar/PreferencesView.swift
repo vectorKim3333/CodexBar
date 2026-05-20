@@ -8,7 +8,6 @@ enum PreferencesTab: String, CaseIterable, Hashable {
     case display
     case advanced
     case about
-    case debug
 
     static let defaultWidth: CGFloat = 546
     static let providersWidth: CGFloat = 792
@@ -21,7 +20,6 @@ enum PreferencesTab: String, CaseIterable, Hashable {
         case .display: L("tab_display")
         case .advanced: L("tab_advanced")
         case .about: L("tab_about")
-        case .debug: L("tab_debug")
         }
     }
 
@@ -38,7 +36,6 @@ enum PreferencesTab: String, CaseIterable, Hashable {
 struct PreferencesView: View {
     @Bindable var settings: SettingsStore
     @Bindable var store: UsageStore
-    let updater: UpdaterProviding
     @Bindable var selection: PreferencesSelection
     let managedCodexAccountCoordinator: ManagedCodexAccountCoordinator
     let codexAccountPromotionCoordinator: CodexAccountPromotionCoordinator
@@ -49,7 +46,6 @@ struct PreferencesView: View {
     init(
         settings: SettingsStore,
         store: UsageStore,
-        updater: UpdaterProviding,
         selection: PreferencesSelection,
         managedCodexAccountCoordinator: ManagedCodexAccountCoordinator = ManagedCodexAccountCoordinator(),
         codexAccountPromotionCoordinator: CodexAccountPromotionCoordinator? = nil,
@@ -57,7 +53,6 @@ struct PreferencesView: View {
     {
         self.settings = settings
         self.store = store
-        self.updater = updater
         self.selection = selection
         self.managedCodexAccountCoordinator = managedCodexAccountCoordinator
         self.codexAccountPromotionCoordinator = codexAccountPromotionCoordinator
@@ -91,29 +86,20 @@ struct PreferencesView: View {
                 .tabItem { Label(L("tab_advanced"), systemImage: "slider.horizontal.3") }
                 .tag(PreferencesTab.advanced)
 
-            AboutPane(updater: self.updater)
+            AboutPane()
                 .tabItem { Label(L("tab_about"), systemImage: "info.circle") }
                 .tag(PreferencesTab.about)
 
-            if self.settings.debugMenuEnabled {
-                DebugPane(settings: self.settings, store: self.store)
-                    .tabItem { Label(L("tab_debug"), systemImage: "ladybug") }
-                    .tag(PreferencesTab.debug)
-            }
         }
-        .id(self.settings.appLanguage)
+        // Korean-only fork; no language reactive id needed.
         .padding(.horizontal, 24)
         .padding(.vertical, 16)
         .frame(width: self.contentWidth, height: self.contentHeight)
         .onAppear {
             self.updateLayout(for: self.selection.tab, animate: false)
-            self.ensureValidTabSelection()
         }
         .onChange(of: self.selection.tab) { _, newValue in
             self.updateLayout(for: newValue, animate: true)
-        }
-        .onChange(of: self.settings.debugMenuEnabled) { _, _ in
-            self.ensureValidTabSelection()
         }
     }
 
@@ -147,10 +133,4 @@ struct PreferencesView: View {
         window.setFrame(frame, display: true, animate: animate)
     }
 
-    private func ensureValidTabSelection() {
-        if !self.settings.debugMenuEnabled, self.selection.tab == .debug {
-            self.selection.tab = .general
-            self.updateLayout(for: .general, animate: true)
-        }
-    }
 }

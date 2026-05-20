@@ -304,19 +304,6 @@ public enum ProviderStoragePathCatalog {
                     .appendingPathComponent("Library/Application Support/CodexBar/ClaudeProbe", isDirectory: true)
                     .path,
             ]
-        case .gemini:
-            [
-                homePath(".gemini"),
-                homePath(".config/gemini"),
-            ]
-        case .opencode, .opencodego:
-            [
-                homePath(".config/opencode"),
-            ]
-        case .copilot:
-            [
-                homePath(".config/github-copilot"),
-            ]
         default:
             []
         }

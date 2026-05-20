@@ -21,8 +21,6 @@ struct CodexConsumerProjectionCharacterizationTests {
         return SettingsStore(
             userDefaults: defaults,
             configStore: configStore,
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
     }
 
     private func makeCodexStore(settings: SettingsStore, dashboardAuthorized: Bool) -> UsageStore {
@@ -84,9 +82,7 @@ struct CodexConsumerProjectionCharacterizationTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
 
         let overrideSnapshot = UsageSnapshot(
@@ -136,9 +132,7 @@ struct CodexConsumerProjectionCharacterizationTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
 
         let snapshot = UsageSnapshot(

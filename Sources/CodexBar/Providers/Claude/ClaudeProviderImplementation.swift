@@ -21,13 +21,11 @@ struct ClaudeProviderImplementation: ProviderImplementation {
     @MainActor
     func observeSettings(_ settings: SettingsStore) {
         _ = settings.claudeUsageDataSource
-        _ = settings.claudeAdminAPIKey
         _ = settings.claudeCookieSource
         _ = settings.claudeCookieHeader
         _ = settings.claudeOAuthKeychainPromptMode
         _ = settings.claudeOAuthKeychainReadStrategy
         _ = settings.claudeWebExtrasEnabled
-        _ = settings.claudePeakHoursEnabled
     }
 
     @MainActor
@@ -68,9 +66,9 @@ struct ClaudeProviderImplementation: ProviderImplementation {
     @MainActor
     func settingsToggles(context: ProviderSettingsContext) -> [ProviderSettingsToggleDescriptor] {
         let subtitle = if context.settings.debugDisableKeychainAccess {
-            "Inactive while \"Disable Keychain access\" is enabled in Advanced."
+            L("keychain_prompt_avoid_inactive")
         } else {
-            "Use /usr/bin/security to read Claude credentials and avoid CodexBar keychain prompts."
+            L("keychain_prompt_avoid_subtitle")
         }
 
         let promptFreeBinding = Binding(
@@ -80,27 +78,12 @@ struct ClaudeProviderImplementation: ProviderImplementation {
                 context.settings.claudeOAuthPromptFreeCredentialsEnabled = enabled
             })
 
-        let peakHoursBinding = Binding(
-            get: { context.settings.claudePeakHoursEnabled },
-            set: { context.settings.claudePeakHoursEnabled = $0 })
-
         return [
             ProviderSettingsToggleDescriptor(
                 id: "claude-oauth-prompt-free-credentials",
-                title: "Avoid Keychain prompts",
+                title: L("Avoid Keychain prompts"),
                 subtitle: subtitle,
                 binding: promptFreeBinding,
-                statusText: nil,
-                actions: [],
-                isVisible: nil,
-                onChange: nil,
-                onAppDidBecomeActive: nil,
-                onAppearWhenEnabled: nil),
-            ProviderSettingsToggleDescriptor(
-                id: "claude-peak-hours",
-                title: "Show peak hours indicator",
-                subtitle: "Show whether Claude is in peak usage hours.",
-                binding: peakHoursBinding,
                 statusText: nil,
                 actions: [],
                 isVisible: nil,
@@ -129,8 +112,8 @@ struct ClaudeProviderImplementation: ProviderImplementation {
                     ?? .onlyOnUserAction
             })
 
-        let usageOptions = ClaudeUsageDataSource.allCases.map {
-            ProviderSettingsPickerOption(id: $0.rawValue, title: $0.displayName)
+        let usageOptions = ClaudeUsageDataSource.allCases.map { source in
+            ProviderSettingsPickerOption(id: source.rawValue, title: Self.localizedUsageSourceTitle(source))
         }
         let cookieOptions = ProviderCookieSourceUI.options(
             allowsOff: false,
@@ -138,35 +121,34 @@ struct ClaudeProviderImplementation: ProviderImplementation {
         let keychainPromptPolicyOptions: [ProviderSettingsPickerOption] = [
             ProviderSettingsPickerOption(
                 id: ClaudeOAuthKeychainPromptMode.never.rawValue,
-                title: "Never prompt"),
+                title: L("Never prompt")),
             ProviderSettingsPickerOption(
                 id: ClaudeOAuthKeychainPromptMode.onlyOnUserAction.rawValue,
-                title: "Only on user action"),
+                title: L("Only on user action")),
             ProviderSettingsPickerOption(
                 id: ClaudeOAuthKeychainPromptMode.always.rawValue,
-                title: "Always allow prompts"),
+                title: L("Always allow prompts")),
         ]
         let cookieSubtitle: () -> String? = {
             ProviderCookieSourceUI.subtitle(
                 source: context.settings.claudeCookieSource,
                 keychainDisabled: context.settings.debugDisableKeychainAccess,
-                auto: "Automatic imports browser cookies for the web API.",
-                manual: "Paste a Cookie header from a claude.ai request.",
-                off: "Claude cookies are disabled.")
+                auto: L("Automatic imports browser cookies for the web API."),
+                manual: L("claude_cookie_manual_subtitle"),
+                off: L("claude_cookie_off_subtitle"))
         }
         let keychainPromptPolicySubtitle: () -> String? = {
             if context.settings.debugDisableKeychainAccess {
-                return "Global Keychain access is disabled in Advanced, so this setting is currently inactive."
+                return L("keychain_prompt_policy_disabled")
             }
-            return "Controls Claude OAuth Keychain prompts when the standard reader is active. Choosing " +
-                "\"Never prompt\" can make OAuth unavailable; use Web/CLI when needed."
+            return L("keychain_prompt_policy_subtitle")
         }
 
         return [
             ProviderSettingsPickerDescriptor(
                 id: "claude-usage-source",
-                title: "Usage source",
-                subtitle: "Auto falls back to the next source if the preferred one fails.",
+                title: L("Usage source"),
+                subtitle: L("Auto falls back to the next source if the preferred one fails."),
                 binding: usageBinding,
                 options: usageOptions,
                 isVisible: nil,
@@ -178,8 +160,8 @@ struct ClaudeProviderImplementation: ProviderImplementation {
                 }),
             ProviderSettingsPickerDescriptor(
                 id: "claude-keychain-prompt-policy",
-                title: "Keychain prompt policy",
-                subtitle: "Applies only to the Security.framework OAuth keychain reader.",
+                title: L("Keychain prompt policy"),
+                subtitle: L("Applies only to the Security.framework OAuth keychain reader."),
                 dynamicSubtitle: keychainPromptPolicySubtitle,
                 binding: keychainPromptPolicyBinding,
                 options: keychainPromptPolicyOptions,
@@ -188,8 +170,8 @@ struct ClaudeProviderImplementation: ProviderImplementation {
                 onChange: nil),
             ProviderSettingsPickerDescriptor(
                 id: "claude-cookie-source",
-                title: "Claude cookies",
-                subtitle: "Automatic imports browser cookies for the web API.",
+                title: L("Claude cookies"),
+                subtitle: L("Automatic imports browser cookies for the web API."),
                 dynamicSubtitle: cookieSubtitle,
                 binding: cookieBinding,
                 options: cookieOptions,
@@ -205,18 +187,18 @@ struct ClaudeProviderImplementation: ProviderImplementation {
 
     @MainActor
     func settingsFields(context: ProviderSettingsContext) -> [ProviderSettingsFieldDescriptor] {
-        [
-            ProviderSettingsFieldDescriptor(
-                id: "claude-admin-api-key",
-                title: "Admin API key",
-                subtitle: "Stored in ~/.codexbar/config.json. Requires an Anthropic Admin API key.",
-                kind: .secure,
-                placeholder: "sk-ant-admin...",
-                binding: context.stringBinding(\.claudeAdminAPIKey),
-                actions: [],
-                isVisible: nil,
-                onActivate: nil),
-        ]
+        []
+    }
+
+    @MainActor
+    private static func localizedUsageSourceTitle(_ source: ClaudeUsageDataSource) -> String {
+        switch source {
+        case .auto: L("Auto")
+        case .api: "API (Admin key)"
+        case .oauth: "OAuth API"
+        case .web: "Web API (cookies)"
+        case .cli: "CLI (PTY)"
+        }
     }
 
     @MainActor

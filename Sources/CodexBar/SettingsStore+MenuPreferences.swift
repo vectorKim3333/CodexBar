@@ -6,16 +6,6 @@ extension SettingsStore {
         if Self.isBalanceOnlyProvider(provider) {
             return .automatic
         }
-        if provider == .openrouter {
-            let raw = self.menuBarMetricPreferencesRaw[provider.rawValue] ?? ""
-            let preference = MenuBarMetricPreference(rawValue: raw) ?? .automatic
-            switch preference {
-            case .automatic, .primary:
-                return preference
-            case .secondary, .average, .tertiary, .extraUsage:
-                return .automatic
-            }
-        }
         let raw = self.menuBarMetricPreferencesRaw[provider.rawValue] ?? ""
         let preference = MenuBarMetricPreference(rawValue: raw) ?? .automatic
         if preference == .average, !self.menuBarMetricSupportsAverage(for: provider) {
@@ -35,15 +25,6 @@ extension SettingsStore {
             self.menuBarMetricPreferencesRaw[provider.rawValue] = MenuBarMetricPreference.automatic.rawValue
             return
         }
-        if provider == .openrouter {
-            switch preference {
-            case .automatic, .primary:
-                self.menuBarMetricPreferencesRaw[provider.rawValue] = preference.rawValue
-            case .secondary, .average, .tertiary, .extraUsage:
-                self.menuBarMetricPreferencesRaw[provider.rawValue] = MenuBarMetricPreference.automatic.rawValue
-            }
-            return
-        }
         if preference == .tertiary, !self.menuBarMetricSupportsTertiary(for: provider) {
             self.menuBarMetricPreferencesRaw[provider.rawValue] = MenuBarMetricPreference.automatic.rawValue
             return
@@ -56,22 +37,19 @@ extension SettingsStore {
     }
 
     func menuBarMetricSupportsAverage(for provider: UsageProvider) -> Bool {
-        provider == .gemini
+        false
     }
 
     func menuBarMetricSupportsTertiary(for provider: UsageProvider) -> Bool {
-        provider == .cursor || provider == .perplexity || provider == .zai
+        false
     }
 
     func menuBarMetricSupportsTertiary(for provider: UsageProvider, snapshot: UsageSnapshot?) -> Bool {
-        if provider == .cursor || provider == .zai {
-            return snapshot?.tertiary != nil
-        }
-        return self.menuBarMetricSupportsTertiary(for: provider)
+        false
     }
 
     func menuBarMetricSupportsExtraUsage(for provider: UsageProvider) -> Bool {
-        provider == .cursor || provider == .claude
+        provider == .claude
     }
 
     func menuBarMetricSupportsExtraUsage(for provider: UsageProvider, snapshot: UsageSnapshot?) -> Bool {
@@ -105,11 +83,6 @@ extension SettingsStore {
     }
 
     static func isBalanceOnlyProvider(_ provider: UsageProvider) -> Bool {
-        switch provider {
-        case .deepseek, .mistral, .kimik2, .moonshot:
-            true
-        default:
-            false
-        }
+        false
     }
 }

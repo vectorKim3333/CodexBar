@@ -27,8 +27,6 @@ struct StatusMenuPersistentRefreshTests {
         return SettingsStore(
             userDefaults: defaults,
             configStore: configStore,
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
     }
 
     @Test
@@ -42,9 +40,7 @@ struct StatusMenuPersistentRefreshTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: .system)
 
         let menu = controller.makeMenu(for: .codex)

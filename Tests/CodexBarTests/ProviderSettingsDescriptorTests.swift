@@ -15,8 +15,6 @@ struct ProviderSettingsDescriptorTests {
         let settings = SettingsStore(
             userDefaults: defaults,
             configStore: configStore,
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
         let store = UsageStore(
             fetcher: UsageFetcher(environment: [:]),
             browserDetection: BrowserDetection(cacheTTL: 0),
@@ -91,8 +89,6 @@ struct ProviderSettingsDescriptorTests {
         let settings = SettingsStore(
             userDefaults: defaults,
             configStore: configStore,
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
         let store = UsageStore(
             fetcher: UsageFetcher(environment: [:]),
             browserDetection: BrowserDetection(cacheTTL: 0),
@@ -135,8 +131,6 @@ struct ProviderSettingsDescriptorTests {
         let settings = SettingsStore(
             userDefaults: defaults,
             configStore: configStore,
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
         let store = UsageStore(
             fetcher: UsageFetcher(environment: [:]),
             browserDetection: BrowserDetection(cacheTTL: 0),
@@ -185,8 +179,6 @@ struct ProviderSettingsDescriptorTests {
         let settings = SettingsStore(
             userDefaults: defaults,
             configStore: configStore,
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
         settings.debugDisableKeychainAccess = false
         let store = UsageStore(
             fetcher: UsageFetcher(environment: [:]),
@@ -233,8 +225,6 @@ struct ProviderSettingsDescriptorTests {
         let settings = SettingsStore(
             userDefaults: defaults,
             configStore: configStore,
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
         settings.debugDisableKeychainAccess = false
         settings.claudeOAuthKeychainReadStrategy = .securityCLIExperimental
 
@@ -278,8 +268,6 @@ struct ProviderSettingsDescriptorTests {
         let settings = SettingsStore(
             userDefaults: defaults,
             configStore: configStore,
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
         settings.debugDisableKeychainAccess = true
         let store = UsageStore(
             fetcher: UsageFetcher(environment: [:]),
@@ -323,8 +311,6 @@ struct ProviderSettingsDescriptorTests {
         let settings = SettingsStore(
             userDefaults: defaults,
             configStore: configStore,
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
         settings.debugMenuEnabled = true
         settings.claudeUsageDataSource = .cli
         settings.claudeWebExtrasEnabled = true
@@ -333,127 +319,4 @@ struct ProviderSettingsDescriptorTests {
         #expect(settings.claudeWebExtrasEnabled == false)
     }
 
-    @Test
-    func `kilo exposes usage source picker and api field only`() throws {
-        let suite = "ProviderSettingsDescriptorTests-kilo"
-        let defaults = try #require(UserDefaults(suiteName: suite))
-        defaults.removePersistentDomain(forName: suite)
-        let configStore = testConfigStore(suiteName: suite)
-        let settings = SettingsStore(
-            userDefaults: defaults,
-            configStore: configStore,
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
-        let store = UsageStore(
-            fetcher: UsageFetcher(environment: [:]),
-            browserDetection: BrowserDetection(cacheTTL: 0),
-            settings: settings)
-
-        let context = ProviderSettingsContext(
-            provider: .kilo,
-            settings: settings,
-            store: store,
-            boolBinding: { keyPath in
-                Binding(
-                    get: { settings[keyPath: keyPath] },
-                    set: { settings[keyPath: keyPath] = $0 })
-            },
-            stringBinding: { keyPath in
-                Binding(
-                    get: { settings[keyPath: keyPath] },
-                    set: { settings[keyPath: keyPath] = $0 })
-            },
-            statusText: { _ in nil },
-            setStatusText: { _, _ in },
-            lastAppActiveRunAt: { _ in nil },
-            setLastAppActiveRunAt: { _, _ in },
-            requestConfirmation: { _ in },
-            runLoginFlow: {})
-
-        let implementation = KiloProviderImplementation()
-        let toggles = implementation.settingsToggles(context: context)
-        let pickers = implementation.settingsPickers(context: context)
-        let fields = implementation.settingsFields(context: context)
-
-        #expect(toggles.isEmpty)
-        #expect(pickers.contains(where: { $0.id == "kilo-usage-source" }))
-        #expect(fields.contains(where: { $0.id == "kilo-api-key" }))
-    }
-
-    @Test
-    func `deepgram exposes api key and project id fields`() throws {
-        let suite = "ProviderSettingsDescriptorTests-deepgram"
-        let defaults = try #require(UserDefaults(suiteName: suite))
-        defaults.removePersistentDomain(forName: suite)
-        let configStore = testConfigStore(suiteName: suite)
-        let settings = SettingsStore(
-            userDefaults: defaults,
-            configStore: configStore,
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
-        let store = UsageStore(
-            fetcher: UsageFetcher(environment: [:]),
-            browserDetection: BrowserDetection(cacheTTL: 0),
-            settings: settings)
-
-        let context = ProviderSettingsContext(
-            provider: .deepgram,
-            settings: settings,
-            store: store,
-            boolBinding: { keyPath in
-                Binding(
-                    get: { settings[keyPath: keyPath] },
-                    set: { settings[keyPath: keyPath] = $0 })
-            },
-            stringBinding: { keyPath in
-                Binding(
-                    get: { settings[keyPath: keyPath] },
-                    set: { settings[keyPath: keyPath] = $0 })
-            },
-            statusText: { _ in nil },
-            setStatusText: { _, _ in },
-            lastAppActiveRunAt: { _ in nil },
-            setLastAppActiveRunAt: { _, _ in },
-            requestConfirmation: { _ in },
-            runLoginFlow: {})
-
-        let implementation = DeepgramProviderImplementation()
-        let fields = implementation.settingsFields(context: context)
-
-        #expect(fields.contains(where: { $0.id == "deepgram-api-key" }))
-        #expect(fields.contains(where: { $0.id == "deepgram-project-id" }))
-
-        // Basic presence checks for Deepgram settings fields (layout copied from OpenRouter)
-        _ = try #require(fields.first(where: { $0.id == "deepgram-project-id" }))
-        _ = try #require(fields.first(where: { $0.id == "deepgram-api-key" }))
-    }
-
-    @Test
-    func `alibaba presentation follows store source label`() throws {
-        let suite = "ProviderSettingsDescriptorTests-alibaba-presentation"
-        let defaults = try #require(UserDefaults(suiteName: suite))
-        defaults.removePersistentDomain(forName: suite)
-        let configStore = testConfigStore(suiteName: suite)
-        let settings = SettingsStore(
-            userDefaults: defaults,
-            configStore: configStore,
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
-        let store = UsageStore(
-            fetcher: UsageFetcher(environment: [:]),
-            browserDetection: BrowserDetection(cacheTTL: 0),
-            settings: settings)
-        let metadata = try #require(ProviderDescriptorRegistry.metadata[.alibaba])
-        let context = ProviderPresentationContext(
-            provider: .alibaba,
-            settings: settings,
-            store: store,
-            metadata: metadata)
-
-        let detailLine = AlibabaCodingPlanProviderImplementation()
-            .presentation(context: context)
-            .detailLine(context)
-
-        #expect(detailLine == store.sourceLabel(for: .alibaba))
-    }
 }

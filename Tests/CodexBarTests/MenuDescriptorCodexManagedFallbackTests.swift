@@ -14,20 +14,8 @@ struct MenuDescriptorCodexManagedFallbackTests {
         let settings = SettingsStore(
             userDefaults: defaults,
             configStore: testConfigStore(suiteName: suite),
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore(),
             codexCookieStore: InMemoryCookieHeaderStore(),
             claudeCookieStore: InMemoryCookieHeaderStore(),
-            cursorCookieStore: InMemoryCookieHeaderStore(),
-            opencodeCookieStore: InMemoryCookieHeaderStore(),
-            factoryCookieStore: InMemoryCookieHeaderStore(),
-            minimaxCookieStore: InMemoryMiniMaxCookieStore(),
-            minimaxAPITokenStore: InMemoryMiniMaxAPITokenStore(),
-            kimiTokenStore: InMemoryKimiTokenStore(),
-            kimiK2TokenStore: InMemoryKimiK2TokenStore(),
-            augmentCookieStore: InMemoryCookieHeaderStore(),
-            ampCookieStore: InMemoryCookieHeaderStore(),
-            copilotTokenStore: InMemoryCopilotTokenStore(),
             tokenAccountStore: InMemoryTokenAccountStore())
         settings.statusChecksEnabled = false
 
@@ -65,9 +53,7 @@ struct MenuDescriptorCodexManagedFallbackTests {
             provider: .codex,
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updateReady: false,
-            includeContextualActions: false)
+            account: fetcher.loadAccountInfo(),            includeContextualActions: false)
 
         let lines = descriptor.sections
             .flatMap(\.entries)
@@ -91,20 +77,8 @@ struct MenuDescriptorCodexManagedFallbackTests {
         let settings = SettingsStore(
             userDefaults: defaults,
             configStore: testConfigStore(suiteName: suite),
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore(),
             codexCookieStore: InMemoryCookieHeaderStore(),
             claudeCookieStore: InMemoryCookieHeaderStore(),
-            cursorCookieStore: InMemoryCookieHeaderStore(),
-            opencodeCookieStore: InMemoryCookieHeaderStore(),
-            factoryCookieStore: InMemoryCookieHeaderStore(),
-            minimaxCookieStore: InMemoryMiniMaxCookieStore(),
-            minimaxAPITokenStore: InMemoryMiniMaxAPITokenStore(),
-            kimiTokenStore: InMemoryKimiTokenStore(),
-            kimiK2TokenStore: InMemoryKimiK2TokenStore(),
-            augmentCookieStore: InMemoryCookieHeaderStore(),
-            ampCookieStore: InMemoryCookieHeaderStore(),
-            copilotTokenStore: InMemoryCopilotTokenStore(),
             tokenAccountStore: InMemoryTokenAccountStore())
         settings.statusChecksEnabled = false
 
@@ -134,9 +108,7 @@ struct MenuDescriptorCodexManagedFallbackTests {
             provider: .codex,
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updateReady: false,
-            includeContextualActions: false)
+            account: fetcher.loadAccountInfo(),            includeContextualActions: false)
 
         let lines = descriptor.sections
             .flatMap(\.entries)

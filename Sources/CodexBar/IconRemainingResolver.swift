@@ -26,18 +26,6 @@ enum IconRemainingResolver {
         style: IconStyle)
         -> (primary: RateWindow?, secondary: RateWindow?)
     {
-        if style == .perplexity {
-            let windows = snapshot.orderedPerplexityDisplayWindows()
-            return (
-                primary: windows.first,
-                secondary: windows.dropFirst().first)
-        }
-        if style == .antigravity {
-            let windows = [snapshot.primary, snapshot.secondary, snapshot.tertiary].compactMap(\.self)
-            return (
-                primary: windows.first,
-                secondary: windows.dropFirst().first)
-        }
         if style == .codex {
             let windows = self.codexVisibleWindows(snapshot: snapshot)
             return (
@@ -54,18 +42,6 @@ enum IconRemainingResolver {
         style: IconStyle)
         -> (primary: Double?, secondary: Double?)
     {
-        if style == .perplexity {
-            let windows = snapshot.orderedPerplexityDisplayWindows()
-            return (
-                primary: windows.first?.remainingPercent,
-                secondary: windows.dropFirst().first?.remainingPercent)
-        }
-        if style == .antigravity {
-            let windows = [snapshot.primary, snapshot.secondary, snapshot.tertiary].compactMap(\.self)
-            return (
-                primary: windows.first?.remainingPercent,
-                secondary: windows.dropFirst().first?.remainingPercent)
-        }
         if style == .codex {
             let windows = self.codexVisibleWindows(snapshot: snapshot)
             return (

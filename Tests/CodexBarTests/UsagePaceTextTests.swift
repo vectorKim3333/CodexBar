@@ -130,7 +130,7 @@ struct UsagePaceTextTests {
             resetsAt: now.addingTimeInterval(2 * 3600),
             resetDescription: nil)
 
-        let detail = UsagePaceText.sessionDetail(provider: .zai, window: window, now: now)
+        let detail = UsagePaceText.sessionDetail(provider: .codex, window: window, now: now)
 
         #expect(detail == nil)
     }

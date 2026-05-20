@@ -175,26 +175,6 @@ struct PathBuilderTests {
     }
 
     @Test
-    func `resolves gemini from interactive shell`() {
-        let fm = MockFileManager(executables: ["/shell/bin/gemini"])
-        let commandV: (String, String?, TimeInterval, FileManager) -> String? = { tool, shell, timeout, fileManager in
-            #expect(tool == "gemini")
-            #expect(shell == "/bin/zsh")
-            #expect(timeout == 2.0)
-            _ = fileManager
-            return "/shell/bin/gemini"
-        }
-
-        let resolved = BinaryLocator.resolveGeminiBinary(
-            env: ["SHELL": "/bin/zsh"],
-            loginPATH: nil,
-            commandV: commandV,
-            fileManager: fm,
-            home: "/home/test")
-        #expect(resolved == "/shell/bin/gemini")
-    }
-
-    @Test
     func `resolves claude from login path`() {
         let fm = MockFileManager(executables: ["/login/bin/claude"])
         let resolved = BinaryLocator.resolveClaudeBinary(

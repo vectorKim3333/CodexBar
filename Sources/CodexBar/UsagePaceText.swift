@@ -17,9 +17,9 @@ enum UsagePaceText {
     static func weeklySummary(pace: UsagePace, now: Date = .init()) -> String {
         let detail = self.weeklyDetail(pace: pace, now: now)
         if let rightLabel = detail.rightLabel {
-            return "Pace: \(detail.leftLabel) · \(rightLabel)"
+            return "페이스: \(detail.leftLabel) · \(rightLabel)"
         }
-        return "Pace: \(detail.leftLabel)"
+        return "페이스: \(detail.leftLabel)"
     }
 
     static func weeklyDetail(pace: UsagePace, now: Date = .init()) -> WeeklyDetail {
@@ -34,29 +34,29 @@ enum UsagePaceText {
         let deltaValue = Int(abs(pace.deltaPercent).rounded())
         switch pace.stage {
         case .onTrack:
-            return "On pace"
+            return "정상 페이스"
         case .slightlyAhead, .ahead, .farAhead:
-            return "\(deltaValue)% in deficit"
+            return "\(deltaValue)% 초과 사용"
         case .slightlyBehind, .behind, .farBehind:
-            return "\(deltaValue)% in reserve"
+            return "\(deltaValue)% 여유"
         }
     }
 
     private static func detailRightLabel(for pace: UsagePace, context: DetailContext, now: Date) -> String? {
         let etaLabel: String?
         if pace.willLastToReset {
-            etaLabel = "Lasts until reset"
+            etaLabel = "리셋까지 유지"
         } else if let etaSeconds = pace.etaSeconds {
             let etaText = Self.durationText(seconds: etaSeconds, now: now)
-            let prefix = context == .session ? "Projected empty" : "Runs out"
-            etaLabel = etaText == "now" ? "\(prefix) now" : "\(prefix) in \(etaText)"
+            let prefix = context == .session ? "소진 예상" : "소진"
+            etaLabel = etaText == "지금" ? "\(prefix) 임박" : "\(etaText) \(prefix)"
         } else {
             etaLabel = nil
         }
 
         guard let runOutProbability = pace.runOutProbability else { return etaLabel }
         let roundedRisk = self.roundedRiskPercent(runOutProbability)
-        let riskLabel = "≈ \(roundedRisk)% run-out risk"
+        let riskLabel = "소진 위험 ≈ \(roundedRisk)%"
         if let etaLabel {
             return "\(etaLabel) · \(riskLabel)"
         }
@@ -65,10 +65,7 @@ enum UsagePaceText {
 
     private static func durationText(seconds: TimeInterval, now: Date) -> String {
         let date = now.addingTimeInterval(seconds)
-        let countdown = UsageFormatter.resetCountdownDescription(from: date, now: now)
-        if countdown == "now" { return "now" }
-        if countdown.hasPrefix("in ") { return String(countdown.dropFirst(3)) }
-        return countdown
+        return UsageFormatter.resetCountdownDescription(from: date, now: now)
     }
 
     private static func roundedRiskPercent(_ probability: Double) -> Int {
@@ -97,8 +94,8 @@ enum UsagePaceText {
     static func sessionSummary(provider: UsageProvider, window: RateWindow, now: Date = .init()) -> String? {
         guard let detail = sessionDetail(provider: provider, window: window, now: now) else { return nil }
         if let rightLabel = detail.rightLabel {
-            return "Pace: \(detail.leftLabel) · \(rightLabel)"
+            return "페이스: \(detail.leftLabel) · \(rightLabel)"
         }
-        return "Pace: \(detail.leftLabel)"
+        return "페이스: \(detail.leftLabel)"
     }
 }

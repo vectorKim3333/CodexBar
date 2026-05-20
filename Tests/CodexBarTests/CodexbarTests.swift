@@ -49,71 +49,6 @@ struct CodexBarTests {
     }
 
     @Test
-    func `antigravity icon falls back to tertiary when leading lanes are missing`() {
-        let snapshot = UsageSnapshot(
-            primary: nil,
-            secondary: nil,
-            tertiary: RateWindow(usedPercent: 80, windowMinutes: nil, resetsAt: nil, resetDescription: nil),
-            updatedAt: Date())
-
-        let remaining = IconRemainingResolver.resolvedRemaining(snapshot: snapshot, style: .antigravity)
-        #expect(remaining.primary == 20)
-        #expect(remaining.secondary == nil)
-    }
-
-    @Test
-    func `antigravity icon uses next distinct fallback lane`() {
-        let snapshot = UsageSnapshot(
-            primary: nil,
-            secondary: RateWindow(usedPercent: 30, windowMinutes: nil, resetsAt: nil, resetDescription: nil),
-            tertiary: RateWindow(usedPercent: 60, windowMinutes: nil, resetsAt: nil, resetDescription: nil),
-            updatedAt: Date())
-
-        let remaining = IconRemainingResolver.resolvedRemaining(snapshot: snapshot, style: .antigravity)
-        #expect(remaining.primary == 70)
-        #expect(remaining.secondary == 40)
-    }
-
-    @Test
-    func `perplexity icon falls back to purchased lane when bonus is exhausted`() {
-        let snapshot = UsageSnapshot(
-            primary: nil,
-            secondary: RateWindow(usedPercent: 100, windowMinutes: nil, resetsAt: nil, resetDescription: nil),
-            tertiary: RateWindow(usedPercent: 20, windowMinutes: nil, resetsAt: nil, resetDescription: nil),
-            updatedAt: Date())
-
-        let remaining = IconRemainingResolver.resolvedRemaining(snapshot: snapshot, style: .perplexity)
-        #expect(remaining.primary == 80)
-        #expect(remaining.secondary == 0)
-    }
-
-    @Test
-    func `perplexity icon skips exhausted recurring lane when purchased credits remain`() {
-        let snapshot = UsageSnapshot(
-            primary: RateWindow(usedPercent: 100, windowMinutes: nil, resetsAt: nil, resetDescription: nil),
-            secondary: RateWindow(usedPercent: 100, windowMinutes: nil, resetsAt: nil, resetDescription: nil),
-            tertiary: RateWindow(usedPercent: 20, windowMinutes: nil, resetsAt: nil, resetDescription: nil),
-            updatedAt: Date())
-
-        let remaining = IconRemainingResolver.resolvedRemaining(snapshot: snapshot, style: .perplexity)
-        #expect(remaining.primary == 80)
-        #expect(remaining.secondary == 0)
-    }
-
-    @Test
-    func `perplexity icon prefers purchased lane before bonus`() {
-        let snapshot = UsageSnapshot(
-            primary: nil,
-            secondary: RateWindow(usedPercent: 20, windowMinutes: nil, resetsAt: nil, resetDescription: nil),
-            tertiary: RateWindow(usedPercent: 45, windowMinutes: nil, resetsAt: nil, resetDescription: nil),
-            updatedAt: Date())
-
-        let remaining = IconRemainingResolver.resolvedRemaining(snapshot: snapshot, style: .perplexity)
-        #expect(remaining.primary == 55)
-        #expect(remaining.secondary == 80)
-    }
-
-    @Test
     func `codex icon promotes weekly only window into primary display lane`() {
         let snapshot = UsageSnapshot(
             primary: nil,
@@ -203,59 +138,6 @@ struct CodexBarTests {
         }
 
         #expect(internalHoles >= 16) // at least one 4×4 eye block, but typically two eyes => 32
-    }
-
-    @Test
-    func `icon renderer warp eyes cut out at expected centers`() {
-        // Regression: Warp eyes should be tilted in-place and remain centered on the face.
-        let image = IconRenderer.makeIcon(
-            primaryRemaining: 50,
-            weeklyRemaining: 50,
-            creditsRemaining: nil,
-            stale: false,
-            style: .warp)
-
-        let bitmapReps = image.representations.compactMap { $0 as? NSBitmapImageRep }
-        let rep = bitmapReps.first(where: { $0.pixelsWide == 36 && $0.pixelsHigh == 36 })
-        #expect(rep != nil)
-        guard let rep else { return }
-
-        func alphaAt(px x: Int, _ y: Int) -> CGFloat {
-            (rep.colorAt(x: x, y: y) ?? .clear).alphaComponent
-        }
-
-        func minAlphaNear(px cx: Int, _ cy: Int, radius: Int) -> CGFloat {
-            var minAlpha: CGFloat = 1.0
-            let x0 = max(0, cx - radius)
-            let x1 = min(rep.pixelsWide - 1, cx + radius)
-            let y0 = max(0, cy - radius)
-            let y1 = min(rep.pixelsHigh - 1, cy + radius)
-            for y in y0...y1 {
-                for x in x0...x1 {
-                    minAlpha = min(minAlpha, alphaAt(px: x, y))
-                }
-            }
-            return minAlpha
-        }
-
-        func minAlphaNearEitherOrigin(px cx: Int, _ cy: Int, radius: Int) -> CGFloat {
-            let flippedY = (rep.pixelsHigh - 1) - cy
-            return min(minAlphaNear(px: cx, cy, radius: radius), minAlphaNear(px: cx, flippedY, radius: radius))
-        }
-
-        // These are the center pixels for the two Warp eye cutouts in the top bar (36×36 canvas).
-        // If the eyes are rotated around the wrong origin, these points will not be fully punched out.
-        let leftEyeCenter = (x: 11, y: 25)
-        let rightEyeCenter = (x: 25, y: 25)
-
-        // The eye ellipse height is even (8 px), so the exact center can land between pixel rows.
-        // Assert via a small neighborhood search rather than a single pixel.
-        #expect(minAlphaNearEitherOrigin(px: leftEyeCenter.x, leftEyeCenter.y, radius: 2) < 0.05)
-        #expect(minAlphaNearEitherOrigin(px: rightEyeCenter.x, rightEyeCenter.y, radius: 2) < 0.05)
-
-        // Sanity: nearby top bar track area should remain visible (not everything is transparent).
-        let midAlpha = max(alphaAt(px: 18, 25), alphaAt(px: 18, (rep.pixelsHigh - 1) - 25))
-        #expect(midAlpha > 0.05)
     }
 
     @Test

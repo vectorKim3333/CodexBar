@@ -38,7 +38,6 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
         UsageStore,
         SettingsStore,
         AccountInfo,
-        UpdaterProviding,
         PreferencesSelection,
         ManagedCodexAccountCoordinator,
         CodexAccountPromotionCoordinator)
@@ -48,7 +47,6 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
         store: UsageStore,
         settings: SettingsStore,
         account: AccountInfo,
-        updater: UpdaterProviding,
         selection: PreferencesSelection,
         managedCodexAccountCoordinator: ManagedCodexAccountCoordinator,
         codexAccountPromotionCoordinator: CodexAccountPromotionCoordinator)
@@ -58,7 +56,6 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
             store: store,
             settings: settings,
             account: account,
-            updater: updater,
             preferencesSelection: selection,
             managedCodexAccountCoordinator: managedCodexAccountCoordinator,
             codexAccountPromotionCoordinator: codexAccountPromotionCoordinator)
@@ -71,7 +68,6 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
     let store: UsageStore
     let settings: SettingsStore
     let account: AccountInfo
-    let updater: UpdaterProviding
     let managedCodexAccountCoordinator: ManagedCodexAccountCoordinator
     let codexAccountPromotionCoordinator: CodexAccountPromotionCoordinator
     private let statusBar: NSStatusBar
@@ -97,8 +93,6 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
     var loginTask: Task<Void, Never>? {
         didSet { self.refreshMenusForLoginStateChange() }
     }
-
-    var creditsPurchaseWindow: OpenAICreditsPurchaseWindowController?
 
     var activeLoginProvider: UsageProvider? {
         didSet {
@@ -154,6 +148,7 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
     var lastKnownScreenCount: Int
     var pendingScreenChangePreviousCount: Int?
     var screenChangeVisibilityTask: Task<Void, Never>?
+    var iconHeartbeatTask: Task<Void, Never>?
     let loginLogger = CodexBarLog.logger(LogCategories.login)
     let menuLogger = CodexBarLog.logger(LogCategories.app)
     var selectedMenuProvider: UsageProvider? {
@@ -244,7 +239,6 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
         store: UsageStore,
         settings: SettingsStore,
         account: AccountInfo,
-        updater: UpdaterProviding,
         preferencesSelection: PreferencesSelection,
         managedCodexAccountCoordinator: ManagedCodexAccountCoordinator = ManagedCodexAccountCoordinator(),
         codexAccountPromotionCoordinator: CodexAccountPromotionCoordinator? = nil,
@@ -257,7 +251,6 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
         self.store = store
         self.settings = settings
         self.account = account
-        self.updater = updater
         self.preferencesSelection = preferencesSelection
         self.managedCodexAccountCoordinator = managedCodexAccountCoordinator
         self.codexAccountPromotionCoordinator = codexAccountPromotionCoordinator
@@ -313,7 +306,6 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
         store: UsageStore,
         settings: SettingsStore,
         account: AccountInfo,
-        updater: UpdaterProviding,
         preferencesSelection: PreferencesSelection,
         statusBar: NSStatusBar = .system,
         observeProviderConfigNotifications: Bool = !SettingsStore.isRunningTests)
@@ -322,7 +314,6 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
             store: store,
             settings: settings,
             account: account,
-            updater: updater,
             preferencesSelection: preferencesSelection,
             managedCodexAccountCoordinator: ManagedCodexAccountCoordinator(),
             codexAccountPromotionCoordinator: nil,
@@ -335,8 +326,25 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
         self.observeStoreIconChanges()
         self.observeDebugForceAnimation()
         self.observeSettingsChanges()
-        self.observeUpdaterChanges()
         self.observeManagedCodexCoordinatorChanges()
+        self.startIconHeartbeat()
+    }
+
+    /// Periodic icon re-evaluation so the menu-bar pill's countdown text
+    /// (e.g. "1h 45m" → "1h 44m") ticks even when no fetch is firing.
+    /// Re-runs `updateIcons()` once a minute; each provider's
+    /// `shouldSkipProviderIconRender` guard means an actual redraw only
+    /// happens when the resolved `resetText` (now part of the signature)
+    /// actually changes.
+    private func startIconHeartbeat() {
+        self.iconHeartbeatTask?.cancel()
+        self.iconHeartbeatTask = Task { @MainActor [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(60))
+                guard let self else { return }
+                self.updateIcons()
+            }
+        }
     }
 
     private func observeStoreChanges() {
@@ -430,18 +438,6 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
                     self.quotaWarningFlashTasks.removeValue(forKey: provider)
                     self.updateIcons()
                 }
-            }
-        }
-    }
-
-    private func observeUpdaterChanges() {
-        withObservationTracking {
-            _ = self.updater.updateStatus.isUpdateReady
-        } onChange: { [weak self] in
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                self.observeUpdaterChanges()
-                self.invalidateMenus()
             }
         }
     }
@@ -602,39 +598,31 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
         #if DEBUG
         guard !self.isReleasedForTesting else { return }
         #endif
-        let anyEnabled = !self.store.enabledProvidersForDisplay().isEmpty
         let force = self.store.debugForceAnimation
-        let mergeIcons = self.shouldMergeIcons
-        if mergeIcons {
-            self.statusItem.isVisible = anyEnabled || force
-            for provider in Array(self.statusItems.keys) {
+        let enabledForDisplay = Set(self.store.enabledProvidersForDisplay())
+        // Menu-bar items strictly mirror the Provider toggles — no fallback,
+        // no availability filter. If both providers are unchecked, nothing
+        // shows. The legacy single-status-item path (`self.statusItem`) is
+        // unused (merge mode is removed) so we keep it permanently hidden.
+        self.statusItem.isVisible = false
+        for provider in self.settings.orderedProviders() {
+            let shouldBeVisible = enabledForDisplay.contains(provider) || force
+            if shouldBeVisible {
+                let item = self.lazyStatusItem(for: provider)
+                item.isVisible = true
+            } else {
                 self.removeProviderStatusItem(for: provider)
             }
-            self.attachMenus()
-        } else {
-            self.statusItem.isVisible = false
-            let fallback = self.fallbackProvider
-            for provider in self.settings.orderedProviders() {
-                let isEnabled = self.isEnabled(provider)
-                let shouldBeVisible = isEnabled || fallback == provider || force
-                if shouldBeVisible {
-                    let item = self.lazyStatusItem(for: provider)
-                    item.isVisible = true
-                } else {
-                    self.removeProviderStatusItem(for: provider)
-                }
-            }
-            self.attachMenus(fallback: fallback)
         }
+        self.attachMenus(fallback: nil)
         self.updateAnimationState()
         self.updateBlinkingState()
     }
 
-    var fallbackProvider: UsageProvider? {
-        // Intentionally uses availability-filtered list: fallback activates when no provider
-        // can actually work, ensuring at least a codex icon is always visible.
-        self.store.enabledProviders().isEmpty ? .codex : nil
-    }
+    /// Returned `nil` permanently — fallback codex display was confusing
+    /// users who turned everything off. Kept as a property because a few
+    /// call sites still reference it; remove later if/when those go.
+    var fallbackProvider: UsageProvider? { nil }
 
     func isEnabled(_ provider: UsageProvider) -> Bool {
         self.store.isEnabled(provider)
@@ -663,28 +651,22 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
     }
 
     private func attachMenus(fallback: UsageProvider? = nil) {
+        _ = fallback // kept for ABI; fallback display is removed.
+        // Each enabled provider's status item gets its own NSMenu instance
+        // registered in `menuProviders[menu] = provider` so `menuWillOpen`
+        // snaps the unified-menu switcher to the clicked pill's provider.
+        // Source of truth is the toggle (enabledProvidersForDisplay), NOT the
+        // availability-filtered isEnabled — what's checked is what shows.
+        let enabledForDisplay = Set(self.store.enabledProvidersForDisplay())
         for provider in UsageProvider.allCases {
-            // Only access/create the status item if it's actually needed
-            let shouldHaveItem = self.isEnabled(provider) || fallback == provider
-
-            if shouldHaveItem {
+            if enabledForDisplay.contains(provider) {
                 let item = self.lazyStatusItem(for: provider)
-
-                if self.isEnabled(provider) {
-                    if self.providerMenus[provider] == nil {
-                        self.providerMenus[provider] = self.makeMenu(for: provider)
-                    }
-                    let menu = self.providerMenus[provider]
-                    if item.menu !== menu {
-                        item.menu = menu
-                    }
-                } else if fallback == provider {
-                    if self.fallbackMenu == nil {
-                        self.fallbackMenu = self.makeMenu(for: nil)
-                    }
-                    if item.menu !== self.fallbackMenu {
-                        item.menu = self.fallbackMenu
-                    }
+                if self.providerMenus[provider] == nil {
+                    self.providerMenus[provider] = self.makeMenu(for: provider)
+                }
+                let menu = self.providerMenus[provider]
+                if item.menu !== menu {
+                    item.menu = menu
                 }
             } else if let item = self.statusItems[provider] {
                 item.menu = nil
@@ -730,7 +712,18 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
     }
 
     var shouldMergeIcons: Bool {
-        self.settings.mergeIcons && self.store.enabledProvidersForDisplay().count > 1
+        // Merge mode is removed in this fork. The menu bar always shows one
+        // status item per enabled provider. Each item's click surfaces the
+        // unified menu (Claude card + Codex card + Overview switcher) via
+        // `shouldShowUnifiedMenu`.
+        false
+    }
+
+    /// True when the unified merged-style menu (provider switcher across
+    /// Claude / Codex / Overview) should be shown, regardless of whether the
+    /// menu bar itself is in merged or split icon mode.
+    var shouldShowUnifiedMenu: Bool {
+        self.store.enabledProvidersForDisplay().count > 1
     }
 
     func switchAccountSubtitle(for target: UsageProvider) -> String? {
@@ -793,6 +786,7 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
         self.blinkTask?.cancel()
         self.loginTask?.cancel()
         self.screenChangeVisibilityTask?.cancel()
+        self.iconHeartbeatTask?.cancel()
         self.pendingScreenChangePreviousCount = nil
         NotificationCenter.default.removeObserver(self)
     }

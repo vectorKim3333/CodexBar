@@ -40,9 +40,7 @@ struct StatusMenuSwitcherRefreshTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: .system)
         defer { controller.releaseStatusItemsForTesting() }
 
@@ -81,8 +79,6 @@ struct StatusMenuSwitcherRefreshTests {
         return SettingsStore(
             userDefaults: defaults,
             configStore: testConfigStore(suiteName: suite),
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
     }
 
     private static func enableCodexAndClaude(_ settings: SettingsStore) {

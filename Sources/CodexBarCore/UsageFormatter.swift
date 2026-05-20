@@ -9,13 +9,13 @@ public enum UsageFormatter {
     public static func usageLine(remaining: Double, used: Double, showUsed: Bool) -> String {
         let percent = showUsed ? used : remaining
         let clamped = min(100, max(0, percent))
-        let suffix = showUsed ? "used" : "left"
+        let suffix = showUsed ? "사용" : "남음"
         return String(format: "%.0f%% %@", clamped, suffix)
     }
 
     public static func resetCountdownDescription(from date: Date, now: Date = .init()) -> String {
         let seconds = max(0, date.timeIntervalSince(now))
-        if seconds < 1 { return "now" }
+        if seconds < 1 { return "지금" }
 
         let totalMinutes = max(1, Int(ceil(seconds / 60.0)))
         let days = totalMinutes / (24 * 60)
@@ -23,14 +23,14 @@ public enum UsageFormatter {
         let minutes = totalMinutes % 60
 
         if days > 0 {
-            if hours > 0 { return "in \(days)d \(hours)h" }
-            return "in \(days)d"
+            if hours > 0 { return "\(days)일 \(hours)시간 후" }
+            return "\(days)일 후"
         }
         if hours > 0 {
-            if minutes > 0 { return "in \(hours)h \(minutes)m" }
-            return "in \(hours)h"
+            if minutes > 0 { return "\(hours)시간 \(minutes)분 후" }
+            return "\(hours)시간 후"
         }
-        return "in \(totalMinutes)m"
+        return "\(totalMinutes)분 후"
     }
 
     public static func resetDescription(from date: Date, now: Date = .init()) -> String {
@@ -42,7 +42,7 @@ public enum UsageFormatter {
         if let tomorrow = calendar.date(byAdding: .day, value: 1, to: now),
            calendar.isDate(date, inSameDayAs: tomorrow)
         {
-            return "tomorrow, \(date.formatted(date: .omitted, time: .shortened))"
+            return "내일 \(date.formatted(date: .omitted, time: .shortened))"
         }
         return date.formatted(date: .abbreviated, time: .shortened)
     }
@@ -56,14 +56,15 @@ public enum UsageFormatter {
             let text = style == .countdown
                 ? self.resetCountdownDescription(from: date, now: now)
                 : self.resetDescription(from: date, now: now)
-            return "Resets \(text)"
+            return "\(text) 리셋"
         }
 
         if let desc = window.resetDescription {
             let trimmed = desc.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !trimmed.isEmpty else { return nil }
-            if trimmed.lowercased().hasPrefix("resets") { return trimmed }
-            return "Resets \(trimmed)"
+            let lower = trimmed.lowercased()
+            if lower.hasPrefix("resets") || trimmed.hasSuffix("리셋") { return trimmed }
+            return "\(trimmed) 리셋"
         }
         return nil
     }
@@ -71,25 +72,18 @@ public enum UsageFormatter {
     public static func updatedString(from date: Date, now: Date = .init()) -> String {
         let delta = now.timeIntervalSince(date)
         if abs(delta) < 60 {
-            return "Updated just now"
+            return "방금 업데이트"
         }
         if let hours = Calendar.current.dateComponents([.hour], from: date, to: now).hour, hours < 24 {
-            #if os(macOS)
-            let rel = RelativeDateTimeFormatter()
-            rel.locale = Locale(identifier: "en_US")
-            rel.unitsStyle = .abbreviated
-            return "Updated \(rel.localizedString(for: date, relativeTo: now))"
-            #else
             let seconds = max(0, Int(now.timeIntervalSince(date)))
             if seconds < 3600 {
                 let minutes = max(1, seconds / 60)
-                return "Updated \(minutes)m ago"
+                return "\(minutes)분 전 업데이트"
             }
             let wholeHours = max(1, seconds / 3600)
-            return "Updated \(wholeHours)h ago"
-            #endif
+            return "\(wholeHours)시간 전 업데이트"
         } else {
-            return "Updated \(date.formatted(date: .omitted, time: .shortened))"
+            return "\(date.formatted(date: .omitted, time: .shortened)) 업데이트"
         }
     }
 
@@ -100,7 +94,7 @@ public enum UsageFormatter {
         // Use explicit locale for consistent formatting on all systems
         number.locale = Locale(identifier: "en_US_POSIX")
         let formatted = number.string(from: NSNumber(value: value)) ?? String(format: "%.2f", value)
-        return "\(formatted) left"
+        return "\(formatted) 남음"
     }
 
     public static func kiroCreditNumber(_ value: Double) -> String {
@@ -117,13 +111,13 @@ public enum UsageFormatter {
         value.formatted(.currency(code: "USD").locale(Locale(identifier: "en_US")))
     }
 
-    public static let costEstimateHint = "Estimated from local logs · may differ from your bill"
+    public static let costEstimateHint = "로컬 로그 기준 추정치 · 실제 청구액과 다를 수 있음"
 
     public static func costEstimateHint(provider: UsageProvider) -> String {
         switch provider {
         case .claude:
-            "Estimated from local Claude logs at API rates; token totals include cache read/write tokens " +
-                "and may differ from Claude Code /status."
+            "로컬 Claude 로그 기준 API 단가 추정치. 토큰 합계에 캐시 읽기/쓰기가 포함되며 " +
+                "Claude Code /status 와 다를 수 있음."
         default:
             self.costEstimateHint
         }
@@ -192,7 +186,7 @@ public enum UsageFormatter {
         number.numberStyle = .decimal
         number.maximumFractionDigits = 2
         let credits = number.string(from: NSNumber(value: event.creditsUsed)) ?? "0"
-        return "\(formatter.string(from: event.date)) · \(event.service) · \(credits) credits"
+        return "\(formatter.string(from: event.date)) · \(event.service) · 크레딧 \(credits)"
     }
 
     public static func creditEventCompact(_ event: CreditEvent) -> String {
@@ -280,7 +274,7 @@ public enum UsageFormatter {
             cleaned = stripped.trimmingCharacters(in: .whitespacesAndNewlines)
         }
         if cleaned.lowercased() == "oauth" {
-            return "Ollama"
+            return "OAuth"
         }
         // Capitalize first letter only if lowercase, preserving acronyms like "AI"
         if let first = cleaned.first, first.isLowercase {

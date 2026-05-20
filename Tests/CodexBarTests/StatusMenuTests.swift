@@ -25,8 +25,6 @@ struct StatusMenuTests {
         return SettingsStore(
             userDefaults: defaults,
             configStore: configStore,
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
     }
 
     func makeCodexStore(settings: SettingsStore, dashboardAuthorized: Bool) -> UsageStore {
@@ -79,51 +77,6 @@ struct StatusMenuTests {
     }
 
     @Test
-    func `alibaba dashboard action follows selected region`() {
-        self.disableMenuCardsForTesting()
-        let settings = self.makeSettings()
-        settings.statusChecksEnabled = false
-        settings.refreshFrequency = .manual
-        settings.mergeIcons = false
-        settings.providerDetectionCompleted = true
-        settings.alibabaCodingPlanAPIRegion = .chinaMainland
-
-        let fetcher = UsageFetcher()
-        let store = UsageStore(fetcher: fetcher, browserDetection: BrowserDetection(cacheTTL: 0), settings: settings)
-        let controller = StatusItemController(
-            store: store,
-            settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
-            statusBar: self.makeStatusBarForTesting())
-
-        #expect(controller.dashboardURL(for: .alibaba) == AlibabaCodingPlanAPIRegion.chinaMainland.dashboardURL)
-    }
-
-    @Test
-    func `opencode go dashboard action follows configured workspace`() {
-        self.disableMenuCardsForTesting()
-        let settings = self.makeSettings()
-        settings.statusChecksEnabled = false
-        settings.refreshFrequency = .manual
-        settings.opencodegoWorkspaceID = "https://opencode.ai/workspace/wrk_abc123/go"
-
-        let fetcher = UsageFetcher()
-        let store = UsageStore(fetcher: fetcher, browserDetection: BrowserDetection(cacheTTL: 0), settings: settings)
-        let controller = StatusItemController(
-            store: store,
-            settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
-            statusBar: self.makeStatusBarForTesting())
-
-        #expect(controller.dashboardURL(for: .opencodego)?
-            .absoluteString == "https://opencode.ai/workspace/wrk_abc123/go")
-    }
-
-    @Test
     func `claude subscription dashboard action opens usage page`() {
         for plan in ["Claude Pro", "Claude Team"] {
             self.disableMenuCardsForTesting()
@@ -155,9 +108,7 @@ struct StatusMenuTests {
             let controller = StatusItemController(
                 store: store,
                 settings: settings,
-                account: fetcher.loadAccountInfo(),
-                updater: DisabledUpdaterController(),
-                preferencesSelection: PreferencesSelection(),
+                account: fetcher.loadAccountInfo(),                preferencesSelection: PreferencesSelection(),
                 statusBar: self.makeStatusBarForTesting())
 
             #expect(controller.dashboardURL(for: .claude)?.absoluteString == "https://claude.ai/settings/usage")
@@ -179,18 +130,12 @@ struct StatusMenuTests {
         if let claudeMeta = registry.metadata[.claude] {
             settings.setProviderEnabled(provider: .claude, metadata: claudeMeta, enabled: true)
         }
-        if let geminiMeta = registry.metadata[.gemini] {
-            settings.setProviderEnabled(provider: .gemini, metadata: geminiMeta, enabled: false)
-        }
-
         let fetcher = UsageFetcher()
         let store = UsageStore(fetcher: fetcher, browserDetection: BrowserDetection(cacheTTL: 0), settings: settings)
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
         defer { controller.releaseStatusItemsForTesting() }
 
@@ -231,9 +176,7 @@ struct StatusMenuTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
         defer { controller.releaseStatusItemsForTesting() }
 
@@ -260,9 +203,7 @@ struct StatusMenuTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
 
         let menu = controller.makeMenu()
@@ -289,9 +230,7 @@ struct StatusMenuTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: UsageFetcher().loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: UsageFetcher().loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
 
         let menu = controller.makeMenu()
@@ -352,9 +291,6 @@ struct StatusMenuTests {
         if let claudeMeta = registry.metadata[.claude] {
             settings.setProviderEnabled(provider: .claude, metadata: claudeMeta, enabled: true)
         }
-        if let geminiMeta = registry.metadata[.gemini] {
-            settings.setProviderEnabled(provider: .gemini, metadata: geminiMeta, enabled: true)
-        }
 
         let fetcher = UsageFetcher()
         let store = UsageStore(fetcher: fetcher, browserDetection: BrowserDetection(cacheTTL: 0), settings: settings)
@@ -371,9 +307,7 @@ struct StatusMenuTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
         defer { controller.releaseStatusItemsForTesting() }
 
@@ -453,9 +387,7 @@ struct StatusMenuTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
 
         controller.releaseStatusItemsForTesting()
@@ -485,9 +417,7 @@ struct StatusMenuTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
 
         let model = try #require(controller.menuCardModel(for: .codex))
@@ -542,9 +472,7 @@ struct StatusMenuTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
 
         #expect(store.enabledProviders().count == 2)
@@ -592,9 +520,7 @@ struct StatusMenuTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
 
         let menu = controller.makeMenu()
@@ -628,9 +554,7 @@ struct StatusMenuTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
 
         let menu = controller.makeMenu()
@@ -683,9 +607,7 @@ struct StatusMenuTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
 
         let menu = controller.makeMenu()
@@ -722,7 +644,7 @@ struct StatusMenuTests {
         let registry = ProviderRegistry.shared
         for provider in UsageProvider.allCases {
             guard let metadata = registry.metadata[provider] else { continue }
-            let shouldEnable = provider == .codex || provider == .claude || provider == .cursor
+            let shouldEnable = provider == .codex || provider == .claude
             settings.setProviderEnabled(provider: provider, metadata: metadata, enabled: shouldEnable)
         }
 
@@ -731,9 +653,7 @@ struct StatusMenuTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
 
         let menu = controller.makeMenu()
@@ -793,9 +713,7 @@ extension StatusMenuTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
 
         let menu = controller.makeMenu(for: .codex)
@@ -824,18 +742,13 @@ extension StatusMenuTests {
         if let claudeMeta = registry.metadata[.claude] {
             settings.setProviderEnabled(provider: .claude, metadata: claudeMeta, enabled: true)
         }
-        if let geminiMeta = registry.metadata[.gemini] {
-            settings.setProviderEnabled(provider: .gemini, metadata: geminiMeta, enabled: false)
-        }
 
         let fetcher = UsageFetcher()
         let store = UsageStore(fetcher: fetcher, browserDetection: BrowserDetection(cacheTTL: 0), settings: settings)
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
         defer { controller.releaseStatusItemsForTesting() }
 
@@ -862,10 +775,6 @@ extension StatusMenuTests {
         try settings.setProviderEnabled(
             provider: .claude,
             metadata: #require(registry.metadata[.claude]),
-            enabled: true)
-        try settings.setProviderEnabled(
-            provider: .gemini,
-            metadata: #require(registry.metadata[.gemini]),
             enabled: false)
 
         let fetcher = UsageFetcher()
@@ -873,9 +782,7 @@ extension StatusMenuTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
 
         let codexItem = try #require(controller.statusItems[.codex])
@@ -883,14 +790,14 @@ extension StatusMenuTests {
         #expect(!codexItem.autosaveName.hasPrefix("codexbar-"))
 
         try settings.setProviderEnabled(
-            provider: .gemini,
-            metadata: #require(registry.metadata[.gemini]),
+            provider: .claude,
+            metadata: #require(registry.metadata[.claude]),
             enabled: true)
         controller.handleProviderConfigChange(reason: "test")
 
         #expect(controller.statusItems[.codex] === codexItem)
         #expect(controller.statusItems[.codex]?.autosaveName.hasPrefix("codexbar-") == false)
-        #expect(controller.statusItems[.gemini]?.autosaveName.hasPrefix("codexbar-") == false)
+        #expect(controller.statusItems[.claude]?.autosaveName.hasPrefix("codexbar-") == false)
     }
 
     @Test
@@ -909,9 +816,6 @@ extension StatusMenuTests {
         if let claudeMeta = registry.metadata[.claude] {
             settings.setProviderEnabled(provider: .claude, metadata: claudeMeta, enabled: false)
         }
-        if let geminiMeta = registry.metadata[.gemini] {
-            settings.setProviderEnabled(provider: .gemini, metadata: geminiMeta, enabled: false)
-        }
 
         let fetcher = UsageFetcher()
         let store = UsageStore(fetcher: fetcher, browserDetection: BrowserDetection(cacheTTL: 0), settings: settings)
@@ -927,9 +831,7 @@ extension StatusMenuTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
         defer { controller.releaseStatusItemsForTesting() }
 
@@ -957,9 +859,6 @@ extension StatusMenuTests {
         if let claudeMeta = registry.metadata[.claude] {
             settings.setProviderEnabled(provider: .claude, metadata: claudeMeta, enabled: false)
         }
-        if let geminiMeta = registry.metadata[.gemini] {
-            settings.setProviderEnabled(provider: .gemini, metadata: geminiMeta, enabled: false)
-        }
 
         let fetcher = UsageFetcher()
         let store = UsageStore(fetcher: fetcher, browserDetection: BrowserDetection(cacheTTL: 0), settings: settings)
@@ -977,9 +876,7 @@ extension StatusMenuTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
 
         let menu = controller.makeMenu()
@@ -1020,9 +917,7 @@ extension StatusMenuTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
 
         let parentMenu = NSMenu()
@@ -1088,9 +983,7 @@ extension StatusMenuTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
 
         let submenu = NSMenu()
@@ -1107,8 +1000,6 @@ extension StatusMenuTests {
         self.disableMenuCardsForTesting()
         let settings = SettingsStore(
             configStore: testConfigStore(suiteName: "StatusMenuTests-history"),
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
         settings.statusChecksEnabled = false
         settings.refreshFrequency = .manual
         settings.mergeIcons = true
@@ -1122,10 +1013,6 @@ extension StatusMenuTests {
         if let claudeMeta = registry.metadata[.claude] {
             settings.setProviderEnabled(provider: .claude, metadata: claudeMeta, enabled: false)
         }
-        if let geminiMeta = registry.metadata[.gemini] {
-            settings.setProviderEnabled(provider: .gemini, metadata: geminiMeta, enabled: false)
-        }
-
         let fetcher = UsageFetcher()
         let store = UsageStore(fetcher: fetcher, browserDetection: BrowserDetection(cacheTTL: 0), settings: settings)
 
@@ -1154,9 +1041,7 @@ extension StatusMenuTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
         defer { controller.releaseStatusItemsForTesting() }
 
@@ -1170,59 +1055,6 @@ extension StatusMenuTests {
         #expect(
             creditsItem?.submenu?.items
                 .contains { ($0.representedObject as? String) == "creditsHistoryChart" } == true)
-    }
-
-    @Test
-    func `shows open AI API usage chart submenu without codex web history`() throws {
-        self.disableMenuCardsForTesting()
-        let settings = self.makeSettings()
-        settings.statusChecksEnabled = false
-        settings.refreshFrequency = .manual
-        settings.mergeIcons = false
-        settings.selectedMenuProvider = .openai
-
-        let registry = ProviderRegistry.shared
-        let metadata = try #require(registry.metadata[.openai])
-        settings.setProviderEnabled(provider: .openai, metadata: metadata, enabled: true)
-
-        let fetcher = UsageFetcher()
-        let store = UsageStore(fetcher: fetcher, browserDetection: BrowserDetection(cacheTTL: 0), settings: settings)
-        let now = Date(timeIntervalSince1970: 1_700_000_000)
-        let usage = OpenAIAPIUsageSnapshot(
-            daily: [
-                OpenAIAPIUsageSnapshot.DailyBucket(
-                    day: "2023-11-14",
-                    startTime: now,
-                    endTime: now.addingTimeInterval(86400),
-                    costUSD: 9,
-                    requests: 12,
-                    inputTokens: 100,
-                    cachedInputTokens: 0,
-                    outputTokens: 50,
-                    totalTokens: 150,
-                    lineItems: [],
-                    models: []),
-            ],
-            updatedAt: now)
-        store._setSnapshotForTesting(usage.toUsageSnapshot(), provider: .openai)
-
-        let controller = StatusItemController(
-            store: store,
-            settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
-            statusBar: self.makeStatusBarForTesting())
-        defer { controller.releaseStatusItemsForTesting() }
-
-        let menu = controller.makeMenu(for: .openai)
-        controller.menuWillOpen(menu)
-        let usageItem = menu.items.first { ($0.representedObject as? String) == "menuCardUsage" }
-
-        #expect(usageItem?.submenu?.items
-            .contains { ($0.representedObject as? String) == StatusItemController.openAIAPIUsageChartID } == true)
-        #expect(menu.items.contains { ($0.representedObject as? String) == "menuCardHeader" } == false)
-        #expect(menu.items.contains { ($0.representedObject as? String) == "menuCardExtraUsage" } == false)
     }
 
     @Test
@@ -1241,9 +1073,6 @@ extension StatusMenuTests {
         }
         if let claudeMeta = registry.metadata[.claude] {
             settings.setProviderEnabled(provider: .claude, metadata: claudeMeta, enabled: false)
-        }
-        if let geminiMeta = registry.metadata[.gemini] {
-            settings.setProviderEnabled(provider: .gemini, metadata: geminiMeta, enabled: false)
         }
 
         let fetcher = UsageFetcher()
@@ -1279,9 +1108,7 @@ extension StatusMenuTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
         defer { controller.releaseStatusItemsForTesting() }
 
@@ -1314,9 +1141,7 @@ extension StatusMenuTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
 
         let submenu = controller.makeHostedSubviewPlaceholderMenu(
@@ -1372,9 +1197,6 @@ extension StatusMenuTests {
         if let claudeMeta = registry.metadata[.claude] {
             settings.setProviderEnabled(provider: .claude, metadata: claudeMeta, enabled: true)
         }
-        if let geminiMeta = registry.metadata[.gemini] {
-            settings.setProviderEnabled(provider: .gemini, metadata: geminiMeta, enabled: false)
-        }
 
         let fetcher = UsageFetcher()
         let store = UsageStore(fetcher: fetcher, browserDetection: BrowserDetection(cacheTTL: 0), settings: settings)
@@ -1417,9 +1239,7 @@ extension StatusMenuTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
         defer { controller.releaseStatusItemsForTesting() }
 
@@ -1429,61 +1249,6 @@ extension StatusMenuTests {
         #expect(ids.contains("menuCardExtraUsage"))
     }
 
-    @Test
-    func `shows vertex cost when usage error present`() {
-        self.disableMenuCardsForTesting()
-        let settings = self.makeSettings()
-        settings.statusChecksEnabled = false
-        settings.refreshFrequency = .manual
-        settings.mergeIcons = true
-        settings.selectedMenuProvider = .vertexai
-        settings.costUsageEnabled = true
-
-        let registry = ProviderRegistry.shared
-        if let vertexMeta = registry.metadata[.vertexai] {
-            settings.setProviderEnabled(provider: .vertexai, metadata: vertexMeta, enabled: true)
-        }
-        if let codexMeta = registry.metadata[.codex] {
-            settings.setProviderEnabled(provider: .codex, metadata: codexMeta, enabled: false)
-        }
-        if let claudeMeta = registry.metadata[.claude] {
-            settings.setProviderEnabled(provider: .claude, metadata: claudeMeta, enabled: false)
-        }
-
-        let fetcher = UsageFetcher()
-        let store = UsageStore(fetcher: fetcher, browserDetection: BrowserDetection(cacheTTL: 0), settings: settings)
-        store._setErrorForTesting("No Vertex AI usage data found for the current project.", provider: .vertexai)
-        store._setTokenSnapshotForTesting(CostUsageTokenSnapshot(
-            sessionTokens: 10,
-            sessionCostUSD: 0.01,
-            last30DaysTokens: 100,
-            last30DaysCostUSD: 1.0,
-            daily: [
-                CostUsageDailyReport.Entry(
-                    date: "2025-12-23",
-                    inputTokens: nil,
-                    outputTokens: nil,
-                    totalTokens: 100,
-                    costUSD: 1.0,
-                    modelsUsed: nil,
-                    modelBreakdowns: nil),
-            ],
-            updatedAt: Date()), provider: .vertexai)
-
-        let controller = StatusItemController(
-            store: store,
-            settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
-            statusBar: self.makeStatusBarForTesting())
-        defer { controller.releaseStatusItemsForTesting() }
-
-        let menu = controller.makeMenu()
-        controller.menuWillOpen(menu)
-        let ids = menu.items.compactMap { $0.representedObject as? String }
-        #expect(ids.contains("menuCardCost"))
-    }
 }
 
 extension StatusMenuTests {
@@ -1500,7 +1265,7 @@ extension StatusMenuTests {
         let registry = ProviderRegistry.shared
         for provider in UsageProvider.allCases {
             guard let metadata = registry.metadata[provider] else { continue }
-            let shouldEnable = provider == .codex || provider == .claude || provider == .cursor
+            let shouldEnable = provider == .codex || provider == .claude
             settings.setProviderEnabled(provider: provider, metadata: metadata, enabled: shouldEnable)
         }
 
@@ -1509,9 +1274,7 @@ extension StatusMenuTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
 
         let menu = controller.makeMenu()
@@ -1519,10 +1282,9 @@ extension StatusMenuTests {
 
         let ids = self.representedIDs(in: menu)
         let overviewRows = ids.filter { $0.hasPrefix("overviewRow-") }
-        #expect(overviewRows.count == 3)
+        #expect(overviewRows.count == 2)
         #expect(overviewRows.contains("overviewRow-codex"))
         #expect(overviewRows.contains("overviewRow-claude"))
-        #expect(overviewRows.contains("overviewRow-cursor"))
         #expect(ids.contains("menuCard") == false)
     }
 
@@ -1539,22 +1301,20 @@ extension StatusMenuTests {
         let registry = ProviderRegistry.shared
         for provider in UsageProvider.allCases {
             guard let metadata = registry.metadata[provider] else { continue }
-            let shouldEnable = provider == .codex || provider == .claude || provider == .cursor
+            let shouldEnable = provider == .codex || provider == .claude
             settings.setProviderEnabled(provider: provider, metadata: metadata, enabled: shouldEnable)
         }
         _ = settings.setMergedOverviewProviderSelection(
             provider: .claude,
             isSelected: false,
-            activeProviders: [.codex, .claude, .cursor])
+            activeProviders: [.codex, .claude])
 
         let fetcher = UsageFetcher()
         let store = UsageStore(fetcher: fetcher, browserDetection: BrowserDetection(cacheTTL: 0), settings: settings)
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
 
         let menu = controller.makeMenu()
@@ -1562,9 +1322,8 @@ extension StatusMenuTests {
 
         let ids = self.representedIDs(in: menu)
         let overviewRows = ids.filter { $0.hasPrefix("overviewRow-") }
-        #expect(overviewRows.count == 2)
+        #expect(overviewRows.count == 1)
         #expect(overviewRows.contains("overviewRow-codex"))
-        #expect(overviewRows.contains("overviewRow-cursor"))
         #expect(overviewRows.contains("overviewRow-claude") == false)
         #expect(ids.contains("menuCard") == false)
     }
@@ -1583,10 +1342,7 @@ extension StatusMenuTests {
         let registry = ProviderRegistry.shared
         for provider in UsageProvider.allCases {
             guard let metadata = registry.metadata[provider] else { continue }
-            let shouldEnable = provider == .codex ||
-                provider == .claude ||
-                provider == .cursor ||
-                provider == .opencode
+            let shouldEnable = provider == .codex || provider == .claude
             settings.setProviderEnabled(provider: provider, metadata: metadata, enabled: shouldEnable)
         }
 
@@ -1595,9 +1351,7 @@ extension StatusMenuTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
 
         let menu = controller.makeMenu()
@@ -1639,9 +1393,7 @@ extension StatusMenuTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
 
         let menu = controller.makeMenu()
@@ -1676,9 +1428,7 @@ extension StatusMenuTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
 
         let menu = controller.makeMenu()

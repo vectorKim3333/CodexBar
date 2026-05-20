@@ -7,15 +7,20 @@ extension UsageStore {
         _ = self.settings.persistResolvedCodexActiveSourceCorrectionIfNeeded()
     }
 
-    /// Force refresh Augment session (called from UI button)
-    func forceRefreshAugmentSession() async {
-        await self.performRuntimeAction(.forceSessionRefresh, for: .augment)
-    }
-
     func refreshProvider(_ provider: UsageProvider, allowDisabled: Bool = false) async {
         self.prepareRefreshState(for: provider)
         guard let spec = self.providerSpecs[provider] else { return }
         let codexExpectedGuard = provider == .codex ? self.currentCodexAccountScopedRefreshGuard() : nil
+
+        // Rate-limit backoff: if the last fetch hit HTTP 429 (or similar
+        // throttling), skip until the backoff window elapses. Anthropic in
+        // particular returns 429 for tight polling, and continuing to hammer
+        // it just extends the lockout. Backoff is per-provider so Codex isn't
+        // punished for a Claude limit. Cleared on next successful fetch.
+        let now = Date()
+        if let backoffUntil = self.rateLimitBackoffUntil[provider], backoffUntil > now {
+            return
+        }
 
         if !spec.isEnabled(), !allowDisabled {
             self.refreshingProviders.remove(provider)
@@ -29,9 +34,6 @@ extension UsageStore {
                 if provider == .codex {
                     self.codexAccountSnapshots = []
                 }
-                if provider == .kilo {
-                    self.kiloScopeSnapshots = []
-                }
                 self.tokenSnapshots.removeValue(forKey: provider)
                 self.tokenErrors[provider] = nil
                 self.failureGates[provider]?.reset()
@@ -41,6 +43,7 @@ extension UsageStore {
                 self.lastKnownSessionWindowSource.removeValue(forKey: provider)
                 self.quotaWarningState = self.quotaWarningState.filter { $0.key.provider != provider }
                 self.lastTokenFetchAt.removeValue(forKey: provider)
+                self.rateLimitBackoffUntil.removeValue(forKey: provider)
             }
             return
         }
@@ -53,15 +56,6 @@ extension UsageStore {
             return
         } else if provider == .codex {
             self.codexAccountSnapshots = []
-        }
-
-        if provider == .kilo, self.shouldFanOutKiloScopes() {
-            await self.refreshKiloScopes()
-            // Continue to also fetch the personal snapshot through the regular path
-            // so the existing single-card render keeps working when only personal is shown.
-            // The presence of multi-element kiloScopeSnapshots triggers stacked rendering.
-        } else if provider == .kilo {
-            await MainActor.run { self.kiloScopeSnapshots = [] }
         }
 
         let tokenAccounts = self.tokenAccounts(for: provider)
@@ -107,6 +101,22 @@ extension UsageStore {
             self.lastFetchAttempts[provider] = outcome.attempts
         }
 
+        // Inspect the fetch attempts for HTTP 429 / "rate_limit_error"
+        // signatures. If any strategy in the fallback chain saw rate limiting,
+        // arm a ~10-minute backoff so further calls (menu opens, background
+        // timer, manual refresh) skip cleanly instead of hammering Anthropic.
+        let hadRateLimit = outcome.attempts.contains { attempt in
+            guard let desc = attempt.errorDescription?.lowercased() else { return false }
+            return desc.contains("429")
+                || desc.contains("rate_limit")
+                || desc.contains("rate limit")
+        }
+        if hadRateLimit {
+            await MainActor.run {
+                self.rateLimitBackoffUntil[provider] = Date().addingTimeInterval(Self.rateLimitBackoffSeconds)
+            }
+        }
+
         switch outcome.result {
         case let .success(result):
             let scoped = result.usage.scoped(to: provider)
@@ -127,6 +137,7 @@ extension UsageStore {
                 self.snapshots[provider] = backfilled
                 self.lastSourceLabels[provider] = result.sourceLabel
                 self.errors[provider] = nil
+                self.rateLimitBackoffUntil.removeValue(forKey: provider)
                 self.failureGates[provider]?.recordSuccess()
                 if provider == .codex {
                     self.rememberLiveSystemCodexEmailIfNeeded(scoped.accountEmail(for: .codex))

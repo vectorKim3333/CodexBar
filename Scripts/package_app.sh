@@ -263,8 +263,8 @@ for ARCH in "${ARCH_LIST[@]}"; do
   swift build -c "$CONF" --arch "$ARCH"
 done
 
-APP_FINAL="$ROOT/CodexBar.app"
-APP_STAGE="$ROOT/.build/package/CodexBar.app"
+APP_FINAL="$ROOT/ClCoBar.app"
+APP_STAGE="$ROOT/.build/package/ClCoBar.app"
 rm -rf "$APP_STAGE"
 APP="$APP_STAGE"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" "$APP/Contents/Frameworks"
@@ -338,8 +338,8 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CFBundleName</key><string>CodexBar</string>
-    <key>CFBundleDisplayName</key><string>CodexBar</string>
+    <key>CFBundleName</key><string>ClCoBar</string>
+    <key>CFBundleDisplayName</key><string>ClCoBar</string>
     <key>CFBundleIdentifier</key><string>${BUNDLE_ID}</string>
     <key>CFBundleExecutable</key><string>CodexBar</string>
     <key>CFBundlePackageType</key><string>APPL</string>
@@ -462,13 +462,8 @@ PLIST
   install_binary "CodexBarWidget" "$WIDGET_APP/Contents/MacOS/CodexBarWidget"
   generate_widget_appintents_metadata "$WIDGET_APP/Contents/Resources"
 fi
-# Embed Sparkle.framework
-if [[ -d ".build/$CONF/Sparkle.framework" ]]; then
-  cp -R ".build/$CONF/Sparkle.framework" "$APP/Contents/Frameworks/"
-  chmod -R a+rX "$APP/Contents/Frameworks/Sparkle.framework"
-  install_name_tool -add_rpath "@executable_path/../Frameworks" "$APP/Contents/MacOS/CodexBar"
-  # Re-sign Sparkle and all nested components with Developer ID + timestamp
-  SPARKLE="$APP/Contents/Frameworks/Sparkle.framework"
+# Define code-signing identity + args (used by helper signing below).
+# (Sparkle.framework signing block was removed when Sparkle integration was dropped.)
 if [[ "$SIGNING_MODE" == "adhoc" ]]; then
   CODESIGN_ID="-"
   CODESIGN_ARGS=(--force --sign "$CODESIGN_ID")
@@ -476,22 +471,8 @@ elif [[ "$ALLOW_LLDB" == "1" ]]; then
   CODESIGN_ID="-"
   CODESIGN_ARGS=(--force --sign "$CODESIGN_ID")
 else
-  CODESIGN_ID="${APP_IDENTITY:-Developer ID Application: Peter Steinberger (Y5PE65HELJ)}"
+  CODESIGN_ID="${APP_IDENTITY:-${USER:-CodexBar} Developer}"
   CODESIGN_ARGS=(--force --timestamp --options runtime --sign "$CODESIGN_ID")
-fi
-function resign() { codesign "${CODESIGN_ARGS[@]}" "$1"; }
-  # Sign innermost binaries first, then the framework root to seal resources
-  resign "$SPARKLE"
-  resign "$SPARKLE/Versions/B/Sparkle"
-  resign "$SPARKLE/Versions/B/Autoupdate"
-  resign "$SPARKLE/Versions/B/Updater.app"
-  resign "$SPARKLE/Versions/B/Updater.app/Contents/MacOS/Updater"
-  resign "$SPARKLE/Versions/B/XPCServices/Downloader.xpc"
-  resign "$SPARKLE/Versions/B/XPCServices/Downloader.xpc/Contents/MacOS/Downloader"
-  resign "$SPARKLE/Versions/B/XPCServices/Installer.xpc"
-  resign "$SPARKLE/Versions/B/XPCServices/Installer.xpc/Contents/MacOS/Installer"
-  resign "$SPARKLE/Versions/B"
-  resign "$SPARKLE"
 fi
 
 if [[ -f "$ICON_TARGET" ]]; then

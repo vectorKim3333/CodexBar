@@ -14,8 +14,6 @@ struct MenuDescriptorOpenAIAPITests {
         let settings = SettingsStore(
             userDefaults: defaults,
             configStore: testConfigStore(suiteName: suite),
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
         settings.statusChecksEnabled = false
 
         let store = UsageStore(
@@ -73,9 +71,7 @@ struct MenuDescriptorOpenAIAPITests {
             provider: .openai,
             store: store,
             settings: settings,
-            account: AccountInfo(email: nil, plan: nil),
-            updateReady: false,
-            includeContextualActions: false)
+            account: AccountInfo(email: nil, plan: nil),            includeContextualActions: false)
         let lines = descriptor.sections
             .flatMap(\.entries)
             .compactMap { entry -> String? in

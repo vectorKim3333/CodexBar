@@ -38,21 +38,6 @@ extension StatusItemController: StatusItemMenuPersistentActionDelegate {
         }
     }
 
-    @objc func refreshAugmentSession() {
-        Task {
-            await self.store.forceRefreshAugmentSession()
-            // Also trigger a full refresh to update the menu and clear any stale errors
-            await ProviderInteractionContext.$current.withValue(.userInitiated) {
-                await self.store.refresh(forceTokenUsage: false)
-            }
-            self.refreshOpenMenusAfterExplicitStoreAction()
-        }
-    }
-
-    @objc func installUpdate() {
-        self.updater.installUpdate()
-    }
-
     @objc func openDashboard() {
         let preferred = self.lastMenuProvider
             ?? (self.store.isEnabled(.codex) ? .codex : self.store.enabledProviders().first)
@@ -63,17 +48,6 @@ extension StatusItemController: StatusItemMenuPersistentActionDelegate {
     }
 
     func dashboardURL(for provider: UsageProvider) -> URL? {
-        if provider == .alibaba {
-            return self.settings.alibabaCodingPlanAPIRegion.dashboardURL
-        }
-        if provider == .minimax {
-            return self.settings.minimaxAPIRegion.dashboardURL
-        }
-
-        if provider == .opencodego {
-            return self.settings.opencodegoDashboardURL
-        }
-
         let meta = self.store.metadata(for: provider)
         let urlString: String? = if provider == .claude, self.store.isClaudeSubscription() {
             meta.subscriptionDashboardURL ?? meta.dashboardURL
@@ -97,11 +71,7 @@ extension StatusItemController: StatusItemMenuPersistentActionDelegate {
         guard let urlString,
               let url = URL(string: urlString) else { return }
 
-        let autoStart = true
-        let accountEmail = self.store.codexAccountEmailForOpenAIDashboard()
-        let controller = self.creditsPurchaseWindow ?? OpenAICreditsPurchaseWindowController()
-        controller.show(purchaseURL: url, accountEmail: accountEmail, autoStartPurchase: autoStart)
-        self.creditsPurchaseWindow = controller
+        NSWorkspace.shared.open(url)
     }
 
     static func sanitizedCreditsPurchaseURL(_ raw: String?) -> String? {
@@ -162,7 +132,7 @@ extension StatusItemController: StatusItemMenuPersistentActionDelegate {
         guard self.settings.hasUnreadableManagedCodexAccountStore == false else {
             self.presentLoginAlert(
                 title: "Managed Codex accounts unavailable",
-                message: "CodexBar could not read managed account storage. " +
+                message: "ClCoBar could not read managed account storage. " +
                     "Recover the store before adding another account.")
             return
         }
@@ -372,9 +342,9 @@ extension StatusItemController: StatusItemMenuPersistentActionDelegate {
                 "Codex login completed, but no account email was available. " +
                     "Try again after confirming the account is fully signed in."
             case .workspaceSelectionCancelled:
-                "CodexBar found multiple workspaces, but no workspace was selected."
+                "ClCoBar found multiple workspaces, but no workspace was selected."
             case let .unsafeManagedHome(path):
-                "CodexBar refused to modify an unexpected managed home path: \(path)"
+                "ClCoBar refused to modify an unexpected managed home path: \(path)"
             }
             info = LoginAlertInfo(title: "Could not add Codex account", message: message)
         } else {
@@ -425,72 +395,9 @@ extension StatusItemController: StatusItemMenuPersistentActionDelegate {
         }
     }
 
-    func describe(_ outcome: GeminiLoginRunner.Result.Outcome) -> String {
-        switch outcome {
-        case .success: "success"
-        case .missingBinary: "missingBinary"
-        case let .launchFailed(message): "launchFailed(\(message))"
-        }
-    }
-
-    func describe(_ outcome: AntigravityLoginRunner.Result.Outcome) -> String {
-        switch outcome {
-        case let .success(email):
-            "success(email: \(email ?? "nil"))"
-        case .cancelled:
-            "cancelled"
-        case .timedOut:
-            "timedOut"
-        case let .launchFailed(message):
-            "launchFailed(\(message))"
-        case let .failed(message):
-            "failed(\(message))"
-        }
-    }
-
-    func presentGeminiLoginResult(_ result: GeminiLoginRunner.Result) {
-        guard let info = Self.geminiLoginAlertInfo(for: result) else { return }
-        self.presentLoginAlert(title: info.title, message: info.message)
-    }
-
-    func presentAntigravityLoginResult(_ result: AntigravityLoginRunner.Result) {
-        guard let info = Self.antigravityLoginAlertInfo(for: result) else { return }
-        self.presentLoginAlert(title: info.title, message: info.message)
-    }
-
     struct LoginAlertInfo: Equatable {
         let title: String
         let message: String
-    }
-
-    nonisolated static func geminiLoginAlertInfo(for result: GeminiLoginRunner.Result) -> LoginAlertInfo? {
-        switch result.outcome {
-        case .success:
-            nil
-        case .missingBinary:
-            LoginAlertInfo(
-                title: "Gemini CLI not found",
-                message: "Install the Gemini CLI (npm i -g @google/gemini-cli) and try again.")
-        case let .launchFailed(message):
-            LoginAlertInfo(title: "Could not open Terminal for Gemini", message: message)
-        }
-    }
-
-    nonisolated static func antigravityLoginAlertInfo(for result: AntigravityLoginRunner.Result) -> LoginAlertInfo? {
-        switch result.outcome {
-        case .success, .cancelled:
-            nil
-        case .timedOut:
-            LoginAlertInfo(
-                title: "Antigravity login timed out",
-                message: "The browser login did not complete in time. Try Antigravity login again.")
-        case let .launchFailed(message):
-            LoginAlertInfo(
-                title: "Could not open browser for Antigravity",
-                message: "Open this URL manually to continue login:\n\n\(message)")
-        case let .failed(message):
-            LoginAlertInfo(title: "Antigravity login failed", message: message)
-        }
     }
 
     func presentLoginAlert(title: String, message: String) {
@@ -517,23 +424,4 @@ extension StatusItemController: StatusItemMenuPersistentActionDelegate {
         AppNotifications.shared.post(idPrefix: "login-\(provider.rawValue)", title: title, body: body)
     }
 
-    func presentCursorLoginResult(_ result: CursorLoginRunner.Result) {
-        switch result.outcome {
-        case .success:
-            return
-        case .cancelled:
-            // User closed the window; no alert needed
-            return
-        case let .failed(message):
-            self.presentLoginAlert(title: "Cursor login failed", message: message)
-        }
-    }
-
-    func describe(_ outcome: CursorLoginRunner.Result.Outcome) -> String {
-        switch outcome {
-        case .success: "success"
-        case .cancelled: "cancelled"
-        case let .failed(message): "failed(\(message))"
-        }
-    }
 }

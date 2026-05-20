@@ -21,21 +21,18 @@ struct StatusItemAnimationSignatureTests {
         let settings = SettingsStore(
             userDefaults: defaults,
             configStore: testConfigStore(suiteName: suite),
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
         settings.statusChecksEnabled = false
         settings.refreshFrequency = .manual
         settings.mergeIcons = true
         settings.selectedMenuProvider = .codex
         settings.menuBarShowsBrandIconWithPercent = false
-        settings.syntheticAPIToken = "synthetic-test-token"
 
         let registry = ProviderRegistry.shared
         if let codexMeta = registry.metadata[.codex] {
             settings.setProviderEnabled(provider: .codex, metadata: codexMeta, enabled: true)
         }
-        if let syntheticMeta = registry.metadata[.synthetic] {
-            settings.setProviderEnabled(provider: .synthetic, metadata: syntheticMeta, enabled: true)
+        if let claudeMeta = registry.metadata[.claude] {
+            settings.setProviderEnabled(provider: .claude, metadata: claudeMeta, enabled: true)
         }
 
         let fetcher = UsageFetcher()
@@ -43,9 +40,7 @@ struct StatusItemAnimationSignatureTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
 
         store._setSnapshotForTesting(
@@ -55,14 +50,14 @@ struct StatusItemAnimationSignatureTests {
                 updatedAt: Date()),
             provider: .codex)
 
-        #expect(store.enabledProvidersForDisplay() == [.codex, .synthetic])
-        #expect(store.enabledProviders() == [.codex, .synthetic])
+        #expect(store.enabledProvidersForDisplay() == [.codex, .claude])
+        #expect(store.enabledProviders() == [.codex, .claude])
         #expect(store.iconStyle == .combined)
         controller.applyIcon(phase: nil)
         let combinedSignature = controller.lastAppliedMergedIconRenderSignature
 
-        if let syntheticMeta = registry.metadata[.synthetic] {
-            settings.setProviderEnabled(provider: .synthetic, metadata: syntheticMeta, enabled: false)
+        if let claudeMeta = registry.metadata[.claude] {
+            settings.setProviderEnabled(provider: .claude, metadata: claudeMeta, enabled: false)
         }
 
         #expect(store.enabledProvidersForDisplay() == [.codex])
@@ -85,20 +80,15 @@ struct StatusItemAnimationSignatureTests {
         let settings = SettingsStore(
             userDefaults: defaults ?? .standard,
             configStore: testConfigStore(suiteName: "StatusItemAnimationSignatureTests-merged-overview-provider-order"),
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
         settings.statusChecksEnabled = false
         settings.refreshFrequency = .manual
         settings.mergeIcons = true
         settings.selectedMenuProvider = .codex
         settings.mergedMenuLastSelectedWasOverview = true
         settings.menuBarShowsBrandIconWithPercent = false
-        settings.setProviderOrder([.cursor, .codex, .claude])
+        settings.setProviderOrder([.codex, .claude])
 
         let registry = ProviderRegistry.shared
-        if let cursorMeta = registry.metadata[.cursor] {
-            settings.setProviderEnabled(provider: .cursor, metadata: cursorMeta, enabled: true)
-        }
         if let codexMeta = registry.metadata[.codex] {
             settings.setProviderEnabled(provider: .codex, metadata: codexMeta, enabled: true)
         }
@@ -111,9 +101,7 @@ struct StatusItemAnimationSignatureTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
 
         let snapshot = UsageSnapshot(
@@ -123,16 +111,15 @@ struct StatusItemAnimationSignatureTests {
         store._setSnapshotForTesting(snapshot, provider: .codex)
         store._setSnapshotForTesting(snapshot, provider: .claude)
 
-        #expect(store.enabledProvidersForDisplay().prefix(3) == [.cursor, .codex, .claude])
+        #expect(store.enabledProvidersForDisplay().prefix(2) == [.codex, .claude])
         #expect(settings.resolvedMergedOverviewProviders(activeProviders: store.enabledProvidersForDisplay()) == [
-            .cursor,
             .codex,
             .claude,
         ])
 
         controller.applyIcon(phase: nil)
 
-        #expect(controller.lastAppliedMergedIconRenderSignature?.contains("provider=cursor") == true)
+        #expect(controller.lastAppliedMergedIconRenderSignature?.contains("provider=codex") == true)
     }
 
     @Test
@@ -143,8 +130,6 @@ struct StatusItemAnimationSignatureTests {
         let settings = SettingsStore(
             userDefaults: defaults,
             configStore: testConfigStore(suiteName: suite),
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
         settings.statusChecksEnabled = false
         settings.refreshFrequency = .manual
         settings.mergeIcons = false
@@ -159,9 +144,7 @@ struct StatusItemAnimationSignatureTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
 
         store._setSnapshotForTesting(

@@ -299,8 +299,6 @@ struct CodexManagedOpenAIWebRefreshTests {
         let settings = SettingsStore(
             userDefaults: defaults,
             configStore: configStore,
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
         settings.openAIWebAccessEnabled = true
         settings.codexCookieSource = .auto
         return settings

@@ -16,7 +16,7 @@ struct PreferencesPaneSmokeTests {
         _ = AdvancedPane(settings: settings).body
         _ = ProvidersPane(settings: settings, store: store).body
         _ = DebugPane(settings: settings, store: store).body
-        _ = AboutPane(updater: DisabledUpdaterController()).body
+        _ = AboutPane().body
 
         settings.debugDisableKeychainAccess = false
     }
@@ -41,7 +41,7 @@ struct PreferencesPaneSmokeTests {
         _ = AdvancedPane(settings: settings).body
         _ = ProvidersPane(settings: settings, store: store).body
         _ = DebugPane(settings: settings, store: store).body
-        _ = AboutPane(updater: DisabledUpdaterController()).body
+        _ = AboutPane().body
     }
 
     @Test
@@ -87,20 +87,8 @@ struct PreferencesPaneSmokeTests {
         return SettingsStore(
             userDefaults: defaults,
             configStore: configStore,
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore(),
             codexCookieStore: InMemoryCookieHeaderStore(),
             claudeCookieStore: InMemoryCookieHeaderStore(),
-            cursorCookieStore: InMemoryCookieHeaderStore(),
-            opencodeCookieStore: InMemoryCookieHeaderStore(),
-            factoryCookieStore: InMemoryCookieHeaderStore(),
-            minimaxCookieStore: InMemoryMiniMaxCookieStore(),
-            minimaxAPITokenStore: InMemoryMiniMaxAPITokenStore(),
-            kimiTokenStore: InMemoryKimiTokenStore(),
-            kimiK2TokenStore: InMemoryKimiK2TokenStore(),
-            augmentCookieStore: InMemoryCookieHeaderStore(),
-            ampCookieStore: InMemoryCookieHeaderStore(),
-            copilotTokenStore: InMemoryCopilotTokenStore(),
             tokenAccountStore: InMemoryTokenAccountStore())
     }
 

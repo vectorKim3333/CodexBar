@@ -27,7 +27,7 @@ extension UsageStore {
         } else {
             // Generic providers must carry an explicit window duration. Using the 10080-minute fallback for
             // windows without windowMinutes would fabricate a weekly pace for non-weekly windows
-            // (e.g. Factory monthly with only resetsAt).
+            // (e.g. providers with only resetsAt).
             guard window.windowMinutes != nil else { return nil }
             resolved = UsagePace.weekly(window: window, now: now, defaultWindowMinutes: 10080)
         }

@@ -25,8 +25,6 @@ struct BatteryDrainDiagnosticTests {
 
         let settings = SettingsStore(
             configStore: testConfigStore(suiteName: "BatteryDrain-AllDisabled"),
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
 
         settings.statusChecksEnabled = false
         settings.refreshFrequency = .manual
@@ -48,9 +46,7 @@ struct BatteryDrainDiagnosticTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
         defer { controller.releaseStatusItemsForTesting() }
 
@@ -68,8 +64,6 @@ struct BatteryDrainDiagnosticTests {
 
         let settings = SettingsStore(
             configStore: testConfigStore(suiteName: "BatteryDrain-HasData"),
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
 
         settings.statusChecksEnabled = false
         settings.refreshFrequency = .manual
@@ -96,9 +90,7 @@ struct BatteryDrainDiagnosticTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
         defer { controller.releaseStatusItemsForTesting() }
 
@@ -116,8 +108,6 @@ struct BatteryDrainDiagnosticTests {
 
         let settings = SettingsStore(
             configStore: testConfigStore(suiteName: "BatteryDrain-NoData"),
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
 
         settings.statusChecksEnabled = false
         settings.refreshFrequency = .manual
@@ -137,9 +127,7 @@ struct BatteryDrainDiagnosticTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
         defer { controller.releaseStatusItemsForTesting() }
 
@@ -154,8 +142,6 @@ struct BatteryDrainDiagnosticTests {
 
         let settings = SettingsStore(
             configStore: testConfigStore(suiteName: "BatteryDrain-ErrorStops"),
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
 
         settings.statusChecksEnabled = false
         settings.refreshFrequency = .manual
@@ -176,9 +162,7 @@ struct BatteryDrainDiagnosticTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
 
         #expect(store.isStale(provider: .codex) == true)

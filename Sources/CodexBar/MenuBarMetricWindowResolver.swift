@@ -33,32 +33,14 @@ enum MenuBarMetricWindowResolver {
     }
 
     private static func tertiaryOrder(for provider: UsageProvider) -> [Lane] {
-        if provider == .zai {
-            return [.tertiary, .primary, .secondary]
-        }
-        if provider == .perplexity || provider == .cursor || provider == .antigravity {
-            return [.tertiary, .secondary, .primary]
-        }
         return [.primary, .secondary]
     }
 
     private static func primaryOrder(for provider: UsageProvider) -> [Lane] {
-        if provider == .zai {
-            return [.primary, .tertiary, .secondary]
-        }
-        if provider == .perplexity || provider == .antigravity {
-            return [.primary, .secondary, .tertiary]
-        }
         return [.primary, .secondary]
     }
 
     private static func secondaryOrder(for provider: UsageProvider) -> [Lane] {
-        if provider == .zai || provider == .antigravity {
-            return [.secondary, .primary, .tertiary]
-        }
-        if provider == .perplexity {
-            return [.secondary, .tertiary, .primary]
-        }
         return [.secondary, .primary]
     }
 
@@ -72,9 +54,6 @@ enum MenuBarMetricWindowResolver {
               let primary = snapshot.primary,
               let secondary = snapshot.secondary
         else {
-            if provider == .antigravity {
-                return self.window(in: snapshot, following: [.primary, .secondary, .tertiary])
-            }
             return snapshot.primary ?? snapshot.secondary
         }
 
@@ -83,33 +62,6 @@ enum MenuBarMetricWindowResolver {
     }
 
     private static func automaticWindow(provider: UsageProvider, snapshot: UsageSnapshot) -> RateWindow? {
-        if provider == .antigravity {
-            return self.window(in: snapshot, following: [.primary, .secondary, .tertiary])
-        }
-        if provider == .perplexity {
-            return snapshot.automaticPerplexityWindow()
-        }
-        if provider == .zai {
-            return self.mostConstrainedWindow(
-                primary: snapshot.primary,
-                secondary: snapshot.tertiary,
-                tertiary: nil) ?? snapshot.secondary
-        }
-        if provider == .factory || provider == .kimi {
-            return snapshot.secondary ?? snapshot.primary
-        }
-        if provider == .copilot,
-           let primary = snapshot.primary,
-           let secondary = snapshot.secondary
-        {
-            return primary.usedPercent >= secondary.usedPercent ? primary : secondary
-        }
-        if provider == .cursor {
-            return Self.mostConstrainedWindow(
-                primary: snapshot.primary,
-                secondary: snapshot.secondary,
-                tertiary: snapshot.tertiary)
-        }
         if provider == .claude,
            Self.shouldUseClaudeSpendLimit(providerCost: snapshot.providerCost, snapshot: snapshot),
            let extraUsage = Self.extraUsageWindow(snapshot: snapshot)

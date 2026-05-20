@@ -22,8 +22,6 @@ struct StatusItemControllerSplitLifecycleTests {
         return SettingsStore(
             userDefaults: defaults,
             configStore: testConfigStore(suiteName: suite),
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
     }
 
     private func containsHostingView(_ view: NSView) -> Bool {
@@ -58,9 +56,7 @@ struct StatusItemControllerSplitLifecycleTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
         return (settings, controller)
     }

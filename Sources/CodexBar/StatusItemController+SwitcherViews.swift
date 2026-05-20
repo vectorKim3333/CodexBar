@@ -14,17 +14,10 @@ final class ProviderSwitcherView: NSView {
         let title: String
     }
 
-    private struct QuotaIndicator {
-        let badge: NSView
-        let fillWidthConstraint: NSLayoutConstraint
-    }
-
     private let segments: [Segment]
     private let onSelect: (ProviderSwitcherSelection) -> Void
     private let showsIcons: Bool
-    private let weeklyRemainingProvider: (UsageProvider) -> Double?
     private var buttons: [NSButton] = []
-    private var quotaIndicators: [ObjectIdentifier: QuotaIndicator] = [:]
     private var hoverTrackingArea: NSTrackingArea?
     private var segmentWidths: [CGFloat] = []
     private let selectedBackground = NSColor.controlAccentColor.cgColor
@@ -47,7 +40,6 @@ final class ProviderSwitcherView: NSView {
         width: CGFloat,
         showsIcons: Bool,
         iconProvider: (UsageProvider) -> NSImage,
-        weeklyRemainingProvider: @escaping (UsageProvider) -> Double?,
         onSelect: @escaping (ProviderSwitcherSelection) -> Void)
     {
         let minimumGap: CGFloat = 1
@@ -76,7 +68,6 @@ final class ProviderSwitcherView: NSView {
         self.segments = segments
         self.onSelect = onSelect
         self.showsIcons = showsIcons
-        self.weeklyRemainingProvider = weeklyRemainingProvider
         self.stackedIcons = showsIcons && self.segments.count > 3
         let initialOuterPadding = Self.switcherOuterPadding(
             for: width,
@@ -158,13 +149,6 @@ final class ProviderSwitcherView: NSView {
                 button.imagePosition = .noImage
             }
 
-            let remaining: Double? = switch segment.selection {
-            case let .provider(provider):
-                self.weeklyRemainingProvider(provider)
-            case .overview:
-                nil
-            }
-            self.addQuotaIndicator(to: button, selection: segment.selection, remainingPercent: remaining)
             button.bezelStyle = .regularSquare
             button.isBordered = false
             button.controlSize = .small
@@ -601,7 +585,6 @@ final class ProviderSwitcherView: NSView {
             } else {
                 self.unselectedBackground
             }
-            self.updateQuotaIndicatorVisibility(for: button)
             (button as? StackedToggleButton)?.setContentTintColor(button.contentTintColor)
             (button as? InlineIconToggleButton)?.setContentTintColor(button.contentTintColor)
         }
@@ -615,12 +598,6 @@ final class ProviderSwitcherView: NSView {
     func _test_setHoveredButtonTag(_ tag: Int?) {
         self.hoveredButtonTag = tag
         self.updateButtonStyles()
-    }
-
-    func _test_quotaIndicatorFillWidths() -> [CGFloat] {
-        self.buttons.compactMap { button in
-            self.quotaIndicators[ObjectIdentifier(button)]?.fillWidthConstraint.constant
-        }
     }
     #endif
 
@@ -813,74 +790,6 @@ final class ProviderSwitcherView: NSView {
         newImage.unlockFocus()
         newImage.isTemplate = image.isTemplate
         return newImage
-    }
-
-    private func addQuotaIndicator(to view: NSView, selection: ProviderSwitcherSelection, remainingPercent: Double?) {
-        guard let remainingPercent else { return }
-        let indicatorWidth: CGFloat = 16
-        let fillWidth = Self.quotaIndicatorFillWidth(
-            remainingPercent: remainingPercent,
-            totalWidth: indicatorWidth)
-
-        let badge = NSView()
-        badge.wantsLayer = true
-        badge.layer?.backgroundColor = NSColor.secondaryLabelColor.withAlphaComponent(0.18).cgColor
-        badge.layer?.cornerRadius = 1.5
-        badge.layer?.masksToBounds = true
-        badge.translatesAutoresizingMaskIntoConstraints = false
-
-        let fill = NSView()
-        fill.wantsLayer = true
-        fill.layer?.backgroundColor = Self.quotaIndicatorColor(
-            for: selection,
-            remainingPercent: remainingPercent).cgColor
-        fill.layer?.cornerRadius = 1.5
-        fill.layer?.masksToBounds = true
-        fill.translatesAutoresizingMaskIntoConstraints = false
-        badge.addSubview(fill)
-        view.addSubview(badge)
-
-        let fillWidthConstraint = fill.widthAnchor.constraint(equalToConstant: fillWidth)
-        NSLayoutConstraint.activate([
-            badge.topAnchor.constraint(equalTo: view.topAnchor, constant: 3),
-            badge.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -6),
-            badge.widthAnchor.constraint(equalToConstant: indicatorWidth),
-            badge.heightAnchor.constraint(equalToConstant: 3),
-            fill.leadingAnchor.constraint(equalTo: badge.leadingAnchor),
-            fill.topAnchor.constraint(equalTo: badge.topAnchor),
-            fill.bottomAnchor.constraint(equalTo: badge.bottomAnchor),
-            fillWidthConstraint,
-        ])
-
-        self.quotaIndicators[ObjectIdentifier(view)] = QuotaIndicator(
-            badge: badge,
-            fillWidthConstraint: fillWidthConstraint)
-        self.updateQuotaIndicatorVisibility(for: view)
-    }
-
-    private func updateQuotaIndicatorVisibility(for view: NSView) {
-        guard let indicator = self.quotaIndicators[ObjectIdentifier(view)] else { return }
-        let isSelected = (view as? NSButton)?.state == .on
-        indicator.badge.isHidden = isSelected
-    }
-
-    private static func quotaIndicatorColor(
-        for selection: ProviderSwitcherSelection,
-        remainingPercent _: Double) -> NSColor
-    {
-        switch selection {
-        case let .provider(provider):
-            let color = ProviderDescriptorRegistry.descriptor(for: provider).branding.color
-            return NSColor(deviceRed: color.red, green: color.green, blue: color.blue, alpha: 0.7)
-        case .overview:
-            return NSColor.secondaryLabelColor.withAlphaComponent(0.7)
-        }
-    }
-
-    private static func quotaIndicatorFillWidth(remainingPercent: Double, totalWidth: CGFloat) -> CGFloat {
-        let clamped = min(100, max(0, remainingPercent))
-        guard clamped > 0 else { return 0 }
-        return max(3, totalWidth * CGFloat(clamped / 100))
     }
 
     private static func overviewIcon() -> NSImage {

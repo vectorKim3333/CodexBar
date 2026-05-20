@@ -15,6 +15,7 @@ CodexBar.app/
 CodexBar *.app/
 CodexBar_*.app/
 Codexbar.app/
+ClCoBar.app/
 # Release artifacts
 *.ipa
 *.dSYM*
@@ -41,3 +42,4 @@ docs/.astro/
 # Swift Package Manager metadata (leave sources tracked)
 # Packages/
 # Package.resolved
+dist/

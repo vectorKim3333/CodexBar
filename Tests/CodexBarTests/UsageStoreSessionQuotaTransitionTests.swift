@@ -11,8 +11,6 @@ struct UsageStoreSessionQuotaTransitionTests {
         return SettingsStore(
             userDefaults: defaults,
             configStore: testConfigStore(suiteName: suiteName),
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
     }
 
     @MainActor
@@ -33,7 +31,7 @@ struct UsageStoreSessionQuotaTransitionTests {
     }
 
     @Test
-    func `copilot switch from primary to secondary resets baseline`() {
+    func `codex switch from primary to secondary resets baseline`() {
         let settings = self.makeSettings(suiteName: "UsageStoreSessionQuotaTransitionTests-primary-secondary")
         settings.refreshFrequency = .manual
         settings.statusChecksEnabled = false
@@ -50,19 +48,19 @@ struct UsageStoreSessionQuotaTransitionTests {
             primary: RateWindow(usedPercent: 20, windowMinutes: nil, resetsAt: nil, resetDescription: nil),
             secondary: nil,
             updatedAt: Date())
-        store.handleSessionQuotaTransition(provider: .copilot, snapshot: primarySnapshot)
+        store.handleSessionQuotaTransition(provider: .codex, snapshot: primarySnapshot)
 
         let secondarySnapshot = UsageSnapshot(
             primary: nil,
             secondary: RateWindow(usedPercent: 100, windowMinutes: nil, resetsAt: nil, resetDescription: nil),
             updatedAt: Date())
-        store.handleSessionQuotaTransition(provider: .copilot, snapshot: secondarySnapshot)
+        store.handleSessionQuotaTransition(provider: .codex, snapshot: secondarySnapshot)
 
         #expect(notifier.posts.isEmpty)
     }
 
     @Test
-    func `copilot switch from secondary to primary resets baseline`() {
+    func `codex switch from secondary to primary resets baseline`() {
         let settings = self.makeSettings(suiteName: "UsageStoreSessionQuotaTransitionTests-secondary-primary")
         settings.refreshFrequency = .manual
         settings.statusChecksEnabled = false
@@ -79,13 +77,13 @@ struct UsageStoreSessionQuotaTransitionTests {
             primary: nil,
             secondary: RateWindow(usedPercent: 20, windowMinutes: nil, resetsAt: nil, resetDescription: nil),
             updatedAt: Date())
-        store.handleSessionQuotaTransition(provider: .copilot, snapshot: secondarySnapshot)
+        store.handleSessionQuotaTransition(provider: .codex, snapshot: secondarySnapshot)
 
         let primarySnapshot = UsageSnapshot(
             primary: RateWindow(usedPercent: 100, windowMinutes: nil, resetsAt: nil, resetDescription: nil),
             secondary: nil,
             updatedAt: Date())
-        store.handleSessionQuotaTransition(provider: .copilot, snapshot: primarySnapshot)
+        store.handleSessionQuotaTransition(provider: .codex, snapshot: primarySnapshot)
 
         #expect(notifier.posts.isEmpty)
     }

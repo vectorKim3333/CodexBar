@@ -138,18 +138,11 @@ enum IconRenderer {
                     alpha: CGFloat = 1.0,
                     addNotches: Bool = false,
                     addFace: Bool = false,
-                    addGeminiTwist: Bool = false,
-                    addAntigravityTwist: Bool = false,
-                    addFactoryTwist: Bool = false,
-                    addWarpTwist: Bool = false,
                     blink: CGFloat = 0,
-                    drawTrackFill: Bool = true,
-                    warpEyesFilled: Bool = false)
+                    drawTrackFill: Bool = true)
                 {
                     let rect = rectPx.rect()
-                    // Claude reads better as a blockier critter; Codex stays as a capsule.
-                    // Warp uses small corner radius for rounded rectangle (matching logo style)
-                    let cornerRadiusPx = addNotches ? 0 : (addWarpTwist ? 3 : rectPx.h / 2)
+                    let cornerRadiusPx = addNotches ? 0 : rectPx.h / 2
                     let radius = Self.grid.pt(cornerRadiusPx)
 
                     let trackPath = NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius)
@@ -335,313 +328,10 @@ enum IconRenderer {
                         }
                     }
 
-                    // Gemini twist: sparkle-inspired design with prominent 4-pointed stars as eyes
-                    // and decorative points extending from the bar.
-                    if addGeminiTwist {
-                        let ctx = NSGraphicsContext.current?.cgContext
-                        let centerXPx = rectPx.midXPx
-                        let eyeCenterYPx = rectPx.y + rectPx.h / 2
-
-                        ctx?.saveGState()
-                        ctx?.setShouldAntialias(true)
-
-                        // 4-pointed star cutouts (Gemini sparkle eyes) - BIGGER
-                        let starSizePx = 8
-                        let eyeOffsetPx = 8
-                        let sr = Self.grid.pt(starSizePx / 2)
-                        let innerR = sr * 0.25
-
-                        func drawStarCutout(cx: CGFloat, cy: CGFloat) {
-                            let path = NSBezierPath()
-                            for i in 0..<8 {
-                                let angle = CGFloat(i) * .pi / 4 - .pi / 2
-                                let radius = (i % 2 == 0) ? sr : innerR
-                                let px = cx + cos(angle) * radius
-                                let py = cy + sin(angle) * radius
-                                if i == 0 {
-                                    path.move(to: NSPoint(x: px, y: py))
-                                } else {
-                                    path.line(to: NSPoint(x: px, y: py))
-                                }
-                            }
-                            path.close()
-                            path.fill()
-                        }
-
-                        let ldCx = Self.grid.pt(centerXPx - eyeOffsetPx)
-                        let rdCx = Self.grid.pt(centerXPx + eyeOffsetPx)
-                        let yCy = Self.grid.pt(eyeCenterYPx)
-
-                        // Clear star shapes for eyes
-                        ctx?.setBlendMode(.clear)
-                        drawStarCutout(cx: ldCx, cy: yCy)
-                        drawStarCutout(cx: rdCx, cy: yCy)
-                        ctx?.setBlendMode(.normal)
-
-                        // Decorative sparkle points extending from bar (sized to stay within 36px canvas)
-                        fillColor.withAlphaComponent(alpha).setFill()
-                        let pointHeightPx = 4
-                        let pointWidthPx = 4
-
-                        // Top center point (like a crown/sparkle)
-                        let topPointPath = NSBezierPath()
-                        let topCx = Self.grid.pt(centerXPx)
-                        let topBaseY = Self.grid.pt(rectPx.y + rectPx.h)
-                        let topPeakY = Self.grid.pt(rectPx.y + rectPx.h + pointHeightPx)
-                        let halfW = Self.grid.pt(pointWidthPx / 2)
-                        topPointPath.move(to: NSPoint(x: topCx - halfW, y: topBaseY))
-                        topPointPath.line(to: NSPoint(x: topCx, y: topPeakY))
-                        topPointPath.line(to: NSPoint(x: topCx + halfW, y: topBaseY))
-                        topPointPath.close()
-                        topPointPath.fill()
-
-                        // Bottom center point
-                        let bottomPointPath = NSBezierPath()
-                        let bottomBaseY = Self.grid.pt(rectPx.y)
-                        let bottomPeakY = Self.grid.pt(rectPx.y - pointHeightPx)
-                        bottomPointPath.move(to: NSPoint(x: topCx - halfW, y: bottomBaseY))
-                        bottomPointPath.line(to: NSPoint(x: topCx, y: bottomPeakY))
-                        bottomPointPath.line(to: NSPoint(x: topCx + halfW, y: bottomBaseY))
-                        bottomPointPath.close()
-                        bottomPointPath.fill()
-
-                        // Side points (max 3px to stay within canvas edge)
-                        let sidePointH = 3
-                        let sidePointW = 3
-                        let sideHalfW = Self.grid.pt(sidePointW / 2)
-                        let barMidY = Self.grid.pt(eyeCenterYPx)
-
-                        // Left side point
-                        let leftSidePath = NSBezierPath()
-                        let leftBaseX = Self.grid.pt(rectPx.x)
-                        let leftPeakX = Self.grid.pt(rectPx.x - sidePointH)
-                        leftSidePath.move(to: NSPoint(x: leftBaseX, y: barMidY - sideHalfW))
-                        leftSidePath.line(to: NSPoint(x: leftPeakX, y: barMidY))
-                        leftSidePath.line(to: NSPoint(x: leftBaseX, y: barMidY + sideHalfW))
-                        leftSidePath.close()
-                        leftSidePath.fill()
-
-                        // Right side point
-                        let rightSidePath = NSBezierPath()
-                        let rightBaseX = Self.grid.pt(rectPx.x + rectPx.w)
-                        let rightPeakX = Self.grid.pt(rectPx.x + rectPx.w + sidePointH)
-                        rightSidePath.move(to: NSPoint(x: rightBaseX, y: barMidY - sideHalfW))
-                        rightSidePath.line(to: NSPoint(x: rightPeakX, y: barMidY))
-                        rightSidePath.line(to: NSPoint(x: rightBaseX, y: barMidY + sideHalfW))
-                        rightSidePath.close()
-                        rightSidePath.fill()
-
-                        ctx?.restoreGState()
-
-                        // Blink: fill star eyes
-                        if blink > 0.001 {
-                            let clamped = max(0, min(blink, 1))
-                            fillColor.withAlphaComponent(alpha).setFill()
-                            let blinkR = sr * clamped
-                            let blinkInnerR = blinkR * 0.25
-
-                            func drawBlinkStar(cx: CGFloat, cy: CGFloat) {
-                                let path = NSBezierPath()
-                                for i in 0..<8 {
-                                    let angle = CGFloat(i) * .pi / 4 - .pi / 2
-                                    let radius = (i % 2 == 0) ? blinkR : blinkInnerR
-                                    let px = cx + cos(angle) * radius
-                                    let py = cy + sin(angle) * radius
-                                    if i == 0 {
-                                        path.move(to: NSPoint(x: px, y: py))
-                                    } else {
-                                        path.line(to: NSPoint(x: px, y: py))
-                                    }
-                                }
-                                path.close()
-                                path.fill()
-                            }
-
-                            drawBlinkStar(cx: ldCx, cy: yCy)
-                            drawBlinkStar(cx: rdCx, cy: yCy)
-                        }
-                    }
-
-                    if addAntigravityTwist {
-                        let dotSizePx = 3
-                        let dotOffsetXPx = rectPx.x + rectPx.w + 2
-                        let dotOffsetYPx = rectPx.y + rectPx.h - 2
-                        fillColor.withAlphaComponent(alpha).setFill()
-                        let dotRect = Self.grid.rect(
-                            x: dotOffsetXPx - dotSizePx / 2,
-                            y: dotOffsetYPx - dotSizePx / 2,
-                            w: dotSizePx,
-                            h: dotSizePx)
-                        NSBezierPath(ovalIn: dotRect).fill()
-                    }
-
-                    // Factory twist: 8-pointed asterisk/gear-like eyes with cog teeth accents
-                    if addFactoryTwist {
-                        let ctx = NSGraphicsContext.current?.cgContext
-                        let centerXPx = rectPx.midXPx
-                        let eyeCenterYPx = rectPx.y + rectPx.h / 2
-
-                        ctx?.saveGState()
-                        ctx?.setShouldAntialias(true)
-
-                        // 8-pointed asterisk cutouts (Factory gear-like eyes)
-                        let starSizePx = 7
-                        let eyeOffsetPx = 8
-                        let sr = Self.grid.pt(starSizePx / 2)
-                        let innerR = sr * 0.3
-
-                        func drawAsteriskCutout(cx: CGFloat, cy: CGFloat) {
-                            let path = NSBezierPath()
-                            // 8 points for the asterisk
-                            for i in 0..<16 {
-                                let angle = CGFloat(i) * .pi / 8 - .pi / 2
-                                let radius = (i % 2 == 0) ? sr : innerR
-                                let px = cx + cos(angle) * radius
-                                let py = cy + sin(angle) * radius
-                                if i == 0 {
-                                    path.move(to: NSPoint(x: px, y: py))
-                                } else {
-                                    path.line(to: NSPoint(x: px, y: py))
-                                }
-                            }
-                            path.close()
-                            path.fill()
-                        }
-
-                        let ldCx = Self.grid.pt(centerXPx - eyeOffsetPx)
-                        let rdCx = Self.grid.pt(centerXPx + eyeOffsetPx)
-                        let yCy = Self.grid.pt(eyeCenterYPx)
-
-                        // Clear asterisk shapes for eyes
-                        ctx?.setBlendMode(.clear)
-                        drawAsteriskCutout(cx: ldCx, cy: yCy)
-                        drawAsteriskCutout(cx: rdCx, cy: yCy)
-                        ctx?.setBlendMode(.normal)
-
-                        // Small gear teeth on top and bottom edges
-                        fillColor.withAlphaComponent(alpha).setFill()
-                        let toothWidthPx = 3
-                        let toothHeightPx = 2
-
-                        // Top teeth (2 small rectangles)
-                        let topY = Self.grid.pt(rectPx.y + rectPx.h)
-                        let tooth1X = Self.grid.pt(centerXPx - 5 - toothWidthPx / 2)
-                        let tooth2X = Self.grid.pt(centerXPx + 5 - toothWidthPx / 2)
-                        NSBezierPath(rect: CGRect(
-                            x: tooth1X,
-                            y: topY,
-                            width: Self.grid.pt(toothWidthPx),
-                            height: Self.grid.pt(toothHeightPx))).fill()
-                        NSBezierPath(rect: CGRect(
-                            x: tooth2X,
-                            y: topY,
-                            width: Self.grid.pt(toothWidthPx),
-                            height: Self.grid.pt(toothHeightPx))).fill()
-
-                        // Bottom teeth
-                        let bottomY = Self.grid.pt(rectPx.y - toothHeightPx)
-                        NSBezierPath(rect: CGRect(
-                            x: tooth1X,
-                            y: bottomY,
-                            width: Self.grid.pt(toothWidthPx),
-                            height: Self.grid.pt(toothHeightPx))).fill()
-                        NSBezierPath(rect: CGRect(
-                            x: tooth2X,
-                            y: bottomY,
-                            width: Self.grid.pt(toothWidthPx),
-                            height: Self.grid.pt(toothHeightPx))).fill()
-
-                        ctx?.restoreGState()
-
-                        // Blink: fill asterisk eyes
-                        if blink > 0.001 {
-                            let clamped = max(0, min(blink, 1))
-                            fillColor.withAlphaComponent(alpha).setFill()
-                            let blinkR = sr * clamped
-                            let blinkInnerR = blinkR * 0.3
-
-                            func drawBlinkAsterisk(cx: CGFloat, cy: CGFloat) {
-                                let path = NSBezierPath()
-                                for i in 0..<16 {
-                                    let angle = CGFloat(i) * .pi / 8 - .pi / 2
-                                    let radius = (i % 2 == 0) ? blinkR : blinkInnerR
-                                    let px = cx + cos(angle) * radius
-                                    let py = cy + sin(angle) * radius
-                                    if i == 0 {
-                                        path.move(to: NSPoint(x: px, y: py))
-                                    } else {
-                                        path.line(to: NSPoint(x: px, y: py))
-                                    }
-                                }
-                                path.close()
-                                path.fill()
-                            }
-
-                            drawBlinkAsterisk(cx: ldCx, cy: yCy)
-                            drawBlinkAsterisk(cx: rdCx, cy: yCy)
-                        }
-                    }
-
-                    // Warp twist: "Warp" style face with tilted-eye cutouts.
-                    if addWarpTwist {
-                        let ctx = NSGraphicsContext.current?.cgContext
-                        let centerXPx = rectPx.midXPx
-                        let eyeCenterYPx = rectPx.y + rectPx.h / 2
-
-                        ctx?.saveGState()
-                        ctx?.setShouldAntialias(true) // Smooth edges for tilted ellipse eyes
-
-                        // 1. Draw Eyes (Tilted ellipse cutouts - "fox eye" / "cat eye" style)
-                        // Keep sizes in integer pixels so grid conversion stays exact.
-                        let eyeWidthPx = 5
-                        let eyeHeightPx = 8
-                        let eyeOffsetPx = 7
-                        let eyeTiltAngle: CGFloat = .pi / 3 // 60 degrees tilt
-
-                        let leftEyeCx = Self.grid.pt(centerXPx) - Self.grid.pt(eyeOffsetPx)
-                        let rightEyeCx = Self.grid.pt(centerXPx) + Self.grid.pt(eyeOffsetPx)
-                        let eyeCy = Self.grid.pt(eyeCenterYPx)
-                        let eyeW = Self.grid.pt(eyeWidthPx)
-                        let eyeH = Self.grid.pt(eyeHeightPx)
-
-                        /// Draw a tilted ellipse eye at the given center.
-                        func drawTiltedEyeCutout(cx: CGFloat, cy: CGFloat, tiltAngle: CGFloat) {
-                            guard let ctx else { return }
-                            let eyeRect = CGRect(x: -eyeW / 2, y: -eyeH / 2, width: eyeW, height: eyeH)
-
-                            // Use CGContext transforms instead of AffineTransform-on-path so the rotation origin
-                            // is unambiguous and the current blend mode is consistently respected.
-                            ctx.saveGState()
-                            ctx.translateBy(x: cx, y: cy)
-                            ctx.rotate(by: tiltAngle)
-                            ctx.addEllipse(in: eyeRect)
-                            ctx.fillPath()
-                            ctx.restoreGState()
-                        }
-
-                        if warpEyesFilled {
-                            fillColor.withAlphaComponent(alpha).setFill()
-                            drawTiltedEyeCutout(cx: leftEyeCx, cy: eyeCy, tiltAngle: eyeTiltAngle)
-                            drawTiltedEyeCutout(cx: rightEyeCx, cy: eyeCy, tiltAngle: -eyeTiltAngle)
-                        } else {
-                            // Clear eyes using blend mode
-                            ctx?.setBlendMode(.clear)
-                            drawTiltedEyeCutout(cx: leftEyeCx, cy: eyeCy, tiltAngle: eyeTiltAngle)
-                            drawTiltedEyeCutout(cx: rightEyeCx, cy: eyeCy, tiltAngle: -eyeTiltAngle)
-                            ctx?.setBlendMode(.normal)
-                        }
-                        ctx?.restoreGState() // Restore graphics state
-                    }
                 }
 
-                let effectiveWeeklyRemaining: Double? = {
-                    if style == .warp, let weeklyRemaining, weeklyRemaining <= 0 {
-                        return nil
-                    }
-                    return weeklyRemaining
-                }()
                 let topValue = primaryRemaining
-                let bottomValue = effectiveWeeklyRemaining
+                let bottomValue = weeklyRemaining
                 let creditsRatio = creditsRemaining.map { min($0 / Self.creditsCap * 100, 100) }
 
                 let hasWeekly = (bottomValue != nil)
@@ -652,9 +342,6 @@ enum IconRenderer {
                 let creditsRectPx = RectPx(x: barXPx, y: 14, w: barWidthPx, h: 16)
                 let creditsBottomRectPx = RectPx(x: barXPx, y: 4, w: barWidthPx, h: 6)
 
-                // Warp special case: when no bonus or bonus exhausted, show "top monthly, bottom dimmed"
-                let warpNoBonus = style == .warp && !weeklyAvailable
-
                 if weeklyAvailable {
                     // Normal: top=primary, bottom=secondary (bonus/weekly).
                     drawBar(
@@ -662,51 +349,29 @@ enum IconRenderer {
                         remaining: topValue,
                         addNotches: style == .claude,
                         addFace: style == .codex,
-                        addGeminiTwist: style == .gemini || style == .antigravity,
-                        addAntigravityTwist: style == .antigravity,
-                        addFactoryTwist: style == .factory,
-                        addWarpTwist: style == .warp,
                         blink: blink)
                     drawBar(rectPx: bottomRectPx, remaining: bottomValue)
-                } else if !hasWeekly || warpNoBonus {
-                    if style == .warp {
-                        // Warp: no bonus or bonus exhausted -> top=monthly credits, bottom=dimmed track
+                } else if !hasWeekly {
+                    // Weekly missing (e.g. Claude enterprise): keep normal layout but
+                    // dim the bottom track to indicate N/A.
+                    if topValue == nil, let ratio = creditsRatio {
+                        // Credits-only: show credits prominently (e.g. credits loaded before usage).
+                        drawBar(
+                            rectPx: creditsRectPx,
+                            remaining: ratio,
+                            alpha: creditsAlpha,
+                            addNotches: style == .claude,
+                            addFace: style == .codex,
+                            blink: blink)
+                        drawBar(rectPx: creditsBottomRectPx, remaining: nil, alpha: 0.45)
+                    } else {
                         drawBar(
                             rectPx: topRectPx,
                             remaining: topValue,
-                            addWarpTwist: true,
+                            addNotches: style == .claude,
+                            addFace: style == .codex,
                             blink: blink)
                         drawBar(rectPx: bottomRectPx, remaining: nil, alpha: 0.45)
-                    } else {
-                        // Weekly missing (e.g. Claude enterprise): keep normal layout but
-                        // dim the bottom track to indicate N/A.
-                        if topValue == nil, let ratio = creditsRatio {
-                            // Credits-only: show credits prominently (e.g. credits loaded before usage).
-                            drawBar(
-                                rectPx: creditsRectPx,
-                                remaining: ratio,
-                                alpha: creditsAlpha,
-                                addNotches: style == .claude,
-                                addFace: style == .codex,
-                                addGeminiTwist: style == .gemini || style == .antigravity,
-                                addAntigravityTwist: style == .antigravity,
-                                addFactoryTwist: style == .factory,
-                                addWarpTwist: style == .warp,
-                                blink: blink)
-                            drawBar(rectPx: creditsBottomRectPx, remaining: nil, alpha: 0.45)
-                        } else {
-                            drawBar(
-                                rectPx: topRectPx,
-                                remaining: topValue,
-                                addNotches: style == .claude,
-                                addFace: style == .codex,
-                                addGeminiTwist: style == .gemini || style == .antigravity,
-                                addAntigravityTwist: style == .antigravity,
-                                addFactoryTwist: style == .factory,
-                                addWarpTwist: style == .warp,
-                                blink: blink)
-                            drawBar(rectPx: bottomRectPx, remaining: nil, alpha: 0.45)
-                        }
                     }
                 } else {
                     // Weekly exhausted/missing: show credits on top (thicker), weekly (likely 0) on bottom.
@@ -717,10 +382,6 @@ enum IconRenderer {
                             alpha: creditsAlpha,
                             addNotches: style == .claude,
                             addFace: style == .codex,
-                            addGeminiTwist: style == .gemini || style == .antigravity,
-                            addAntigravityTwist: style == .antigravity,
-                            addFactoryTwist: style == .factory,
-                            addWarpTwist: style == .warp,
                             blink: blink)
                     } else {
                         // No credits available; fall back to 5h if present.
@@ -729,10 +390,6 @@ enum IconRenderer {
                             remaining: topValue,
                             addNotches: style == .claude,
                             addFace: style == .codex,
-                            addGeminiTwist: style == .gemini || style == .antigravity,
-                            addAntigravityTwist: style == .antigravity,
-                            addFactoryTwist: style == .factory,
-                            addWarpTwist: style == .warp,
                             blink: blink)
                     }
                     drawBar(rectPx: creditsBottomRectPx, remaining: bottomValue)
@@ -1037,5 +694,224 @@ extension CGPoint {
 extension CGFloat {
     fileprivate func lerp(to other: CGFloat, p: CGFloat) -> CGFloat {
         self + (other - self) * p
+    }
+}
+
+// MARK: - Battery pill icon (clean menu-bar style with reset countdown)
+
+extension IconRenderer {
+    /// Format a `resetsAt` date into a compact countdown string for the menu bar.
+    ///
+    /// - Parameters:
+    ///   - resetsAt: Target date. `nil` or past → returns `nil`.
+    ///   - format: User-selected display style. Default `.approximate`.
+    /// - Returns: `"~2h"` / `"1h 45m"` / `"1h+"` / `"<1m"` etc. depending on format + interval.
+    static func shortResetText(
+        _ resetsAt: Date?,
+        format: MenuBarTimeFormat = .approximate,
+        now: Date = Date()) -> String?
+    {
+        guard let resetsAt, resetsAt > now else { return nil }
+        let totalSeconds = Int(resetsAt.timeIntervalSince(now))
+        if totalSeconds < 60 { return "<1m" }
+        let totalMinutes = totalSeconds / 60
+        let totalHours = totalMinutes / 60
+        let totalDays = totalHours / 24
+
+        switch format {
+        case .approximate:
+            return Self.approximateText(
+                totalSeconds: totalSeconds,
+                totalMinutes: totalMinutes,
+                totalHours: totalHours,
+                totalDays: totalDays)
+        case .precise:
+            return Self.preciseText(
+                totalMinutes: totalMinutes,
+                totalHours: totalHours,
+                totalDays: totalDays)
+        case .floor:
+            return Self.floorText(
+                totalMinutes: totalMinutes,
+                totalHours: totalHours,
+                totalDays: totalDays)
+        }
+    }
+
+    /// `~` prefix + hour-granularity ceiling. Anything from 1 second up to one
+    /// full hour rounds up to `~1h`; 1h 1m–2h → `~2h`; …; 24h+ uses days with
+    /// the same hour-rounding rule.
+    private static func approximateText(
+        totalSeconds: Int,
+        totalMinutes: Int,
+        totalHours: Int,
+        totalDays: Int) -> String
+    {
+        // Days: ceiling on partial-day remainder.
+        if totalHours >= 24 {
+            let remainderHours = totalHours - totalDays * 24
+            let days = totalDays + (remainderHours > 0 || totalSeconds % 3600 > 0 ? 1 : 0)
+            return "~\(days)d"
+        }
+        // Hours: ceiling on partial-hour remainder (works for sub-hour intervals
+        // too — 1 second left → "~1h").
+        let remainderMinutes = totalMinutes - totalHours * 60
+        let hours = totalHours + (remainderMinutes > 0 || totalSeconds % 60 > 0 ? 1 : 0)
+        return "~\(hours)h"
+    }
+
+    /// Exact hours+minutes (or days+hours). No rounding hint.
+    private static func preciseText(totalMinutes: Int, totalHours: Int, totalDays: Int) -> String {
+        if totalHours >= 24 {
+            let remainderHours = totalHours - totalDays * 24
+            return remainderHours == 0 ? "\(totalDays)d" : "\(totalDays)d \(remainderHours)h"
+        }
+        if totalMinutes >= 60 {
+            let remainderMinutes = totalMinutes - totalHours * 60
+            return remainderMinutes == 0 ? "\(totalHours)h" : "\(totalHours)h \(remainderMinutes)m"
+        }
+        return "\(totalMinutes)m"
+    }
+
+    /// Floor with `+` suffix at hour/day boundaries. Minutes have no suffix.
+    private static func floorText(totalMinutes: Int, totalHours: Int, totalDays: Int) -> String {
+        if totalHours >= 24 { return "\(totalDays)d+" }
+        if totalMinutes >= 60 { return "\(totalHours)h+" }
+        return "\(totalMinutes)m"
+    }
+
+    /// Battery-style pill icon: rounded rectangle "shell" with proportional fill, optional reset countdown text alongside.
+    /// An optional `brand` template image is drawn on the left of the pill so a provider can be identified at a glance
+    /// in non-merged mode.
+    ///
+    /// - Parameters:
+    ///   - remaining: 0.0 – 1.0 fraction of quota remaining (drives fill width). `nil` = no fill drawn.
+    ///   - resetText: Short countdown string from `shortResetText(_:)`. `nil` = no text.
+    ///   - stale: If `true`, dim the icon to indicate stale data.
+    ///   - brand: Optional template brand image (e.g. Claude/Codex logo). Drawn at 14×14 to the left of the pill.
+    ///   - showShell: If `false`, the pill outline + cap are omitted and the result is just brand glyph + text.
+    ///   - percentText: Optional `"47%"`-style text shown to the right of the pill. Combined with `resetText` via `·`.
+    static func makeBatteryPillIcon(
+        remaining: Double?,
+        resetText: String?,
+        stale: Bool = false,
+        brand: NSImage? = nil,
+        showShell: Bool = true,
+        percentText: String? = nil) -> NSImage
+    {
+        let height: CGFloat = 18
+        let brandSize: CGFloat = 14
+        let brandGap: CGFloat = 3
+        let brandTotal: CGFloat = (brand != nil) ? brandSize + brandGap : 0
+        let pillWidth: CGFloat = 24
+        let capWidth: CGFloat = 2
+        let capGap: CGFloat = 0.5
+        let textGap: CGFloat = 3
+
+        // Combined right-side text: "47% · 2h" / "47%" / "2h" / nil
+        let combinedText: String? = {
+            let parts = [percentText, resetText].compactMap { $0 }.filter { !$0.isEmpty }
+            return parts.isEmpty ? nil : parts.joined(separator: " · ")
+        }()
+
+        let font = NSFont.monospacedDigitSystemFont(ofSize: 10, weight: .semibold)
+        let textWidth: CGFloat = {
+            guard let combinedText else { return 0 }
+            return ceil((combinedText as NSString).size(withAttributes: [.font: font]).width)
+        }()
+
+        let shellPortion: CGFloat = showShell ? (pillWidth + capGap + capWidth) : 0
+        let shellTextGap: CGFloat = (showShell && combinedText != nil) ? textGap : 0
+        let standaloneTextGap: CGFloat = (!showShell && brand != nil && combinedText != nil) ? textGap : 0
+        let totalWidth = brandTotal + shellPortion + shellTextGap + standaloneTextGap + textWidth
+
+        // No visual content at all: return a tiny placeholder so the status item remains clickable.
+        if totalWidth <= 0 {
+            let placeholder = NSImage(size: NSSize(width: 8, height: height))
+            placeholder.lockFocus()
+            NSColor.black.withAlphaComponent(0.35).setFill()
+            NSBezierPath(roundedRect: CGRect(x: 1, y: height / 2 - 1, width: 6, height: 2),
+                         xRadius: 1, yRadius: 1).fill()
+            placeholder.unlockFocus()
+            placeholder.isTemplate = true
+            return placeholder
+        }
+
+        let image = NSImage(size: NSSize(width: totalWidth, height: height))
+        image.lockFocus()
+
+        let strokeAlpha: CGFloat = stale ? 0.45 : 1.0
+        let fillAlpha: CGFloat = stale ? 0.35 : 1.0
+        let strokeColor = NSColor.black.withAlphaComponent(strokeAlpha)
+        let fillColor = NSColor.black.withAlphaComponent(fillAlpha)
+
+        if let brand {
+            let brandRect = CGRect(
+                x: 0,
+                y: (height - brandSize) / 2,
+                width: brandSize,
+                height: brandSize)
+            brand.draw(
+                in: brandRect,
+                from: .zero,
+                operation: .sourceOver,
+                fraction: stale ? 0.45 : 1.0)
+        }
+
+        let pillOriginX: CGFloat = brandTotal
+
+        if showShell {
+            let shellRect = CGRect(x: pillOriginX + 0.5, y: 3, width: pillWidth - 1, height: height - 6)
+            let shellPath = NSBezierPath(roundedRect: shellRect, xRadius: 3, yRadius: 3)
+            shellPath.lineWidth = 1.0
+            strokeColor.setStroke()
+            shellPath.stroke()
+
+            let capRect = CGRect(
+                x: pillOriginX + pillWidth + capGap,
+                y: shellRect.midY - 2.5,
+                width: capWidth,
+                height: 5)
+            strokeColor.setFill()
+            NSBezierPath(roundedRect: capRect, xRadius: 0.6, yRadius: 0.6).fill()
+
+            if let remaining {
+                let clamped = max(0, min(1, remaining))
+                let innerInset: CGFloat = 1.5
+                let innerWidth = shellRect.width - innerInset * 2
+                let innerHeight = shellRect.height - innerInset * 2
+                let fillWidth = innerWidth * clamped
+                if fillWidth > 0.5 {
+                    let fillRect = CGRect(
+                        x: shellRect.minX + innerInset,
+                        y: shellRect.minY + innerInset,
+                        width: fillWidth,
+                        height: innerHeight)
+                    fillColor.setFill()
+                    NSBezierPath(roundedRect: fillRect, xRadius: 1.2, yRadius: 1.2).fill()
+                }
+            }
+        }
+
+        if let combinedText {
+            let attrs: [NSAttributedString.Key: Any] = [
+                .font: font,
+                .foregroundColor: fillColor,
+            ]
+            let str = NSAttributedString(string: combinedText, attributes: attrs)
+            let textSize = str.size()
+            let drawX: CGFloat = {
+                if showShell {
+                    return pillOriginX + pillWidth + capGap + capWidth + textGap
+                }
+                return brandTotal + (brand != nil ? textGap : 0)
+            }()
+            let drawY = (height - textSize.height) / 2
+            str.draw(at: NSPoint(x: drawX, y: drawY))
+        }
+
+        image.unlockFocus()
+        image.isTemplate = true
+        return image
     }
 }

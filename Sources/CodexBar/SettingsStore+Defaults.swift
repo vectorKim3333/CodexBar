@@ -8,7 +8,11 @@ extension SettingsStore {
     var refreshFrequency: RefreshFrequency {
         get { self.defaultsState.refreshFrequency }
         set {
-            self.defaultsState.refreshFrequency = newValue
+            // @Observable needs full-struct reassignment to fire withMutation;
+            // see usageBarsShowUsed for the underlying bug.
+            var state = self.defaultsState
+            state.refreshFrequency = newValue
+            self.defaultsState = state
             self.userDefaults.set(newValue.rawValue, forKey: "refreshFrequency")
         }
     }
@@ -16,18 +20,17 @@ extension SettingsStore {
     var launchAtLogin: Bool {
         get { self.defaultsState.launchAtLogin }
         set {
-            self.defaultsState.launchAtLogin = newValue
+            var state = self.defaultsState
+            state.launchAtLogin = newValue
+            self.defaultsState = state
             self.userDefaults.set(newValue, forKey: "launchAtLogin")
             LaunchAtLoginManager.setEnabled(newValue)
         }
     }
 
     var debugMenuEnabled: Bool {
-        get { self.defaultsState.debugMenuEnabled }
-        set {
-            self.defaultsState.debugMenuEnabled = newValue
-            self.userDefaults.set(newValue, forKey: "debugMenuEnabled")
-        }
+        get { false }
+        set { /* dead feature — always false */ }
     }
 
     var debugDisableKeychainAccess: Bool {
@@ -64,11 +67,8 @@ extension SettingsStore {
     }
 
     var debugKeepCLISessionsAlive: Bool {
-        get { self.defaultsState.debugKeepCLISessionsAlive }
-        set {
-            self.defaultsState.debugKeepCLISessionsAlive = newValue
-            self.userDefaults.set(newValue, forKey: "debugKeepCLISessionsAlive")
-        }
+        get { false }
+        set { /* dead feature — always false */ }
     }
 
     var isVerboseLoggingEnabled: Bool {
@@ -88,11 +88,8 @@ extension SettingsStore {
     }
 
     var statusChecksEnabled: Bool {
-        get { self.defaultsState.statusChecksEnabled }
-        set {
-            self.defaultsState.statusChecksEnabled = newValue
-            self.userDefaults.set(newValue, forKey: "statusChecksEnabled")
-        }
+        get { false }
+        set { /* dead feature — always false */ }
     }
 
     var sessionQuotaNotificationsEnabled: Bool {
@@ -104,87 +101,39 @@ extension SettingsStore {
     }
 
     var quotaWarningNotificationsEnabled: Bool {
-        get { self.defaultsState.quotaWarningNotificationsEnabled }
-        set {
-            self.defaultsState.quotaWarningNotificationsEnabled = newValue
-            self.userDefaults.set(newValue, forKey: "quotaWarningNotificationsEnabled")
-        }
+        get { false }
+        set { /* dead feature — always false */ }
     }
 
     var quotaWarningThresholds: [Int] {
-        get { QuotaWarningThresholds.sanitized(self.defaultsState.quotaWarningThresholdsRaw) }
-        set {
-            let sanitized = QuotaWarningThresholds.sanitized(newValue)
-            self.defaultsState.quotaWarningThresholdsRaw = sanitized
-            self.defaultsState.quotaWarningSessionThresholdsRaw = sanitized
-            self.defaultsState.quotaWarningWeeklyThresholdsRaw = sanitized
-            self.userDefaults.set(sanitized, forKey: "quotaWarningThresholds")
-            self.userDefaults.set(sanitized, forKey: "quotaWarningSessionThresholds")
-            self.userDefaults.set(sanitized, forKey: "quotaWarningWeeklyThresholds")
-        }
+        get { [] }
+        set { /* dead feature — no-op */ }
     }
 
-    func quotaWarningThresholds(_ window: QuotaWarningWindow) -> [Int] {
-        switch window {
-        case .session:
-            QuotaWarningThresholds.sanitized(self.defaultsState.quotaWarningSessionThresholdsRaw)
-        case .weekly:
-            QuotaWarningThresholds.sanitized(self.defaultsState.quotaWarningWeeklyThresholdsRaw)
-        }
-    }
+    func quotaWarningThresholds(_ window: QuotaWarningWindow) -> [Int] { [] }
 
-    func setQuotaWarningThresholds(_ window: QuotaWarningWindow, thresholds: [Int]) {
-        let sanitized = QuotaWarningThresholds.sanitized(thresholds)
-        switch window {
-        case .session:
-            self.defaultsState.quotaWarningSessionThresholdsRaw = sanitized
-            self.userDefaults.set(sanitized, forKey: "quotaWarningSessionThresholds")
-        case .weekly:
-            self.defaultsState.quotaWarningWeeklyThresholdsRaw = sanitized
-            self.userDefaults.set(sanitized, forKey: "quotaWarningWeeklyThresholds")
-        }
-    }
+    func setQuotaWarningThresholds(_ window: QuotaWarningWindow, thresholds: [Int]) { /* dead feature — no-op */ }
 
-    func quotaWarningWindowEnabled(_ window: QuotaWarningWindow) -> Bool {
-        switch window {
-        case .session:
-            self.defaultsState.quotaWarningSessionEnabled
-        case .weekly:
-            self.defaultsState.quotaWarningWeeklyEnabled
-        }
-    }
+    func quotaWarningWindowEnabled(_ window: QuotaWarningWindow) -> Bool { false }
 
-    func setQuotaWarningWindowEnabled(_ window: QuotaWarningWindow, enabled: Bool) {
-        switch window {
-        case .session:
-            self.defaultsState.quotaWarningSessionEnabled = enabled
-            self.userDefaults.set(enabled, forKey: "quotaWarningSessionEnabled")
-        case .weekly:
-            self.defaultsState.quotaWarningWeeklyEnabled = enabled
-            self.userDefaults.set(enabled, forKey: "quotaWarningWeeklyEnabled")
-        }
-    }
+    func setQuotaWarningWindowEnabled(_ window: QuotaWarningWindow, enabled: Bool) { /* dead feature — no-op */ }
 
     var quotaWarningSoundEnabled: Bool {
-        get { self.defaultsState.quotaWarningSoundEnabled }
-        set {
-            self.defaultsState.quotaWarningSoundEnabled = newValue
-            self.userDefaults.set(newValue, forKey: "quotaWarningSoundEnabled")
-        }
+        get { false }
+        set { /* dead feature — always false */ }
     }
 
     var quotaWarningMarkersVisible: Bool {
-        get { self.defaultsState.quotaWarningMarkersVisible }
-        set {
-            self.defaultsState.quotaWarningMarkersVisible = newValue
-            self.userDefaults.set(newValue, forKey: "quotaWarningMarkersVisible")
-        }
+        get { false }
+        set { /* dead feature — always false */ }
     }
 
     var usageBarsShowUsed: Bool {
         get { self.defaultsState.usageBarsShowUsed }
         set {
-            self.defaultsState.usageBarsShowUsed = newValue
+            var state = self.defaultsState
+            state.usageBarsShowUsed = newValue
+            self.defaultsState = state
             self.userDefaults.set(newValue, forKey: "usageBarsShowUsed")
         }
     }
@@ -192,24 +141,65 @@ extension SettingsStore {
     var resetTimesShowAbsolute: Bool {
         get { self.defaultsState.resetTimesShowAbsolute }
         set {
-            self.defaultsState.resetTimesShowAbsolute = newValue
+            var state = self.defaultsState
+            state.resetTimesShowAbsolute = newValue
+            self.defaultsState = state
             self.userDefaults.set(newValue, forKey: "resetTimesShowAbsolute")
         }
     }
 
     var providerChangelogLinksEnabled: Bool {
-        get { self.defaultsState.providerChangelogLinksEnabled }
-        set {
-            self.defaultsState.providerChangelogLinksEnabled = newValue
-            self.userDefaults.set(newValue, forKey: "providerChangelogLinksEnabled")
-        }
+        get { false }
+        set { /* dead feature — always false */ }
     }
 
     var menuBarShowsBrandIconWithPercent: Bool {
         get { self.defaultsState.menuBarShowsBrandIconWithPercent }
         set {
-            self.defaultsState.menuBarShowsBrandIconWithPercent = newValue
+            var state = self.defaultsState
+            state.menuBarShowsBrandIconWithPercent = newValue
+            self.defaultsState = state
             self.userDefaults.set(newValue, forKey: "menuBarShowsBrandIconWithPercent")
+        }
+    }
+
+    var menuBarShowsBrandIcon: Bool {
+        get { self.defaultsState.menuBarShowsBrandIcon }
+        set {
+            var state = self.defaultsState
+            state.menuBarShowsBrandIcon = newValue
+            self.defaultsState = state
+            self.userDefaults.set(newValue, forKey: "menuBarShowsBrandIcon")
+        }
+    }
+
+    var menuBarShowsPercent: Bool {
+        get { self.defaultsState.menuBarShowsPercent }
+        set {
+            var state = self.defaultsState
+            state.menuBarShowsPercent = newValue
+            self.defaultsState = state
+            self.userDefaults.set(newValue, forKey: "menuBarShowsPercent")
+        }
+    }
+
+    var menuBarShowsBatteryShell: Bool {
+        get { self.defaultsState.menuBarShowsBatteryShell }
+        set {
+            var state = self.defaultsState
+            state.menuBarShowsBatteryShell = newValue
+            self.defaultsState = state
+            self.userDefaults.set(newValue, forKey: "menuBarShowsBatteryShell")
+        }
+    }
+
+    var menuBarShowsResetTime: Bool {
+        get { self.defaultsState.menuBarShowsResetTime }
+        set {
+            var state = self.defaultsState
+            state.menuBarShowsResetTime = newValue
+            self.defaultsState = state
+            self.userDefaults.set(newValue, forKey: "menuBarShowsResetTime")
         }
     }
 
@@ -230,34 +220,28 @@ extension SettingsStore {
         set { self.menuBarDisplayModeRaw = newValue.rawValue }
     }
 
-    private var kiroMenuBarDisplayModeRaw: String? {
-        get { self.defaultsState.kiroMenuBarDisplayModeRaw }
-        set {
-            self.defaultsState.kiroMenuBarDisplayModeRaw = newValue
-            if let raw = newValue {
-                self.userDefaults.set(raw, forKey: "kiroMenuBarDisplayMode")
-            } else {
-                self.userDefaults.removeObject(forKey: "kiroMenuBarDisplayMode")
-            }
+    /// Display style for the menu-bar pill countdown.
+    /// Uses copy-modify-reassign for `@Observable` propagation (see usageBarsShowUsed).
+    var menuBarTimeFormat: MenuBarTimeFormat {
+        get {
+            MenuBarTimeFormat(rawValue: self.defaultsState.menuBarTimeFormatRaw) ?? .precise
         }
-    }
-
-    var kiroMenuBarDisplayMode: KiroMenuBarDisplayMode {
-        get { KiroMenuBarDisplayMode(rawValue: self.kiroMenuBarDisplayModeRaw ?? "") ?? .automatic }
-        set { self.kiroMenuBarDisplayModeRaw = newValue.rawValue }
+        set {
+            var state = self.defaultsState
+            state.menuBarTimeFormatRaw = newValue.rawValue
+            self.defaultsState = state
+            self.userDefaults.set(newValue.rawValue, forKey: "menuBarTimeFormat")
+        }
     }
 
     var multiAccountMenuLayout: MultiAccountMenuLayout {
-        get { MultiAccountMenuLayout(rawValue: self.defaultsState.multiAccountMenuLayoutRaw) ?? .segmented }
-        set {
-            self.defaultsState.multiAccountMenuLayoutRaw = newValue.rawValue
-            self.userDefaults.set(newValue.rawValue, forKey: "multiAccountMenuLayout")
-        }
+        get { .segmented }
+        set { /* dead feature — always segmented */ }
     }
 
     var showAllTokenAccountsInMenu: Bool {
-        get { self.multiAccountMenuLayout == .stacked }
-        set { self.multiAccountMenuLayout = newValue ? .stacked : .segmented }
+        get { false }
+        set { /* dead feature — always segmented layout */ }
     }
 
     var historicalTrackingEnabled: Bool {
@@ -293,19 +277,13 @@ extension SettingsStore {
     }
 
     var randomBlinkEnabled: Bool {
-        get { self.defaultsState.randomBlinkEnabled }
-        set {
-            self.defaultsState.randomBlinkEnabled = newValue
-            self.userDefaults.set(newValue, forKey: "randomBlinkEnabled")
-        }
+        get { false }
+        set { /* dead feature — always false */ }
     }
 
     var confettiOnWeeklyLimitResetsEnabled: Bool {
-        get { self.defaultsState.confettiOnWeeklyLimitResetsEnabled }
-        set {
-            self.defaultsState.confettiOnWeeklyLimitResetsEnabled = newValue
-            self.userDefaults.set(newValue, forKey: "confettiOnWeeklyLimitResetsEnabled")
-        }
+        get { false }
+        set { /* dead feature — always false */ }
     }
 
     var menuBarShowsHighestUsage: Bool {
@@ -366,17 +344,16 @@ extension SettingsStore {
     }
 
     var claudePeakHoursEnabled: Bool {
-        get { self.defaultsState.claudePeakHoursEnabled }
-        set {
-            self.defaultsState.claudePeakHoursEnabled = newValue
-            self.userDefaults.set(newValue, forKey: "claudePeakHoursEnabled")
-        }
+        get { false }
+        set { /* dead feature — always false */ }
     }
 
     var showOptionalCreditsAndExtraUsage: Bool {
         get { self.defaultsState.showOptionalCreditsAndExtraUsage }
         set {
-            self.defaultsState.showOptionalCreditsAndExtraUsage = newValue
+            var state = self.defaultsState
+            state.showOptionalCreditsAndExtraUsage = newValue
+            self.defaultsState = state
             self.userDefaults.set(newValue, forKey: "showOptionalCreditsAndExtraUsage")
         }
     }
@@ -404,14 +381,8 @@ extension SettingsStore {
     }
 
     var providerStorageFootprintsEnabled: Bool {
-        get { self.defaultsState.providerStorageFootprintsEnabled }
-        set {
-            self.defaultsState.providerStorageFootprintsEnabled = newValue
-            self.userDefaults.set(newValue, forKey: "providerStorageFootprintsEnabled")
-            CodexBarLog.logger(LogCategories.settings).info(
-                "Provider storage footprints updated",
-                metadata: ["enabled": newValue ? "1" : "0"])
-        }
+        get { false }
+        set { /* dead feature — always false */ }
     }
 
     var jetbrainsIDEBasePath: String {
@@ -646,8 +617,8 @@ extension SettingsStore {
     }
 
     var debugLoadingPattern: LoadingPattern? {
-        get { self.debugLoadingPatternRaw.flatMap(LoadingPattern.init(rawValue:)) }
-        set { self.debugLoadingPatternRaw = newValue?.rawValue }
+        get { nil }
+        set { /* dead feature — always nil */ }
     }
 }
 

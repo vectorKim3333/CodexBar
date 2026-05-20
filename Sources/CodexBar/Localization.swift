@@ -35,21 +35,12 @@ func codexBarLocalizationResourceBundle(
 }
 
 private func localizedBundle() -> Bundle {
+    // ClCoBar is Korean-only. Try ko.lproj first, then fall back to en.lproj
+    // for any keys the Korean file may have missed.
     let resourceBundle = codexBarLocalizationResourceBundle()
-    let language = appLanguageDefaults().string(forKey: "appLanguage") ?? ""
-    if !language.isEmpty {
-        if let bundle = lprojBundle(named: language, in: resourceBundle) {
-            return bundle
-        }
-    } else {
-        // System mode: follow macOS language preferences
-        if let preferred = resourceBundle.preferredLocalizations.first,
-           let bundle = lprojBundle(named: preferred, in: resourceBundle)
-        {
-            return bundle
-        }
+    if let bundle = lprojBundle(named: "ko", in: resourceBundle) {
+        return bundle
     }
-    // Fallback to en.lproj
     if let path = resourceBundle.path(forResource: "en", ofType: "lproj"),
        let bundle = Bundle(path: path)
     {

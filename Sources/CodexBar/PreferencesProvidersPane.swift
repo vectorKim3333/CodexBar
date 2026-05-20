@@ -414,13 +414,8 @@ struct ProvidersPane: View {
                     }
                 }
             },
-            primaryAddActionTitle: provider == .copilot ? "Add Account" : nil,
-            primaryAddAction: provider == .copilot ? {
-                await CopilotLoginFlow.run(settings: self.settings)
-                await ProviderInteractionContext.$current.withValue(.userInitiated) {
-                    await self.store.refreshProvider(provider, allowDisabled: true)
-                }
-            } : nil,
+            primaryAddActionTitle: nil,
+            primaryAddAction: nil,
             openConfigFile: {
                 self.settings.openTokenAccountsFile()
             },
@@ -479,24 +474,9 @@ struct ProvidersPane: View {
 
     func menuBarMetricPicker(for provider: UsageProvider) -> ProviderSettingsPickerDescriptor? {
         let options: [ProviderSettingsPickerOption]
-        if provider == .openrouter {
-            options = [
-                ProviderSettingsPickerOption(id: MenuBarMetricPreference.automatic.rawValue, title: L("automatic")),
-                ProviderSettingsPickerOption(
-                    id: MenuBarMetricPreference.primary.rawValue,
-                    title: L("primary_api_key_limit")),
-            ]
-        } else if SettingsStore.isBalanceOnlyProvider(provider) {
+        if SettingsStore.isBalanceOnlyProvider(provider) {
             options = [
                 ProviderSettingsPickerOption(id: MenuBarMetricPreference.automatic.rawValue, title: "Automatic"),
-            ]
-        } else if provider == .abacus {
-            let metadata = self.store.metadata(for: provider)
-            options = [
-                ProviderSettingsPickerOption(id: MenuBarMetricPreference.automatic.rawValue, title: L("automatic")),
-                ProviderSettingsPickerOption(
-                    id: MenuBarMetricPreference.primary.rawValue,
-                    title: String(format: L("metric_primary"), metadata.sessionLabel)),
             ]
         } else {
             let metadata = self.store.metadata(for: provider)
@@ -551,18 +531,7 @@ struct ProvidersPane: View {
     }
 
     private static func menuBarMetricPickerSubtitle(for provider: UsageProvider) -> String {
-        switch provider {
-        case .deepseek:
-            L("menu_bar_metric_subtitle_deepseek")
-        case .moonshot:
-            L("menu_bar_metric_subtitle_moonshot")
-        case .mistral:
-            L("menu_bar_metric_subtitle_mistral")
-        case .kimik2:
-            L("menu_bar_metric_subtitle_kimik2")
-        default:
-            L("menu_bar_metric_subtitle")
-        }
+        L("menu_bar_metric_subtitle")
     }
 
     func menuCardModel(for provider: UsageProvider) -> UsageMenuCardView.Model {
@@ -586,7 +555,7 @@ struct ProvidersPane: View {
             dashboardError = codexProjection.userFacingErrors.dashboard
             tokenSnapshot = self.store.tokenSnapshot(for: provider)
             tokenError = self.store.tokenError(for: provider)
-        } else if provider == .claude || provider == .vertexai {
+        } else if provider == .claude {
             credits = nil
             creditsError = nil
             dashboard = nil
@@ -602,8 +571,7 @@ struct ProvidersPane: View {
             tokenError = nil
         }
 
-        // Abacus uses primary for monthly credits (no secondary window)
-        let paceWindow = provider == .abacus ? snapshot?.primary : snapshot?.secondary
+        let paceWindow = snapshot?.secondary
         let weeklyPace = if let codexProjection,
                             let weekly = codexProjection.rateWindow(for: .weekly)
         {
@@ -634,18 +602,8 @@ struct ProvidersPane: View {
             hidePersonalInfo: self.settings.hidePersonalInfo,
             claudePeakHoursEnabled: self.settings.claudePeakHoursEnabled,
             weeklyPace: weeklyPace,
-            quotaWarningThresholds: [
-                .session: self.quotaWarningMarkerThresholds(provider: provider, window: .session),
-                .weekly: self.quotaWarningMarkerThresholds(provider: provider, window: .weekly),
-            ],
             now: now)
         return UsageMenuCardView.Model.make(input)
-    }
-
-    private func quotaWarningMarkerThresholds(provider: UsageProvider, window: QuotaWarningWindow) -> [Int] {
-        guard self.settings.quotaWarningMarkersVisible else { return [] }
-        guard self.settings.quotaWarningEnabled(provider: provider, window: window) else { return [] }
-        return self.settings.resolvedQuotaWarningThresholds(provider: provider, window: window)
     }
 
     private func refreshCodexProvider() async {

@@ -20,8 +20,6 @@ struct StatusMenuSwitcherClickTests {
         return SettingsStore(
             userDefaults: defaults,
             configStore: configStore,
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
     }
 
     @Test
@@ -55,9 +53,7 @@ struct StatusMenuSwitcherClickTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
 
         let menu = controller.makeMenu()
@@ -136,9 +132,7 @@ struct StatusMenuSwitcherClickTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
         defer { controller.releaseStatusItemsForTesting() }
 
@@ -213,9 +207,7 @@ struct StatusMenuSwitcherClickTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: self.makeStatusBarForTesting())
 
         let menu = try #require(controller.makeMenu() as? StatusItemMenu)
@@ -236,13 +228,12 @@ struct StatusMenuSwitcherClickTests {
     @Test
     func `switcher hover styling keeps layout stable`() {
         let view = ProviderSwitcherView(
-            providers: [.codex, .claude, .cursor, .factory, .zai, .minimax, .alibaba],
+            providers: [.codex, .claude],
             selected: .provider(.codex),
             includesOverview: true,
             width: 300,
             showsIcons: true,
             iconProvider: { _ in NSImage(size: NSSize(width: 16, height: 16)) },
-            weeklyRemainingProvider: { _ in nil },
             onSelect: { _ in })
 
         let initialSize = view.intrinsicContentSize
@@ -254,34 +245,6 @@ struct StatusMenuSwitcherClickTests {
 
         #expect(view.intrinsicContentSize == initialSize)
         #expect(view._test_buttonFrames() == initialFrames)
-    }
-
-    @Test
-    func `switcher quota indicator preserves remaining percentage`() throws {
-        let view = ProviderSwitcherView(
-            providers: [.claude, .grok],
-            selected: .provider(.claude),
-            includesOverview: false,
-            width: 180,
-            showsIcons: true,
-            iconProvider: { _ in NSImage(size: NSSize(width: 16, height: 16)) },
-            weeklyRemainingProvider: { provider in
-                switch provider {
-                case .claude:
-                    5
-                case .grok:
-                    95
-                default:
-                    nil
-                }
-            },
-            onSelect: { _ in })
-
-        let fillWidths = view._test_quotaIndicatorFillWidths()
-        #expect(fillWidths.count == 2)
-        let lowRemainingWidth = try #require(fillWidths.first)
-        let highRemainingWidth = try #require(fillWidths.last)
-        #expect(lowRemainingWidth < highRemainingWidth)
     }
 
     private static func arrowKeyEvent(keyCode: UInt16) throws -> NSEvent {

@@ -19,8 +19,6 @@ struct StatusMenuCodexSwitcherPresentationTests {
         return SettingsStore(
             userDefaults: defaults,
             configStore: testConfigStore(suiteName: suite),
-            zaiTokenStore: NoopZaiTokenStore(),
-            syntheticTokenStore: NoopSyntheticTokenStore())
     }
 
     private func makeManagedAccountStoreURL(accounts: [ManagedCodexAccount]) throws -> URL {
@@ -193,9 +191,7 @@ struct StatusMenuCodexSwitcherPresentationTests {
         let controller = StatusItemController(
             store: store,
             settings: settings,
-            account: fetcher.loadAccountInfo(),
-            updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection(),
+            account: fetcher.loadAccountInfo(),            preferencesSelection: PreferencesSelection(),
             statusBar: .system)
         defer { controller.releaseStatusItemsForTesting() }
 

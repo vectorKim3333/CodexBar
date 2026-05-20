@@ -25,7 +25,6 @@ public struct CostUsageFetcher: Sendable {
         environment: [String: String] = ProcessInfo.processInfo.environment,
         now: Date = Date(),
         forceRefresh: Bool = false,
-        allowVertexClaudeFallback: Bool = false,
         codexHomePath: String? = nil) async throws -> CostUsageTokenSnapshot
     {
         try await Self.loadTokenSnapshot(
@@ -33,7 +32,6 @@ public struct CostUsageFetcher: Sendable {
             environment: environment,
             now: now,
             forceRefresh: forceRefresh,
-            allowVertexClaudeFallback: allowVertexClaudeFallback,
             codexHomePath: codexHomePath)
     }
 
@@ -42,27 +40,18 @@ public struct CostUsageFetcher: Sendable {
         environment: [String: String] = ProcessInfo.processInfo.environment,
         now: Date = Date(),
         forceRefresh: Bool = false,
-        allowVertexClaudeFallback: Bool = false,
         codexHomePath: String? = nil,
         scannerOptions overrideScannerOptions: CostUsageScanner.Options? = nil,
         piScannerOptions overridePiScannerOptions: PiSessionCostScanner
             .Options? = nil) async throws -> CostUsageTokenSnapshot
     {
-        guard provider == .codex || provider == .claude || provider == .vertexai || provider == .bedrock else {
+        guard provider == .codex || provider == .claude else {
             throw CostUsageError.unsupportedProvider(provider)
         }
 
         let until = now
         // Rolling window: last 30 days (inclusive). Use -29 for inclusive boundaries.
         let since = Calendar.current.date(byAdding: .day, value: -29, to: now) ?? now
-
-        if provider == .bedrock {
-            let daily = try await Self.loadBedrockDailyReport(
-                environment: environment,
-                since: since,
-                until: until)
-            return Self.tokenSnapshot(from: daily, now: now)
-        }
 
         var options = overrideScannerOptions ?? CostUsageScanner.Options()
         if provider == .codex,
@@ -72,13 +61,9 @@ public struct CostUsageFetcher: Sendable {
             options.codexSessionsRoot = URL(fileURLWithPath: codexHomePath, isDirectory: true)
                 .appendingPathComponent("sessions", isDirectory: true)
         }
-        if provider == .codex || provider == .claude {
-            await ModelsDevPricingPipeline.refreshIfNeeded(now: now, cacheRoot: options.cacheRoot)
-        }
+        await ModelsDevPricingPipeline.refreshIfNeeded(now: now, cacheRoot: options.cacheRoot)
 
-        if provider == .vertexai {
-            options.claudeLogProviderFilter = allowVertexClaudeFallback ? .all : .vertexAIOnly
-        } else if provider == .claude {
+        if provider == .claude {
             options.claudeLogProviderFilter = .excludeVertexAI
         }
         if forceRefresh {
@@ -91,60 +76,22 @@ public struct CostUsageFetcher: Sendable {
             now: now,
             options: options)
 
-        if provider == .vertexai,
-           !allowVertexClaudeFallback,
-           options.claudeLogProviderFilter == .vertexAIOnly,
-           daily.data.isEmpty
-        {
-            var fallback = options
-            fallback.claudeLogProviderFilter = .all
-            daily = CostUsageScanner.loadDailyReport(
-                provider: provider,
-                since: since,
-                until: until,
-                now: now,
-                options: fallback)
+        var piOptions = overridePiScannerOptions ?? PiSessionCostScanner.Options()
+        if piOptions.cacheRoot == nil {
+            piOptions.cacheRoot = options.cacheRoot
         }
-
-        if provider == .codex || provider == .claude {
-            var piOptions = overridePiScannerOptions ?? PiSessionCostScanner.Options()
-            if piOptions.cacheRoot == nil {
-                piOptions.cacheRoot = options.cacheRoot
-            }
-            if forceRefresh {
-                piOptions.refreshMinIntervalSeconds = 0
-            }
-            let piReport = PiSessionCostScanner.loadDailyReport(
-                provider: provider,
-                since: since,
-                until: until,
-                now: now,
-                options: piOptions)
-            daily = CostUsageDailyReport.merged([daily, piReport])
+        if forceRefresh {
+            piOptions.refreshMinIntervalSeconds = 0
         }
-
-        return Self.tokenSnapshot(from: daily, now: now)
-    }
-
-    private static func loadBedrockDailyReport(
-        environment: [String: String],
-        since: Date,
-        until: Date) async throws -> CostUsageDailyReport
-    {
-        guard let accessKeyID = BedrockSettingsReader.accessKeyID(environment: environment),
-              let secretAccessKey = BedrockSettingsReader.secretAccessKey(environment: environment)
-        else {
-            throw BedrockUsageError.missingCredentials
-        }
-        let credentials = BedrockAWSSigner.Credentials(
-            accessKeyID: accessKeyID,
-            secretAccessKey: secretAccessKey,
-            sessionToken: BedrockSettingsReader.sessionToken(environment: environment))
-        return try await BedrockUsageFetcher.fetchDailyReport(
-            credentials: credentials,
+        let piReport = PiSessionCostScanner.loadDailyReport(
+            provider: provider,
             since: since,
             until: until,
-            environment: environment)
+            now: now,
+            options: piOptions)
+        daily = CostUsageDailyReport.merged([daily, piReport])
+
+        return Self.tokenSnapshot(from: daily, now: now)
     }
 
     static func tokenSnapshot(from daily: CostUsageDailyReport, now: Date) -> CostUsageTokenSnapshot {

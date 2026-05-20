@@ -42,13 +42,11 @@ extension UsageStore {
     }
 
     func shouldFetchAllTokenAccounts(provider: UsageProvider, accounts: [ProviderTokenAccount]) -> Bool {
-        guard TokenAccountSupportCatalog.support(for: provider) != nil else { return false }
-        return self.settings.multiAccountMenuLayout == .stacked && accounts.count > 1
+        false
     }
 
     func shouldFetchAllCodexVisibleAccounts() -> Bool {
-        self.settings.multiAccountMenuLayout == .stacked &&
-            self.settings.codexVisibleAccountProjection.visibleAccounts.count > 1
+        false
     }
 
     func refreshCodexVisibleAccountsForMenu() async {
