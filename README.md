@@ -4,7 +4,7 @@
 
 현재 버전: **1.2.0**
 
-<img width="203" height="32" alt="스크린샷 2026-05-19 오후 6 30 04" src="https://github.com/user-attachments/assets/e33420ad-f17c-4dc3-874d-6a9b48fe6e91" />
+<img width="520" height="60" alt="image" src="https://github.com/user-attachments/assets/31427d23-5648-4840-9e80-b1ed613ce963" />
 
 
 ## 요구사항
