@@ -300,6 +300,24 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
             selector: #selector(self.handleScreenParametersDidChange(_:)),
             name: NSApplication.didChangeScreenParametersNotification,
             object: nil)
+        // 시스템이 슬립에서 깨어났을 때 진행 중이던 fetch 가 네트워크 단절로
+        // 끊긴 채 isRefreshing / refreshingProviders 가드가 풀리지 못해
+        // "Not fetched yet" 에 갇히는 경우가 있다. wake notification 으로
+        // 가드를 정리하고 강제 refresh 를 트리거해서 자연스럽게 복구한다.
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(self.handleSystemDidWake(_:)),
+            name: NSWorkspace.didWakeNotification,
+            object: nil)
+    }
+
+    @objc private func handleSystemDidWake(_: Notification) {
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            self.store.isRefreshing = false
+            self.store.refreshingProviders.removeAll()
+            await self.store.refresh()
+        }
     }
 
     convenience init(
@@ -789,5 +807,6 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
         self.iconHeartbeatTask?.cancel()
         self.pendingScreenChangePreviousCount = nil
         NotificationCenter.default.removeObserver(self)
+        NSWorkspace.shared.notificationCenter.removeObserver(self)
     }
 }
