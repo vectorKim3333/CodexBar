@@ -4,6 +4,9 @@
 
 현재 버전: **1.2.0**
 
+<img width="203" height="32" alt="스크린샷 2026-05-19 오후 6 30 04" src="https://github.com/user-attachments/assets/e33420ad-f17c-4dc3-874d-6a9b48fe6e91" />
+
+
 ## 요구사항
 
 - macOS 14+ (Sonoma)
