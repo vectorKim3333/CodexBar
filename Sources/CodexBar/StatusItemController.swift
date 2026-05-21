@@ -124,6 +124,9 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
     var animationStartedAt: Date?
     private var lastConfigRevision: Int
     private var lastProviderOrder: [UsageProvider]
+    /// 직전에 메뉴바에 노출되어 있던 provider 집합. handleSettingsChange 가 호출될 때
+    /// 새로 enabled 된 provider 를 찾아 즉시 refresh 를 트리거하기 위해 사용한다.
+    private var lastDisplayedProviders: Set<UsageProvider> = []
     private var lastMergeIcons: Bool
     private var lastSwitcherShowsIcons: Bool
     private var lastObservedUsageBarsShowUsed: Bool
@@ -300,6 +303,28 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
             selector: #selector(self.handleScreenParametersDidChange(_:)),
             name: NSApplication.didChangeScreenParametersNotification,
             object: nil)
+        // 시스템이 슬립에서 깨어났을 때 진행 중이던 fetch 가 네트워크 단절로
+        // 끊긴 채 isRefreshing / refreshingProviders 가드가 풀리지 못해
+        // "Not fetched yet" 에 갇히는 경우가 있다. wake notification 으로
+        // 가드를 정리하고 강제 refresh 를 트리거해서 자연스럽게 복구한다.
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(self.handleSystemDidWake(_:)),
+            name: NSWorkspace.didWakeNotification,
+            object: nil)
+    }
+
+    @objc private func handleSystemDidWake(_: Notification) {
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            // 슬립 중에 멈춘 task 의 가드가 풀리지 못한 채 남아 있으면 후속 refresh 가
+            // 모두 막힌다. 깨어난 시점에 가드를 강제 정리하고 visibility 까지 다시
+            // 그려서 메뉴바 상태 / fetch 상태 / 캐시가 한꺼번에 동기화되도록 한다.
+            self.store.isRefreshing = false
+            self.store.refreshingProviders.removeAll()
+            self.updateVisibility()
+            await self.store.refresh()
+        }
     }
 
     convenience init(
@@ -343,6 +368,25 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
                 try? await Task.sleep(for: .seconds(60))
                 guard let self else { return }
                 self.updateIcons()
+                self.recoverStaleProviders()
+            }
+        }
+    }
+
+    /// "Not fetched yet" 자가 회복. enabled 인데 snapshot 도 errors 도 없고 in-flight
+    /// 도 아닌 provider 가 있으면 → 마지막 자동 refresh 가 어떤 이유로 결과를 남기지
+    /// 못한 채 사라진 것. heartbeat 주기에 한 번씩 refresh 를 다시 트리거해 시간이
+    /// 지나도 자연스럽게 복구되도록 한다. fetch 결과가 snapshot 또는 errors 에 들어가면
+    /// 다음 주기엔 자동으로 trigger 안 됨 (조건 불만족) → 무한 retry 방지.
+    private func recoverStaleProviders() {
+        for provider in self.store.enabledProvidersForDisplay() {
+            guard self.store.snapshot(for: provider) == nil,
+                  self.store.errors[provider] == nil,
+                  !self.store.refreshingProviders.contains(provider),
+                  self.store.rateLimitBackoffUntil[provider].map({ $0 <= Date() }) ?? true
+            else { continue }
+            Task { @MainActor [weak self] in
+                await self?.store.refreshProvider(provider)
             }
         }
     }
@@ -531,6 +575,23 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
         self.updateIcons()
         if shouldRefreshOpenMenus {
             self.refreshOpenMenusForStructureChange()
+        }
+        self.refreshNewlyEnabledProvidersIfNeeded()
+    }
+
+    /// 토글 OFF → ON 으로 새로 enabled 된 provider 가 있으면 즉시 fetch 를 트리거한다.
+    /// `handleSettingsChange` 가 UI 만 갱신해서 "Not fetched yet" 이 다음 자동 refresh
+    /// 주기까지 유지되는 문제 방지. enabled 차집합으로 판정해서 무한 trigger 회피.
+    private func refreshNewlyEnabledProvidersIfNeeded() {
+        let current = Set(self.store.enabledProvidersForDisplay())
+        let newlyEnabled = current.subtracting(self.lastDisplayedProviders)
+        self.lastDisplayedProviders = current
+        guard !newlyEnabled.isEmpty else { return }
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            for provider in newlyEnabled {
+                await self.store.refreshProvider(provider)
+            }
         }
     }
 
@@ -789,5 +850,6 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
         self.iconHeartbeatTask?.cancel()
         self.pendingScreenChangePreviousCount = nil
         NotificationCenter.default.removeObserver(self)
+        NSWorkspace.shared.notificationCenter.removeObserver(self)
     }
 }
