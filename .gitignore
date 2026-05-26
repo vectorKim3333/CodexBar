@@ -39,6 +39,9 @@ debug_*.swift
 docs/*-analysis.md
 docs/.astro/
 
+# Superpowers brainstorming session artifacts
+.superpowers/
+
 # Swift Package Manager metadata (leave sources tracked)
 # Packages/
 # Package.resolved
