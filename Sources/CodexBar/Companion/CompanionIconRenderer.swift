@@ -7,7 +7,7 @@ import Foundation
 enum CompanionIconRenderer {
     private static let cache = NSCache<NSString, NSImage>()
     private static let phaseQuantizationSteps = 16   // 1.0 / 16 = 0.0625
-    private static let defaultSize = NSSize(width: 22, height: 18)
+    private static let defaultSize = NSSize(width: 18, height: 16)
 
     static func render(
         character: CompanionCharacter,

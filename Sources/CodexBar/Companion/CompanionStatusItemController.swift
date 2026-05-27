@@ -37,7 +37,7 @@ final class CompanionStatusItemController {
 
     func start() {
         guard self.statusItem == nil else { return }
-        let item = NSStatusBar.system.statusItem(withLength: 28)
+        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         item.button?.image = CompanionIconRenderer.render(
             character: self.character, stage: .idle, phase: 0)
         item.button?.action = #selector(self.handleClick)
