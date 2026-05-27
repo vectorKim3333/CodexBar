@@ -508,3 +508,11 @@
 
 /* Cost / token chart hints */
 "top_model_format" = "Top model: %@";
+
+/* Companion preview */
+"companion.preview.label" = "Current stage";
+"companion.stage.idle" = "idle";
+"companion.stage.slow" = "slow";
+"companion.stage.normal" = "normal";
+"companion.stage.fast" = "fast";
+"companion.stage.burst" = "burst";

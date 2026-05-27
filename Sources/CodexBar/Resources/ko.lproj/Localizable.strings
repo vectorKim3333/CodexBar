@@ -519,3 +519,11 @@
 "top_model_format" = "주요 모델: %@";
 "Estimated from local Codex logs for the selected account." = "선택한 계정의 로컬 Codex 로그를 기반으로 추정한 값입니다.";
 "Estimated from local Claude logs at API rates; token totals include cache read/write tokens and may differ from Claude Code /status." = "로컬 Claude 로그를 API 요금 기준으로 추정한 값입니다. 토큰 합계에는 캐시 read/write 토큰이 포함되며 Claude Code 의 /status 결과와 다를 수 있습니다.";
+
+/* Companion preview */
+"companion.preview.label" = "현재 단계";
+"companion.stage.idle" = "대기";
+"companion.stage.slow" = "느림";
+"companion.stage.normal" = "보통";
+"companion.stage.fast" = "빠름";
+"companion.stage.burst" = "폭발";
