@@ -47,6 +47,10 @@ enum CompanionIconRenderer {
         let sx = size.width / grid.width
         let sy = size.height / grid.height
         ctx.scaleBy(x: sx, y: sy)
+        // Convert from CG bottom-left origin to UI top-left origin so sprite atlases
+        // (which use Y-down convention) render right-side up.
+        ctx.translateBy(x: 0, y: grid.height)
+        ctx.scaleBy(x: 1, y: -1)
         ctx.setFillColor(NSColor.black.cgColor)
         ctx.setStrokeColor(NSColor.black.cgColor)
         ctx.setLineWidth(character.style == .line ? 1.2 / max(sx, sy) : 0)

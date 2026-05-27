@@ -37,8 +37,14 @@ final class CompanionMenuBuilder: NSObject, NSMenuDelegate {
         let providerName = controller.provider == .claude ? "Claude" : "Codex"
 
         // 1) Header
-        let header = NSMenuItem(title: "🐱 \(providerName) Companion", action: nil, keyEquivalent: "")
-        header.isEnabled = false
+        let headerText = "🐱 \(providerName) Companion"
+        let header = NSMenuItem(title: headerText, action: nil, keyEquivalent: "")
+        header.attributedTitle = NSAttributedString(
+            string: headerText,
+            attributes: [
+                .foregroundColor: NSColor.labelColor,
+                .font: NSFont.boldSystemFont(ofSize: NSFont.systemFontSize),
+            ])
         menu.addItem(header)
 
         // 2) State line (stage + hourly % + token/min if available)
@@ -47,7 +53,6 @@ final class CompanionMenuBuilder: NSObject, NSMenuDelegate {
             burnPerMinute: controller.currentBurnRate,
             tokensPerMinute: controller.currentTokenRatePerMinute)
         let stateItem = NSMenuItem(title: stateLine, action: nil, keyEquivalent: "")
-        stateItem.isEnabled = false
         menu.addItem(stateItem)
 
         // 3) 기준시간
@@ -58,7 +63,6 @@ final class CompanionMenuBuilder: NSObject, NSMenuDelegate {
             timeStr = L("companion.menu.no_sample")
         }
         let timeItem = NSMenuItem(title: "기준시간: \(timeStr)", action: nil, keyEquivalent: "")
-        timeItem.isEnabled = false
         menu.addItem(timeItem)
 
         // 4) Detail block (session % / weekly / today tokens / top model)
@@ -69,7 +73,6 @@ final class CompanionMenuBuilder: NSObject, NSMenuDelegate {
             menu.addItem(.separator())
             for line in detailLines {
                 let item = NSMenuItem(title: line, action: nil, keyEquivalent: "")
-                item.isEnabled = false
                 menu.addItem(item)
             }
         }
@@ -77,8 +80,7 @@ final class CompanionMenuBuilder: NSObject, NSMenuDelegate {
         menu.addItem(.separator())
 
         // 5) Character picker
-        let charHeader = NSMenuItem(title: L("companion.menu.character_section"), action: nil, keyEquivalent: "")
-        charHeader.isEnabled = false
+        let charHeader = NSMenuItem.sectionHeader(title: L("companion.menu.character_section"))
         menu.addItem(charHeader)
         for character in CompanionCharacter.allCases {
             let item = NSMenuItem(title: self.characterLabel(character),
@@ -93,8 +95,7 @@ final class CompanionMenuBuilder: NSObject, NSMenuDelegate {
         menu.addItem(.separator())
 
         // 6) Provider picker
-        let provHeader = NSMenuItem(title: L("companion.menu.provider_section"), action: nil, keyEquivalent: "")
-        provHeader.isEnabled = false
+        let provHeader = NSMenuItem.sectionHeader(title: L("companion.menu.provider_section"))
         menu.addItem(provHeader)
         for prov in [UsageProvider.claude, .codex] {
             let item = NSMenuItem(title: prov == .claude ? "Claude" : "Codex",
@@ -204,11 +205,34 @@ final class CompanionMenuBuilder: NSObject, NSMenuDelegate {
         return "\(minutes)m"
     }
 
-    /// Shortens a model name to a max of 26 characters (matches InlineUsageDashboardContent).
-    private static func shortModelName(_ name: String) -> String {
-        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmed.count > 26 else { return trimmed }
-        return String(trimmed.prefix(25)) + "…"
+    /// Shortens a Claude model ID to a human-readable name.
+    /// e.g. "claude-opus-4-7" -> "Opus 4.7"
+    ///      "claude-sonnet-4-6" -> "Sonnet 4.6"
+    ///      "claude-haiku-4-5-20251001" -> "Haiku 4.5"
+    private static func shortModelName(_ raw: String) -> String {
+        let lower = raw.lowercased()
+        let families: [(needle: String, pretty: String)] = [
+            ("opus", "Opus"),
+            ("sonnet", "Sonnet"),
+            ("haiku", "Haiku"),
+        ]
+        for (needle, pretty) in families {
+            guard lower.contains(needle) else { continue }
+            let tokens = lower.split(separator: "-").map(String.init)
+            guard let idx = tokens.firstIndex(of: needle) else { continue }
+            var versionParts: [String] = []
+            var i = idx + 1
+            while i < tokens.count, let _ = Int(tokens[i]) {
+                versionParts.append(tokens[i])
+                i += 1
+            }
+            if versionParts.isEmpty {
+                return pretty
+            }
+            let trimmed = Array(versionParts.prefix(2))
+            return "\(pretty) \(trimmed.joined(separator: "."))"
+        }
+        return raw
     }
 
     @objc private func selectCharacter(_ sender: NSMenuItem) {
