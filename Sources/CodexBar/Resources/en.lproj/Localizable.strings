@@ -539,6 +539,7 @@
 "companion.menu.seconds_ago" = "%ds ago";
 "companion.menu.minutes_ago" = "%dm ago";
 "companion.menu.hours_ago" = "%dh ago";
+"companion.menu.days_ago" = "%dd ago";
 "companion.menu.hourly_pct" = "%.0f%%/h";
 "companion.menu.tokens_per_min" = "~%@ tok/min";
 "companion.menu.session_with_reset" = "Session %d%% · resets in %@";

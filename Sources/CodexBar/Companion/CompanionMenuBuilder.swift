@@ -55,10 +55,11 @@ final class CompanionMenuBuilder: NSObject, NSMenuDelegate {
         let stateItem = NSMenuItem(title: stateLine, action: nil, keyEquivalent: "")
         menu.addItem(stateItem)
 
-        // 3) 기준시간
+        // 3) 기준시간 — based on UsageStore snapshot freshness, not our local poll
+        let snapshot = self.usageStore.snapshots[controller.provider]
         let timeStr: String
-        if let lastAt = controller.lastSampleAt {
-            timeStr = self.formatElapsed(Date().timeIntervalSince(lastAt))
+        if let updatedAt = snapshot?.updatedAt {
+            timeStr = self.formatSnapshotTime(updatedAt)
         } else {
             timeStr = L("companion.menu.no_sample")
         }
@@ -66,7 +67,6 @@ final class CompanionMenuBuilder: NSObject, NSMenuDelegate {
         menu.addItem(timeItem)
 
         // 4) Detail block (session % / weekly / today tokens / top model)
-        let snapshot = self.usageStore.snapshots[controller.provider]
         let tokenSnapshot = self.usageStore.tokenSnapshots[controller.provider]
         let detailLines = self.composeDetailLines(snapshot: snapshot, tokenSnapshot: tokenSnapshot)
         if !detailLines.isEmpty {
@@ -275,13 +275,32 @@ final class CompanionMenuBuilder: NSObject, NSMenuDelegate {
         }
     }
 
-    /// Returns Korean relative time: "방금 전", "N초 전", "N분 전", "N시간 전".
+    /// "HH:mm · X분 전" or "HH:mm · X일 전" for older.
+    /// Uses system locale for time format (so user's 24h/12h preference is respected).
+    private func formatSnapshotTime(_ date: Date) -> String {
+        let elapsed = Date().timeIntervalSince(date)
+        let absoluteStr = Self.snapshotTimeFormatter.string(from: date)
+        let relativeStr = self.formatElapsed(elapsed)
+        return "\(absoluteStr) · \(relativeStr)"
+    }
+
+    private static let snapshotTimeFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.timeStyle = .short
+        f.dateStyle = .none
+        f.locale = Locale.autoupdatingCurrent
+        return f
+    }()
+
+    /// Returns relative time: "방금 전", "N초 전", "N분 전", "N시간 전", "N일 전".
     private func formatElapsed(_ seconds: TimeInterval) -> String {
         if seconds < 30 { return L("companion.menu.just_now") }
         if seconds < 60 { return L("companion.menu.seconds_ago", Int(seconds)) }
         let minutes = Int(seconds / 60)
         if minutes < 60 { return L("companion.menu.minutes_ago", minutes) }
         let hours = minutes / 60
-        return L("companion.menu.hours_ago", hours)
+        if hours < 24 { return L("companion.menu.hours_ago", hours) }
+        let days = hours / 24
+        return L("companion.menu.days_ago", days)
     }
 }

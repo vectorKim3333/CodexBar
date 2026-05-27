@@ -129,10 +129,18 @@ final class CompanionStatusItemController {
         } else if inBackoff {
             newStage = self.lastStage ?? .idle   // keep last
         } else {
-            newStage = CompanionPace.classify(
+            let stageFromPct = CompanionPace.classify(
                 burnRate: burn,
                 previous: self.lastStage,
                 timeSinceLastChange: timeSince)
+            // Fallback: when % rate is stuck (e.g., API caching), token activity
+            // from local CLI logs still reflects real work. Pick the higher of the two.
+            if let tpm = self.currentTokenRatePerMinute, tpm > 0 {
+                let stageFromTokens = self.tokenRateStage(tpm)
+                newStage = self.maxStage(stageFromPct, stageFromTokens)
+            } else {
+                newStage = stageFromPct
+            }
         }
 
         if newStage != self.lastStage {
@@ -171,6 +179,25 @@ final class CompanionStatusItemController {
     /// real-time activity. Weekly (secondary) moves too slowly to drive animation.
     private func currentSessionPercent(for provider: UsageProvider) -> Double? {
         return self.usageStore.snapshots[provider]?.primary?.usedPercent
+    }
+
+    /// Map token-rate (tokens/min) to a pace stage.
+    /// Calibration: heavy Claude Code session is ~5k-20k tok/min (cache reads count).
+    /// Light chat is a few hundred. Idle is <50.
+    private func tokenRateStage(_ tpm: Double) -> CompanionPaceStage {
+        if tpm < 50 { return .idle }
+        if tpm < 1_000 { return .slow }
+        if tpm < 10_000 { return .normal }
+        if tpm < 50_000 { return .fast }
+        return .burst
+    }
+
+    /// Returns the more-active of two pace stages.
+    private func maxStage(_ a: CompanionPaceStage, _ b: CompanionPaceStage) -> CompanionPaceStage {
+        let order: [CompanionPaceStage] = [.idle, .slow, .normal, .fast, .burst]
+        let ia = order.firstIndex(of: a) ?? 0
+        let ib = order.firstIndex(of: b) ?? 0
+        return ia >= ib ? a : b
     }
 
     private func updateButtonMetadata(stage: CompanionPaceStage, burnRate: Double) {

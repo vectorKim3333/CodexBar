@@ -550,6 +550,7 @@
 "companion.menu.seconds_ago" = "%d초 전";
 "companion.menu.minutes_ago" = "%d분 전";
 "companion.menu.hours_ago" = "%d시간 전";
+"companion.menu.days_ago" = "%d일 전";
 "companion.menu.hourly_pct" = "시간당 %.0f%%";
 "companion.menu.tokens_per_min" = "약 %@ tok/분";
 "companion.menu.session_with_reset" = "세션 %d%% · %@ 후 리셋";
