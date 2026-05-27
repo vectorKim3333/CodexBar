@@ -42,6 +42,7 @@ final class CompanionStatusItemController {
         item.button?.target = self
         item.menu = self.menuProvider()
         self.statusItem = item
+        self.updateButtonMetadata(stage: .idle, burnRate: 0)
 
         self.driver.onFrame = { [weak self] phase in
             guard let self, let item = self.statusItem else { return }
@@ -90,6 +91,7 @@ final class CompanionStatusItemController {
             self.lastStage = newStage
             self.lastStageChangeAt = now
             self.driver.stage = newStage
+            self.updateButtonMetadata(stage: newStage, burnRate: burn)
         }
     }
 
@@ -109,5 +111,33 @@ final class CompanionStatusItemController {
     /// The "secondary" rate window is Claude/Codex weekly. Returns nil if no snapshot yet.
     private func currentWeeklyPercent(for provider: UsageProvider) -> Double? {
         return self.usageStore.snapshots[provider]?.secondary?.usedPercent
+    }
+
+    private func updateButtonMetadata(stage: CompanionPaceStage, burnRate: Double) {
+        guard let button = self.statusItem?.button else { return }
+        let providerName = self.provider == .claude ? "Claude" : "Codex"
+        if stage == .idle {
+            let tip = String(format: NSLocalizedString("companion.tooltip.idle",
+                                                       comment: ""), providerName)
+            button.toolTip = tip
+            button.setAccessibilityLabel(tip)
+        } else {
+            let stageName = self.stageDisplayName(stage)
+            let tip = String(format: NSLocalizedString("companion.tooltip.active",
+                                                       comment: ""),
+                             providerName, stageName, burnRate)
+            button.toolTip = tip
+            button.setAccessibilityLabel(tip)
+        }
+    }
+
+    private func stageDisplayName(_ s: CompanionPaceStage) -> String {
+        switch s {
+        case .idle:   return NSLocalizedString("companion.stage.idle", comment: "")
+        case .slow:   return NSLocalizedString("companion.stage.slow", comment: "")
+        case .normal: return NSLocalizedString("companion.stage.normal", comment: "")
+        case .fast:   return NSLocalizedString("companion.stage.fast", comment: "")
+        case .burst:  return NSLocalizedString("companion.stage.burst", comment: "")
+        }
     }
 }
