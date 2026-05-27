@@ -271,6 +271,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     controller.start()
                     self.companionController = controller
                     self.companionMenuBuilder = builderRef
+                    // Companion 의 새 NSStatusItem 추가가 macOS 의 status bar 재배치를
+                    // 유발 → 이미 evict 상태였던 사용량 pill 의 invisible 상태가 가시화
+                    // 되는 케이스 있음. 즉시 visibility 복구 요청.
+                    self.statusController?.requestVisibilityRecovery(reason: "companion-start")
                 } else {
                     self.companionController?.character = settings.companionCharacter
                     self.companionController?.provider = settings.companionProvider
@@ -279,6 +283,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self.companionController?.stop()
                 self.companionController = nil
                 self.companionMenuBuilder = nil
+                // Companion 의 NSStatusItem 제거도 동일하게 status bar 재배치 유발.
+                self.statusController?.requestVisibilityRecovery(reason: "companion-stop")
             }
         }
         updateController()

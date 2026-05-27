@@ -207,7 +207,14 @@ final class CompanionStatusItemController {
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
+                // 장시간 deep sleep 후 wake 에선 macOS 가 status bar 재배치하는 시간이
+                // 단발 1.5초로 안 잡힐 수 있음. 1.5s + 5s + 15s cascade 로 여러 번 검증.
+                // recoverIfMissingOrBlocked 는 idempotent 라 중복 호출 안전.
                 try? await Task.sleep(for: .seconds(Self.wakeCheckDelay))
+                self?.recoverIfMissingOrBlocked()
+                try? await Task.sleep(for: .seconds(5 - Self.wakeCheckDelay))
+                self?.recoverIfMissingOrBlocked()
+                try? await Task.sleep(for: .seconds(10))
                 self?.recoverIfMissingOrBlocked()
             }
         }
