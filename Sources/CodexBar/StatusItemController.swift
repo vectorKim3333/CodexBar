@@ -10,12 +10,14 @@ protocol StatusItemControlling: AnyObject {
     func openMenuFromShortcut()
     func runLoginFlowFromSettings(provider: UsageProvider) async
     func celebrationOriginPoint(for provider: UsageProvider?) -> CGPoint?
+    func sharedMenu() -> NSMenu
 }
 
 extension StatusItemControlling {
     func celebrationOriginPoint(for provider: UsageProvider?) -> CGPoint? {
         nil
     }
+    func sharedMenu() -> NSMenu { NSMenu() }
 }
 
 @MainActor

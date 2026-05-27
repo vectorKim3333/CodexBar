@@ -125,6 +125,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private var statusController: StatusItemControlling?
+    private var companionController: CompanionStatusItemController?
+    private var companionObservationTask: Task<Void, Never>?
     private var store: UsageStore?
     private var settings: SettingsStore?
     private var account: AccountInfo?
@@ -147,6 +149,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         AppNotifications.shared.requestAuthorizationOnStartup()
         self.ensureStatusController()
+        self.setupCompanionControllerIfPossible()
         KeyboardShortcuts.onKeyUp(for: .openMenu) { [weak self] in
             Task { @MainActor [weak self] in
                 self?.statusController?.openMenuFromShortcut()
@@ -232,7 +235,62 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             fallbackCodexAccountPromotionCoordinator)
     }
 
+    private func setupCompanionControllerIfPossible() {
+        guard
+            let settings = self.settings,
+            let store = self.store,
+            let statusController = self.statusController
+        else {
+            return
+        }
+        self.setupCompanionController(settings: settings, store: store, statusController: statusController)
+    }
+
+    private func setupCompanionController(
+        settings: SettingsStore,
+        store: UsageStore,
+        statusController: StatusItemControlling)
+    {
+        let updateController: @MainActor () -> Void = { [weak self] in
+            guard let self else { return }
+            if settings.companionEnabled {
+                if self.companionController == nil {
+                    let controller = CompanionStatusItemController(
+                        character: settings.companionCharacter,
+                        provider: settings.companionProvider,
+                        usageStore: store,
+                        menuProvider: { [weak statusController] in
+                            statusController?.sharedMenu() ?? NSMenu()
+                        })
+                    controller.start()
+                    self.companionController = controller
+                } else {
+                    self.companionController?.character = settings.companionCharacter
+                    self.companionController?.provider = settings.companionProvider
+                }
+            } else {
+                self.companionController?.stop()
+                self.companionController = nil
+            }
+        }
+        updateController()
+
+        self.companionObservationTask?.cancel()
+        self.companionObservationTask = Task { @MainActor [weak self] in
+            while !Task.isCancelled {
+                _ = settings.companionEnabled
+                _ = settings.companionCharacter
+                _ = settings.companionProvider
+                try? await Task.sleep(for: .milliseconds(500))
+                guard self != nil else { return }
+                updateController()
+            }
+        }
+    }
+
     deinit {
         NotificationCenter.default.removeObserver(self)
+        // companionObservationTask is @MainActor-isolated and cannot be accessed here;
+        // the task holds only a weak self reference and will terminate naturally on dealloc.
     }
 }

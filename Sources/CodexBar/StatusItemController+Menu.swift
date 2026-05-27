@@ -71,6 +71,8 @@ extension StatusItemController {
         self.makeBaseMenu()
     }
 
+    func sharedMenu() -> NSMenu { self.makeMenu() }
+
     func menuWillOpen(_ menu: NSMenu) {
         if self.isHostedSubviewMenu(menu) {
             self.hydrateHostedSubviewMenuIfNeeded(menu)
