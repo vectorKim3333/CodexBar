@@ -12,30 +12,21 @@ struct CompanionAnimationDriverTests {
     }
 
     @Test
-    func `phase advances when manually stepped (for testability)`() {
+    func `configure sets frame count`() {
         let driver = CompanionAnimationDriver()
-        driver.stage = .normal
-        driver.advancePhase(deltaTime: 0.3)
-        #expect(driver.phase > 0)
-    }
-
-    @Test
-    func `phase wraps in [0, 1)`() {
-        let driver = CompanionAnimationDriver()
-        driver.stage = .burst
-        // burst frameInterval = 0.15 → 1.0 full cycle takes 0.15s
-        // Step by 0.2s → should wrap
-        driver.advancePhase(deltaTime: 0.2)
-        #expect(driver.phase >= 0 && driver.phase < 1)
-    }
-
-    @Test
-    func `idle stage advances phase very slowly (body breathing)`() {
-        let driver = CompanionAnimationDriver()
+        driver.configure(frameCount: 5)
+        // frameCount 자체는 private 이지만, idle 상태에선 frame 0 으로 reset 되는 게
+        // applyStageChange 의 인variant 이므로 외부 관찰 가능.
         driver.stage = .idle
-        // idle frameInterval = 20s
-        driver.advancePhase(deltaTime: 1.0)
-        // 1s / 20s = 0.05
-        #expect(abs(driver.phase - 0.05) < 0.001)
+        #expect(driver.frameIndex == 0)
+    }
+
+    @Test
+    func `idle stage keeps frame index at 0`() {
+        let driver = CompanionAnimationDriver()
+        driver.configure(frameCount: 5)
+        driver.stage = .idle
+        driver.start()
+        #expect(driver.frameIndex == 0)
     }
 }

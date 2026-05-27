@@ -16,7 +16,7 @@ struct CompanionIntegrationTests {
         var controllers: [CompanionStatusItemController] = []
         for _ in 0..<5 {
             let c = CompanionStatusItemController(
-                character: .catPixel, provider: .claude, usageStore: store,
+                character: .dog, provider: .claude, usageStore: store,
                 menuProvider: { NSMenu(title: "test") })
             c.start()
             c.stop()
@@ -26,10 +26,13 @@ struct CompanionIntegrationTests {
     }
 
     @Test
-    func `all 4 characters can be rendered at each stage without throwing`() {
+    func `all characters can be rendered at all frames without throwing`() {
         for character in CompanionCharacter.allCases {
-            for stage in CompanionPaceStage.allCases {
-                let img = CompanionIconRenderer.render(character: character, stage: stage, phase: 0.5)
+            let frameCount = CompanionSpriteFrameRenderer.frameCount(for: character)
+            #expect(frameCount > 0)
+            for frameIndex in 0..<frameCount {
+                let img = CompanionSpriteFrameRenderer.render(
+                    character: character, frameIndex: frameIndex)
                 #expect(img.size.width > 0)
             }
         }

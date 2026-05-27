@@ -6,22 +6,28 @@ import SwiftUI
 @MainActor
 struct CompanionPreviewView: View {
     let character: CompanionCharacter
-    @State private var phase: Double = 0
-    @State private var stageIndex: Int = 0
 
     private let stages: [CompanionPaceStage] = [.idle, .slow, .normal, .fast, .burst]
-    private let cycleDuration: TimeInterval = 5.0   // 1s per stage
-    private let frameInterval: TimeInterval = 1.0 / 30.0   // 30 FPS
+    /// 한 stage 당 미리보기 노출 시간 (3초). 5개 stage → 15초 사이클.
+    private let stageHoldDuration: TimeInterval = 3.0
+    /// TimelineView 의 minimum tick 주기. burst frameInterval / frameCount 보다 짧게.
+    private let tickInterval: TimeInterval = 1.0 / 30.0
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: self.frameInterval)) { context in
+        let frameCount = CompanionSpriteFrameRenderer.frameCount(for: self.character)
+        TimelineView(.animation(minimumInterval: self.tickInterval)) { context in
             let elapsed = context.date.timeIntervalSinceReferenceDate
-            let cyclePos = elapsed.truncatingRemainder(dividingBy: self.cycleDuration) / self.cycleDuration
-            let stageIdx = Int(cyclePos * Double(self.stages.count)) % self.stages.count
+            let cycleDuration = self.stageHoldDuration * Double(self.stages.count)
+            let cyclePos = elapsed.truncatingRemainder(dividingBy: cycleDuration)
+            let stageIdx = Int(cyclePos / self.stageHoldDuration) % self.stages.count
             let stage = self.stages[stageIdx]
-            let stagePhase = (elapsed / stage.frameInterval).truncatingRemainder(dividingBy: 1.0)
-            let image = CompanionIconRenderer.render(
-                character: self.character, stage: stage, phase: stagePhase,
+            let frameIndex = self.currentFrameIndex(
+                stage: stage,
+                elapsed: elapsed,
+                frameCount: frameCount)
+            let image = CompanionSpriteFrameRenderer.render(
+                character: self.character,
+                frameIndex: frameIndex,
                 size: NSSize(width: 88, height: 72))
             HStack(spacing: 16) {
                 Image(nsImage: image)
@@ -37,6 +43,14 @@ struct CompanionPreviewView: View {
             .padding(12)
             .background(RoundedRectangle(cornerRadius: 8).fill(.quaternary))
         }
+    }
+
+    private func currentFrameIndex(stage: CompanionPaceStage, elapsed: TimeInterval, frameCount: Int) -> Int {
+        // .idle 은 frame 0 고정.
+        guard stage != .idle, frameCount > 1 else { return 0 }
+        let perFrame = stage.frameInterval / Double(frameCount)
+        guard perFrame > 0 else { return 0 }
+        return Int(elapsed / perFrame) % frameCount
     }
 
     private func stageLabel(_ s: CompanionPaceStage) -> String {

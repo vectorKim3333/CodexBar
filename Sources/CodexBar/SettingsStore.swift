@@ -319,8 +319,11 @@ extension SettingsStore {
         let providerDetectionCompleted = userDefaults.object(forKey: "providerDetectionCompleted") as? Bool ?? false
         let appLanguageRaw = userDefaults.string(forKey: "appLanguage")
         let companionEnabled = userDefaults.bool(forKey: "companion.enabled")
-        let companionCharacterRaw = userDefaults.string(forKey: "companion.character")
-            ?? CompanionCharacter.catPixel.rawValue
+        // 1.5.0 마이그레이션: 4종(catPixel/catLine/dogPixel/dogLine) → 1종(.dog) 으로 축소.
+        // 기존 저장값이 unknown case 면 default 로 fallback.
+        let companionCharacterRaw = CompanionCharacter(
+            rawValue: userDefaults.string(forKey: "companion.character") ?? "")?
+            .rawValue ?? CompanionCharacter.default.rawValue
         let companionProviderRaw = userDefaults.string(forKey: "companion.provider")
             ?? UsageProvider.claude.rawValue
         let companionFeatureSeen = userDefaults.bool(forKey: "companion.featureSeen")

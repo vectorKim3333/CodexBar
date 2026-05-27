@@ -10,7 +10,7 @@ struct CompanionStatusItemControllerTests {
     func `start creates status item, stop releases it`() {
         let store = Self.makeTestUsageStore()
         let controller = CompanionStatusItemController(
-            character: .catPixel,
+            character: .dog,
             provider: .claude,
             usageStore: store,
             menuProvider: { NSMenu(title: "test") })

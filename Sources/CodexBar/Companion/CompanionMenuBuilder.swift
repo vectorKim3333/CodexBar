@@ -76,19 +76,20 @@ final class CompanionMenuBuilder: NSObject, NSMenuDelegate {
             }
         }
 
-        menu.addItem(.separator())
-
-        // 5) Character picker
-        let charHeader = NSMenuItem.sectionHeader(title: L("companion.menu.character_section"))
-        menu.addItem(charHeader)
-        for character in CompanionCharacter.allCases {
-            let item = NSMenuItem(title: self.characterLabel(character),
-                                  action: #selector(self.selectCharacter(_:)),
-                                  keyEquivalent: "")
-            item.target = self
-            item.representedObject = character
-            item.state = (self.settings.companionCharacter == character) ? .on : .off
-            menu.addItem(item)
+        // 5) Character picker — 캐릭터가 1종일 땐 picker 자체 hide (separator 도 안 보이게).
+        if CompanionCharacter.allCases.count > 1 {
+            menu.addItem(.separator())
+            let charHeader = NSMenuItem.sectionHeader(title: L("companion.menu.character_section"))
+            menu.addItem(charHeader)
+            for character in CompanionCharacter.allCases {
+                let item = NSMenuItem(title: self.characterLabel(character),
+                                      action: #selector(self.selectCharacter(_:)),
+                                      keyEquivalent: "")
+                item.target = self
+                item.representedObject = character
+                item.state = (self.settings.companionCharacter == character) ? .on : .off
+                menu.addItem(item)
+            }
         }
 
         menu.addItem(.separator())
@@ -271,10 +272,14 @@ final class CompanionMenuBuilder: NSObject, NSMenuDelegate {
 
     private func characterLabel(_ c: CompanionCharacter) -> String {
         switch c {
-        case .catPixel: return L("companion.character.catPixel")
-        case .catLine:  return L("companion.character.catLine")
-        case .dogPixel: return L("companion.character.dogPixel")
-        case .dogLine:  return L("companion.character.dogLine")
+        case .dog:       return L("companion.character.dog")
+        case .cat:       return L("companion.character.cat")
+        case .hare:      return L("companion.character.hare")
+        case .tortoise:  return L("companion.character.tortoise")
+        case .bird:      return L("companion.character.bird")
+        case .figureRun: return L("companion.character.figureRun")
+        case .flame:     return L("companion.character.flame")
+        case .boltFill:  return L("companion.character.boltFill")
         }
     }
 

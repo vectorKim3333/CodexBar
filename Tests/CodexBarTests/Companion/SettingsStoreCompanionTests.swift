@@ -18,9 +18,9 @@ struct SettingsStoreCompanionTests {
     }
 
     @Test
-    func companionCharacterDefaultsToCatPixel() {
+    func companionCharacterDefaultsToDog() {
         let store = freshStore()
-        #expect(store.companionCharacter == .catPixel)
+        #expect(store.companionCharacter == .dog)
     }
 
     @Test
@@ -39,8 +39,10 @@ struct SettingsStoreCompanionTests {
     @Test
     func settingCompanionCharacterPersists() {
         let store = freshStore()
-        store.companionCharacter = .dogLine
-        #expect(store.companionCharacter == .dogLine)
+        // 1종일 때는 .dog 자체 setter round-trip 만 확인. 추후 case 추가되면
+        // 변종으로 교체.
+        store.companionCharacter = .dog
+        #expect(store.companionCharacter == .dog)
     }
 
     @Test

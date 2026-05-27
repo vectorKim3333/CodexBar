@@ -120,7 +120,11 @@ struct DisplayPane: View {
                 ))
 
             if self.settings.companionEnabled {
-                self.companionCharacterRow
+                // 캐릭터가 1종밖에 없으면 picker 가 무의미하므로 숨김. 추후 case 추가되면
+                // 자동으로 다시 나타남.
+                if CompanionCharacter.allCases.count > 1 {
+                    self.companionCharacterRow
+                }
                 self.companionTargetRow
                 CompanionPreviewView(character: self.settings.companionCharacter)
             }
@@ -168,10 +172,14 @@ struct DisplayPane: View {
 
     private func characterLabel(_ c: CompanionCharacter) -> String {
         switch c {
-        case .catPixel: return L("companion.character.catPixel")
-        case .catLine:  return L("companion.character.catLine")
-        case .dogPixel: return L("companion.character.dogPixel")
-        case .dogLine:  return L("companion.character.dogLine")
+        case .dog:       return L("companion.character.dog")
+        case .cat:       return L("companion.character.cat")
+        case .hare:      return L("companion.character.hare")
+        case .tortoise:  return L("companion.character.tortoise")
+        case .bird:      return L("companion.character.bird")
+        case .figureRun: return L("companion.character.figureRun")
+        case .flame:     return L("companion.character.flame")
+        case .boltFill:  return L("companion.character.boltFill")
         }
     }
 
