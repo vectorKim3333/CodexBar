@@ -24,7 +24,6 @@ public actor BurnRateCalculator {
 
         guard inWindow.count >= 2, let first = inWindow.first, let last = inWindow.last else {
             self.smoothed = 0
-            self.hasSeed = true
             return 0
         }
 

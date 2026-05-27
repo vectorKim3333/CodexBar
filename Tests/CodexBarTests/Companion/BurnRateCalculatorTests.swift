@@ -71,6 +71,19 @@ struct BurnRateCalculatorTests {
     }
 
     @Test
+    func `seeds on first valid update even after empty initial update`() async {
+        let calc = BurnRateCalculator(window: 300, smoothingAlpha: 0.3)
+        let now = Date()
+        // First update with < 2 samples
+        _ = await calc.update(entries: [entry(0, percent: 10, now: now)], now: now)
+        // Second update with valid samples — should SEED (not EMA-blend from 0)
+        let entries = [entry(5, percent: 10, now: now), entry(0, percent: 12, now: now)]
+        let burn = await calc.update(entries: entries, now: now)
+        // raw = 0.4 %/min; expect seeded (= 0.4), NOT blended (= 0.12)
+        #expect(abs(burn - 0.4) < 0.001)
+    }
+
+    @Test
     func freezePreservesLastValueAcrossUpdate() async {
         let calc = BurnRateCalculator(window: 300, smoothingAlpha: 1.0)
         let now = Date()
