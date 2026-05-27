@@ -108,9 +108,14 @@ struct DisplayPane: View {
                 subtitle: L("companion.toggle.subtitle"),
                 binding: Binding(
                     get: { self.settings.companionEnabled },
-                    set: {
-                        self.settings.companionEnabled = $0
+                    set: { newValue in
+                        let wasOff = !self.settings.companionEnabled
+                        let wasUnseen = !self.settings.companionFeatureSeen
+                        self.settings.companionEnabled = newValue
                         self.settings.companionFeatureSeen = true
+                        if newValue, wasOff, wasUnseen {
+                            Self.showFirstEnableNotification()
+                        }
                     }
                 ))
 
@@ -168,5 +173,13 @@ struct DisplayPane: View {
         case .dogPixel: return L("companion.character.dogPixel")
         case .dogLine:  return L("companion.character.dogLine")
         }
+    }
+
+    static func showFirstEnableNotification() {
+        AppNotifications.shared.post(
+            idPrefix: "companion-first-enable",
+            title: L("companion.first.toast"),
+            body: "",
+            soundEnabled: false)
     }
 }
