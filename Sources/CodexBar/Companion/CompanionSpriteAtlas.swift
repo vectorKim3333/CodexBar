@@ -71,5 +71,5 @@ enum CompanionSpriteAtlas {
     static let catPixelParts: [CompanionPart] = _catPixelParts
     static let catLineParts: [CompanionPart] = _catLineParts
     static let dogPixelParts: [CompanionPart] = _dogPixelParts
-    static let dogLineParts: [CompanionPart] = []
+    static let dogLineParts: [CompanionPart] = _dogLineParts
 }

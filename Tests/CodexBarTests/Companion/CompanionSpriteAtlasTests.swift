@@ -1,3 +1,4 @@
+import CodexBarCore
 import Testing
 @testable import CodexBar
 
@@ -60,5 +61,22 @@ struct CompanionSpriteAtlasTests {
         #expect(ears.count == 2)
         #expect(legs.count == 4)
         #expect(parts.contains { if case .tail = $0.kind { return true } else { return false } })
+    }
+
+    @Test
+    func `dogLine has all required parts`() {
+        let parts = CompanionSpriteAtlas.parts(for: .dogLine)
+        let ears = parts.filter { if case .ear = $0.kind { return true } else { return false } }
+        let legs = parts.filter { if case .leg = $0.kind { return true } else { return false } }
+        #expect(ears.count == 2)
+        #expect(legs.count == 4)
+        #expect(parts.contains { if case .tail = $0.kind { return true } else { return false } })
+    }
+
+    @Test
+    func `all 4 characters return non-empty parts`() {
+        for c in CompanionCharacter.allCases {
+            #expect(!CompanionSpriteAtlas.parts(for: c).isEmpty)
+        }
     }
 }
