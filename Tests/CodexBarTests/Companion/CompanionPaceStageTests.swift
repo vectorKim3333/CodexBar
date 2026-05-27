@@ -24,14 +24,20 @@ struct CompanionPaceStageTests {
 
     @Test
     func `character maps to species and style consistently`() {
-        #expect(CompanionCharacter.catPixel.species == .cat)
-        #expect(CompanionCharacter.catPixel.style == .pixel)
-        #expect(CompanionCharacter.dogLine.species == .dog)
-        #expect(CompanionCharacter.dogLine.style == .line)
+        #expect(CompanionCharacter.dog.species == .dog)
+        #expect(CompanionCharacter.cat.species == .cat)
+        #expect(CompanionCharacter.figureRun.species == .human)
+        #expect(CompanionCharacter.flame.species == .object)
+        // 모든 캐릭터가 SF Symbol vector 라 style 은 .symbol 단일.
+        for c in CompanionCharacter.allCases {
+            #expect(c.style == .symbol)
+        }
     }
 
     @Test
-    func `CompanionCharacter has exactly 4 cases`() {
-        #expect(CompanionCharacter.allCases.count == 4)
+    func `CompanionCharacter has 8 cases`() {
+        #expect(CompanionCharacter.allCases.count == 8)
+        #expect(CompanionCharacter.allCases.contains(.dog))
+        #expect(CompanionCharacter.allCases.contains(.cat))
     }
 }

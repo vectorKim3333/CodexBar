@@ -15,7 +15,7 @@ extension SettingsStore {
 
     var companionCharacter: CompanionCharacter {
         get {
-            CompanionCharacter(rawValue: self.defaultsState.companionCharacterRaw) ?? .catPixel
+            CompanionCharacter(rawValue: self.defaultsState.companionCharacterRaw) ?? .default
         }
         set {
             var state = self.defaultsState

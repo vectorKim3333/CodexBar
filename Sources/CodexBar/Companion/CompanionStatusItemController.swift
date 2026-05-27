@@ -23,7 +23,18 @@ final class CompanionStatusItemController {
     private var samples: [PlanUtilizationHistoryEntry] = []
     private let sampleWindow: TimeInterval = 300
 
-    var character: CompanionCharacter
+    var character: CompanionCharacter {
+        didSet {
+            guard oldValue != self.character else { return }
+            // 캐릭터별 frameCount 가 다를 수 있으므로 driver 재구성.
+            self.driver.configure(frameCount: CompanionSpriteFrameRenderer.frameCount(for: self.character))
+            // 즉시 신규 캐릭터의 첫 프레임으로 button image 교체 (1 tick 대기 없이).
+            if let item = self.statusItem {
+                item.button?.image = CompanionSpriteFrameRenderer.render(
+                    character: self.character, frameIndex: 0)
+            }
+        }
+    }
     var provider: UsageProvider
 
     var currentStage: CompanionPaceStage { self.lastStage ?? .idle }
@@ -44,19 +55,20 @@ final class CompanionStatusItemController {
     func start() {
         guard self.statusItem == nil else { return }
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        item.button?.image = CompanionIconRenderer.render(
-            character: self.character, stage: .idle, phase: 0)
+        item.button?.image = CompanionSpriteFrameRenderer.render(
+            character: self.character, frameIndex: 0)
         item.button?.action = #selector(self.handleClick)
         item.button?.target = self
         item.menu = self.menuProvider()
         self.statusItem = item
         self.updateButtonMetadata(stage: .idle, burnRate: 0)
 
-        self.driver.onFrame = { [weak self] phase in
+        self.driver.onFrame = { [weak self] frameIndex in
             guard let self, let item = self.statusItem else { return }
-            item.button?.image = CompanionIconRenderer.render(
-                character: self.character, stage: self.driver.stage, phase: phase)
+            item.button?.image = CompanionSpriteFrameRenderer.render(
+                character: self.character, frameIndex: frameIndex)
         }
+        self.driver.configure(frameCount: CompanionSpriteFrameRenderer.frameCount(for: self.character))
         self.driver.start()
         self.observeSystemWake()
         self.startObservation()

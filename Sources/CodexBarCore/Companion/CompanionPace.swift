@@ -1,18 +1,24 @@
 import Foundation
 
 public enum CompanionPace {
-    /// Upper threshold for each stage (inclusive at lower bound).
-    /// idle:   [0, 0.01)
-    /// slow:   [0.01, 0.1)
-    /// normal: [0.1, 1.0)
-    /// fast:   [1.0, 5.0)
-    /// burst:  [5.0, ∞)
+    /// 임계값은 시간당 % 기준으로 정의하고 내부 단위인 %/분으로 변환.
+    /// 사용자가 직관적으로 이해하는 단위(시간당 %)에 맞춰 두는 게 향후 조정 용이.
+    ///
+    /// 5시간 세션 윈도우 기준이라 시간당 X% = "이 페이스 유지 시 (100/X)시간 만에 세션 100% 소진".
+    ///
+    /// idle:   [0,        0.6%/hr) — 사실상 정지 (기존 그대로)
+    /// slow:   [0.6%/hr,  10%/hr)  — 1시간에 10% 미만, 가벼운 활동
+    /// normal: [10%/hr,   20%/hr)  — 5시간에 50%~100% 페이스, 일상
+    /// fast:   [20%/hr,   30%/hr)  — 5시간 안에 한도 도달 위험 구간
+    /// burst:  [30%/hr,   ∞)       — 3시간 20분 내 한도 소진 페이스
+    private static func perMin(perHour: Double) -> Double { perHour / 60.0 }
+
     private static let thresholds: [(stage: CompanionPaceStage, upper: Double)] = [
-        (.idle, 0.01),
-        (.slow, 0.1),
-        (.normal, 1.0),
-        (.fast, 5.0),
-        (.burst, .infinity),
+        (.idle,   Self.perMin(perHour: 0.6)),
+        (.slow,   Self.perMin(perHour: 10.0)),
+        (.normal, Self.perMin(perHour: 20.0)),
+        (.fast,   Self.perMin(perHour: 30.0)),
+        (.burst,  .infinity),
     ]
 
     /// ±20% deadband and 3-second hold after transition.
@@ -70,10 +76,10 @@ public enum CompanionPace {
 
     private static func upperThreshold(for stage: CompanionPaceStage) -> Double {
         switch stage {
-        case .idle:   return 0.01
-        case .slow:   return 0.1
-        case .normal: return 1.0
-        case .fast:   return 5.0
+        case .idle:   return Self.perMin(perHour: 0.6)
+        case .slow:   return Self.perMin(perHour: 10.0)
+        case .normal: return Self.perMin(perHour: 20.0)
+        case .fast:   return Self.perMin(perHour: 30.0)
         case .burst:  return .infinity
         }
     }
@@ -81,10 +87,10 @@ public enum CompanionPace {
     private static func lowerThreshold(for stage: CompanionPaceStage) -> Double {
         switch stage {
         case .idle:   return 0
-        case .slow:   return 0.01
-        case .normal: return 0.1
-        case .fast:   return 1.0
-        case .burst:  return 5.0
+        case .slow:   return Self.perMin(perHour: 0.6)
+        case .normal: return Self.perMin(perHour: 10.0)
+        case .fast:   return Self.perMin(perHour: 20.0)
+        case .burst:  return Self.perMin(perHour: 30.0)
         }
     }
 }
