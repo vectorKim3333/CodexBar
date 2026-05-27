@@ -35,4 +35,20 @@ struct CompanionSpriteAtlasTests {
             }
         }
     }
+
+    @Test
+    func `catLine has all required parts`() {
+        let parts = CompanionSpriteAtlas.parts(for: .catLine)
+        let kinds = Set(parts.map { String(describing: $0.kind) })
+        #expect(kinds.contains("body"))
+        #expect(kinds.contains("tail"))
+        let ears = parts.filter { if case .ear = $0.kind { return true } else { return false } }
+        #expect(ears.count == 2)
+        let legs = parts.filter { if case .leg = $0.kind { return true } else { return false } }
+        #expect(legs.count == 4)
+        let whiskers = parts.filter {
+            if case .whisker = $0.kind { return true } else { return false }
+        }
+        #expect(whiskers.count == 2)
+    }
 }
