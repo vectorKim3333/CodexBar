@@ -550,3 +550,11 @@
 "companion.menu.seconds_ago" = "%d초 전";
 "companion.menu.minutes_ago" = "%d분 전";
 "companion.menu.hours_ago" = "%d시간 전";
+"companion.menu.hourly_pct" = "시간당 %.0f%%";
+"companion.menu.tokens_per_min" = "약 %@ tok/분";
+"companion.menu.session_with_reset" = "세션 %d%% · %@ 후 리셋";
+"companion.menu.session_pct" = "세션 %d%%";
+"companion.menu.weekly_pct" = "주간 %d%%";
+"companion.menu.today_tokens_cost" = "오늘 %@ tokens · $%.2f";
+"companion.menu.today_tokens" = "오늘 %@ tokens";
+"companion.menu.top_model" = "주요 모델: %@";

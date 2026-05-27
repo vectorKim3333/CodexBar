@@ -21,12 +21,28 @@ final class CompanionStatusItemController {
     private var samples: [PlanUtilizationHistoryEntry] = []
     private let sampleWindow: TimeInterval = 300
 
+    // Token-rate ring buffer — parallel to `samples`, but tracks sessionTokens delta.
+    private var tokenSamples: [(date: Date, tokens: Int)] = []
+
     var character: CompanionCharacter
     var provider: UsageProvider
 
     var currentStage: CompanionPaceStage { self.lastStage ?? .idle }
     var lastSampleAt: Date? { self.samples.last?.capturedAt }
     private(set) var currentBurnRate: Double = 0
+
+    /// Tokens-per-minute rate over the same 5-min window as burn rate.
+    /// Returns nil when fewer than 2 token samples are present (no local CLI logs).
+    var currentTokenRatePerMinute: Double? {
+        guard self.tokenSamples.count >= 2,
+              let first = self.tokenSamples.first,
+              let last = self.tokenSamples.last
+        else { return nil }
+        let dtMinutes = last.date.timeIntervalSince(first.date) / 60.0
+        guard dtMinutes > 0 else { return nil }
+        let delta = max(0, Double(last.tokens - first.tokens))
+        return delta / dtMinutes
+    }
 
     init(character: CompanionCharacter,
          provider: UsageProvider,
@@ -70,6 +86,7 @@ final class CompanionStatusItemController {
         }
         self.statusItem = nil
         self.samples.removeAll()
+        self.tokenSamples.removeAll()
     }
 
     @objc private func handleClick() {
@@ -141,6 +158,12 @@ final class CompanionStatusItemController {
             resetsAt: nil))
         let cutoff = now.addingTimeInterval(-self.sampleWindow)
         self.samples.removeAll { $0.capturedAt < cutoff }
+
+        // Also record session token count for token-rate calculation.
+        if let tokens = self.usageStore.tokenSnapshots[self.provider]?.sessionTokens {
+            self.tokenSamples.append((date: now, tokens: tokens))
+            self.tokenSamples.removeAll { $0.date < cutoff }
+        }
     }
 
     /// Returns the current weekly used-percent from UsageStore.snapshots.

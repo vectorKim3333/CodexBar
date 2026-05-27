@@ -7,10 +7,15 @@ import Foundation
 final class CompanionMenuBuilder: NSObject, NSMenuDelegate {
     private weak var controller: CompanionStatusItemController?
     private let settings: SettingsStore
+    private let usageStore: UsageStore
 
-    init(controller: CompanionStatusItemController, settings: SettingsStore) {
+    init(controller: CompanionStatusItemController,
+         settings: SettingsStore,
+         usageStore: UsageStore)
+    {
         self.controller = controller
         self.settings = settings
+        self.usageStore = usageStore
     }
 
     func makeMenu() -> NSMenu {
@@ -29,96 +34,181 @@ final class CompanionMenuBuilder: NSObject, NSMenuDelegate {
         menu.removeAllItems()
         guard let controller = self.controller else { return }
 
-        // Header
         let providerName = controller.provider == .claude ? "Claude" : "Codex"
+
+        // 1) Header
         let header = NSMenuItem(title: "🐱 \(providerName) Companion", action: nil, keyEquivalent: "")
         header.isEnabled = false
         menu.addItem(header)
 
-        // State + burn rate
-        let stage = controller.currentStage
-        let stageStr = self.stageName(stage)
-        let burnStr: String
-        if stage == .idle {
-            burnStr = L("companion.menu.idle")
-        } else {
-            burnStr = String(format: "%@ · %.2f %%/분", stageStr, controller.currentBurnRate)
-        }
-        let stateItem = NSMenuItem(title: burnStr, action: nil, keyEquivalent: "")
+        // 2) State line (stage + hourly % + token/min if available)
+        let stateLine = self.composeStateLine(
+            stage: controller.currentStage,
+            burnPerMinute: controller.currentBurnRate,
+            tokensPerMinute: controller.currentTokenRatePerMinute)
+        let stateItem = NSMenuItem(title: stateLine, action: nil, keyEquivalent: "")
         stateItem.isEnabled = false
         menu.addItem(stateItem)
 
-        // Last sample time
+        // 3) 기준시간
         let timeStr: String
         if let lastAt = controller.lastSampleAt {
             timeStr = self.formatElapsed(Date().timeIntervalSince(lastAt))
         } else {
             timeStr = L("companion.menu.no_sample")
         }
-        let timeItem = NSMenuItem(
-            title: "기준시간: \(timeStr)",
-            action: nil,
-            keyEquivalent: "")
+        let timeItem = NSMenuItem(title: "기준시간: \(timeStr)", action: nil, keyEquivalent: "")
         timeItem.isEnabled = false
         menu.addItem(timeItem)
 
-        menu.addItem(NSMenuItem.separator())
+        // 4) Detail block (session % / weekly / today tokens / top model)
+        let snapshot = self.usageStore.snapshots[controller.provider]
+        let tokenSnapshot = self.usageStore.tokenSnapshots[controller.provider]
+        let detailLines = self.composeDetailLines(snapshot: snapshot, tokenSnapshot: tokenSnapshot)
+        if !detailLines.isEmpty {
+            menu.addItem(.separator())
+            for line in detailLines {
+                let item = NSMenuItem(title: line, action: nil, keyEquivalent: "")
+                item.isEnabled = false
+                menu.addItem(item)
+            }
+        }
 
-        // Character picker
-        let charHeader = NSMenuItem(
-            title: L("companion.menu.character_section"),
-            action: nil,
-            keyEquivalent: "")
+        menu.addItem(.separator())
+
+        // 5) Character picker
+        let charHeader = NSMenuItem(title: L("companion.menu.character_section"), action: nil, keyEquivalent: "")
         charHeader.isEnabled = false
         menu.addItem(charHeader)
         for character in CompanionCharacter.allCases {
-            let label = self.characterLabel(character)
-            let item = NSMenuItem(
-                title: label,
-                action: #selector(self.selectCharacter(_:)),
-                keyEquivalent: "")
+            let item = NSMenuItem(title: self.characterLabel(character),
+                                  action: #selector(self.selectCharacter(_:)),
+                                  keyEquivalent: "")
             item.target = self
             item.representedObject = character
             item.state = (self.settings.companionCharacter == character) ? .on : .off
             menu.addItem(item)
         }
 
-        menu.addItem(NSMenuItem.separator())
+        menu.addItem(.separator())
 
-        // Provider picker
-        let provHeader = NSMenuItem(
-            title: L("companion.menu.provider_section"),
-            action: nil,
-            keyEquivalent: "")
+        // 6) Provider picker
+        let provHeader = NSMenuItem(title: L("companion.menu.provider_section"), action: nil, keyEquivalent: "")
         provHeader.isEnabled = false
         menu.addItem(provHeader)
         for prov in [UsageProvider.claude, .codex] {
-            let item = NSMenuItem(
-                title: prov == .claude ? "Claude" : "Codex",
-                action: #selector(self.selectProvider(_:)),
-                keyEquivalent: "")
+            let item = NSMenuItem(title: prov == .claude ? "Claude" : "Codex",
+                                  action: #selector(self.selectProvider(_:)),
+                                  keyEquivalent: "")
             item.target = self
             item.representedObject = prov
             item.state = (self.settings.companionProvider == prov) ? .on : .off
             menu.addItem(item)
         }
 
-        menu.addItem(NSMenuItem.separator())
+        menu.addItem(.separator())
 
-        // Preferences
-        let prefs = NSMenuItem(
-            title: L("companion.menu.preferences"),
-            action: #selector(self.openPreferences),
-            keyEquivalent: ",")
+        // 7) Preferences + Quit
+        let prefs = NSMenuItem(title: L("companion.menu.preferences"),
+                               action: #selector(self.openPreferences),
+                               keyEquivalent: ",")
         prefs.target = self
         menu.addItem(prefs)
 
-        // Quit
-        let quit = NSMenuItem(
-            title: L("companion.menu.quit"),
-            action: #selector(NSApplication.terminate(_:)),
-            keyEquivalent: "q")
+        let quit = NSMenuItem(title: L("companion.menu.quit"),
+                              action: #selector(NSApplication.terminate(_:)),
+                              keyEquivalent: "q")
         menu.addItem(quit)
+    }
+
+    private func composeStateLine(stage: CompanionPaceStage,
+                                  burnPerMinute: Double,
+                                  tokensPerMinute: Double?) -> String {
+        if stage == .idle {
+            return L("companion.menu.idle")
+        }
+        let stageStr = self.stageName(stage)
+        let hourly = burnPerMinute * 60.0
+        var parts: [String] = [stageStr, String(format: L("companion.menu.hourly_pct"), hourly)]
+        if let tpm = tokensPerMinute, tpm > 0 {
+            parts.append(String(format: L("companion.menu.tokens_per_min"), Self.formatTokens(tpm)))
+        }
+        return parts.joined(separator: " · ")
+    }
+
+    private func composeDetailLines(snapshot: UsageSnapshot?,
+                                    tokenSnapshot: CostUsageTokenSnapshot?) -> [String] {
+        var lines: [String] = []
+
+        // Session (primary) — 5h window
+        if let primary = snapshot?.primary {
+            let pct = Int(primary.usedPercent.rounded())
+            if let resetsAt = primary.resetsAt {
+                let remaining = resetsAt.timeIntervalSince(Date())
+                let resetStr = Self.formatDuration(remaining)
+                lines.append(String(format: L("companion.menu.session_with_reset"), pct, resetStr))
+            } else {
+                lines.append(String(format: L("companion.menu.session_pct"), pct))
+            }
+        }
+
+        // Weekly (secondary)
+        if let secondary = snapshot?.secondary {
+            let pct = Int(secondary.usedPercent.rounded())
+            lines.append(String(format: L("companion.menu.weekly_pct"), pct))
+        }
+
+        // Today's tokens + cost
+        if let token = tokenSnapshot, let tokens = token.sessionTokens, tokens > 0 {
+            if let cost = token.sessionCostUSD {
+                lines.append(String(format: L("companion.menu.today_tokens_cost"),
+                                    Self.formatTokens(Double(tokens)), cost))
+            } else {
+                lines.append(String(format: L("companion.menu.today_tokens"),
+                                    Self.formatTokens(Double(tokens))))
+            }
+        }
+
+        // Top model (from today's daily entry)
+        if let topModel = Self.topModelName(from: tokenSnapshot) {
+            lines.append(String(format: L("companion.menu.top_model"),
+                                Self.shortModelName(topModel)))
+        }
+
+        return lines
+    }
+
+    private static func topModelName(from snapshot: CostUsageTokenSnapshot?) -> String? {
+        guard let entries = snapshot?.daily, let today = entries.first else { return nil }
+        guard let models = today.modelBreakdowns, !models.isEmpty else { return nil }
+        let top = models.max { (a, b) in (a.costUSD ?? 0) < (b.costUSD ?? 0) }
+        return top?.modelName
+    }
+
+    /// Returns "32k" / "1.2M" / "123" — Korean-friendly compact format.
+    private static func formatTokens(_ value: Double) -> String {
+        if value >= 1_000_000 { return String(format: "%.1fM", value / 1_000_000) }
+        if value >= 1_000 { return String(format: "%.0fk", value / 1_000) }
+        return String(format: "%.0f", value)
+    }
+
+    /// "1h 23m" / "45m" / "1d" — used for reset countdown.
+    private static func formatDuration(_ seconds: TimeInterval) -> String {
+        if seconds < 0 { return "0m" }
+        let totalMinutes = Int(seconds / 60)
+        let days = totalMinutes / (24 * 60)
+        if days >= 1 { return "\(days)d" }
+        let hours = totalMinutes / 60
+        let minutes = totalMinutes % 60
+        if hours >= 1 { return "\(hours)h \(minutes)m" }
+        return "\(minutes)m"
+    }
+
+    /// Shortens a model name to a max of 26 characters (matches InlineUsageDashboardContent).
+    private static func shortModelName(_ name: String) -> String {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count > 26 else { return trimmed }
+        return String(trimmed.prefix(25)) + "…"
     }
 
     @objc private func selectCharacter(_ sender: NSMenuItem) {

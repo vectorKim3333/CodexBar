@@ -263,7 +263,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                         provider: settings.companionProvider,
                         usageStore: store,
                         menuProvider: { builderRef?.makeMenu() ?? NSMenu() })
-                    builderRef = CompanionMenuBuilder(controller: controller, settings: settings)
+                    builderRef = CompanionMenuBuilder(
+                        controller: controller,
+                        settings: settings,
+                        usageStore: store)
                     controller.start()
                     self.companionController = controller
                     self.companionMenuBuilder = builderRef
