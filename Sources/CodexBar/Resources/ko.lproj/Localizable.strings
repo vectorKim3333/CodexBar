@@ -540,3 +540,13 @@
 "companion.stage.normal" = "보통";
 "companion.stage.fast" = "빠름";
 "companion.stage.burst" = "폭주";
+"companion.menu.idle" = "휴식 중";
+"companion.menu.no_sample" = "아직 없음";
+"companion.menu.character_section" = "캐릭터";
+"companion.menu.provider_section" = "추적 대상";
+"companion.menu.preferences" = "환경설정…";
+"companion.menu.quit" = "ClCoBar 종료";
+"companion.menu.just_now" = "방금 전";
+"companion.menu.seconds_ago" = "%d초 전";
+"companion.menu.minutes_ago" = "%d분 전";
+"companion.menu.hours_ago" = "%d시간 전";

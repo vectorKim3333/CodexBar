@@ -126,6 +126,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private var statusController: StatusItemControlling?
     private var companionController: CompanionStatusItemController?
+    private var companionMenuBuilder: CompanionMenuBuilder?
     private var companionObservationTask: Task<Void, Never>?
     private var store: UsageStore?
     private var settings: SettingsStore?
@@ -255,15 +256,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             guard let self else { return }
             if settings.companionEnabled {
                 if self.companionController == nil {
+                    // Two-step setup: controller must exist before menuBuilder can reference it.
+                    var builderRef: CompanionMenuBuilder?
                     let controller = CompanionStatusItemController(
                         character: settings.companionCharacter,
                         provider: settings.companionProvider,
                         usageStore: store,
-                        menuProvider: { [weak statusController] in
-                            statusController?.sharedMenu() ?? NSMenu()
-                        })
+                        menuProvider: { builderRef?.makeMenu() ?? NSMenu() })
+                    builderRef = CompanionMenuBuilder(controller: controller, settings: settings)
                     controller.start()
                     self.companionController = controller
+                    self.companionMenuBuilder = builderRef
                 } else {
                     self.companionController?.character = settings.companionCharacter
                     self.companionController?.provider = settings.companionProvider
@@ -271,6 +274,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             } else {
                 self.companionController?.stop()
                 self.companionController = nil
+                self.companionMenuBuilder = nil
             }
         }
         updateController()

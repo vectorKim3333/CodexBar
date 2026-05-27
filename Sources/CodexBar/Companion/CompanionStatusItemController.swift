@@ -24,6 +24,10 @@ final class CompanionStatusItemController {
     var character: CompanionCharacter
     var provider: UsageProvider
 
+    var currentStage: CompanionPaceStage { self.lastStage ?? .idle }
+    var lastSampleAt: Date? { self.samples.last?.capturedAt }
+    private(set) var currentBurnRate: Double = 0
+
     init(character: CompanionCharacter,
          provider: UsageProvider,
          usageStore: UsageStore,
@@ -95,6 +99,7 @@ final class CompanionStatusItemController {
         }
 
         let burn = await self.calculator.update(entries: self.samples, now: now)
+        self.currentBurnRate = burn
         let timeSince = now.timeIntervalSince(self.lastStageChangeAt)
         let reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
         let lastSampleAge: TimeInterval = self.samples.last

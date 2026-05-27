@@ -529,3 +529,13 @@
 "companion.stage.normal" = "normal";
 "companion.stage.fast" = "fast";
 "companion.stage.burst" = "burst";
+"companion.menu.idle" = "Idle";
+"companion.menu.no_sample" = "no sample yet";
+"companion.menu.character_section" = "Character";
+"companion.menu.provider_section" = "Tracking";
+"companion.menu.preferences" = "Preferences…";
+"companion.menu.quit" = "Quit ClCoBar";
+"companion.menu.just_now" = "just now";
+"companion.menu.seconds_ago" = "%ds ago";
+"companion.menu.minutes_ago" = "%dm ago";
+"companion.menu.hours_ago" = "%dh ago";
