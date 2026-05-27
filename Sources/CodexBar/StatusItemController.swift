@@ -314,6 +314,36 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
             selector: #selector(self.handleSystemDidWake(_:)),
             name: NSWorkspace.didWakeNotification,
             object: nil)
+        // 사용자가 다른 앱에 있다가 ClCoBar 메뉴바를 클릭하려고 돌아온 순간,
+        // 또는 macOS 가 status item window 를 evict 한 채로 시간이 흐른 뒤
+        // 다시 active 가 된 경우 → 가장 자연스러운 복구 타이밍. wake notification
+        // 의 1.5s one-shot 만으로는 long-uptime eviction 을 놓치기 때문에
+        // active 복귀와 screen wake 시점에서도 강제로 visibility 를 검증한다.
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(self.handleApplicationDidBecomeActive(_:)),
+            name: NSApplication.didBecomeActiveNotification,
+            object: nil)
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(self.handleScreensDidWake(_:)),
+            name: NSWorkspace.screensDidWakeNotification,
+            object: nil)
+    }
+
+    @objc private func handleApplicationDidBecomeActive(_: Notification) {
+        Task { @MainActor [weak self] in
+            self?.recoverInvisibleOrBlockedStatusItemsIfNeeded(reason: "app-active")
+        }
+    }
+
+    @objc private func handleScreensDidWake(_: Notification) {
+        Task { @MainActor [weak self] in
+            // 디스플레이가 슬립에서 깨어났을 때 evict 상태인 경우가 잦음.
+            // wake 직후 AppKit 이 메뉴바를 다시 그릴 시간을 주고 검증.
+            try? await Task.sleep(for: .seconds(MenuBarVisibilityWatcher.wakeCheckDelay))
+            self?.recoverInvisibleOrBlockedStatusItemsIfNeeded(reason: "screens-wake")
+        }
     }
 
     @objc private func handleSystemDidWake(_: Notification) {
@@ -367,16 +397,78 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
     /// `shouldSkipProviderIconRender` guard means an actual redraw only
     /// happens when the resolved `resetText` (now part of the signature)
     /// actually changes.
+    ///
+    /// 추가로 매 주기마다 `recoverInvisibleOrBlockedStatusItemsIfNeeded` 를
+    /// 호출해 사용자가 켜둔 provider 의 NSStatusItem 이 evict 됐거나 사라진
+    /// 상태인지 확인하고 자동 복구한다. wake notification 의 1.5s one-shot 만
+    /// 으로는 long-uptime / display-only sleep / Tahoe allow-list 변경 등의
+    /// 케이스를 못 잡기 때문에 항시적 watchdog 이 필요.
     private func startIconHeartbeat() {
         self.iconHeartbeatTask?.cancel()
         self.iconHeartbeatTask = Task { @MainActor [weak self] in
             while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(60))
+                try? await Task.sleep(for: .seconds(30))
                 guard let self else { return }
                 self.updateIcons()
                 self.recoverStaleProviders()
+                self.recoverInvisibleOrBlockedStatusItemsIfNeeded(reason: "heartbeat")
             }
         }
+    }
+
+    /// 사용자가 켜둔 provider 의 NSStatusItem 이 다음 셋 중 하나에 해당하면 복구:
+    ///
+    ///  1. statusItems[provider] 가 nil → `updateVisibility()` 로 lazy 생성
+    ///  2. isVisible == false 인데 사용자가 켜둠 → `isVisible = true` 강제
+    ///  3. isVisible == true 인데 button.window / screen 이 nil (macOS 가 evict)
+    ///     → `recreateStatusItemsForVisibilityRecovery()` 로 statusBar 에서
+    ///     통째로 재등록
+    ///
+    /// 메뉴가 열려 있는 동안 status item 을 재생성하면 메뉴가 닫히고 깜빡이므로
+    /// `openMenus.isEmpty` 일 때만 destructive 복구를 수행. 가벼운 isVisible
+    /// 토글 / 누락 보충은 메뉴 열림 여부와 무관하게 안전하다.
+    func recoverInvisibleOrBlockedStatusItemsIfNeeded(reason: String) {
+        #if DEBUG
+        guard !self.isReleasedForTesting else { return }
+        #endif
+        guard !SettingsStore.isRunningTests else { return }
+
+        let enabledForDisplay = Set(self.store.enabledProvidersForDisplay())
+
+        // (1)+(2) 누락 / 비가시 보충 — 메뉴 열림과 무관, 항상 즉시 처리.
+        var missingProviders: [UsageProvider] = []
+        var hiddenProviders: [UsageProvider] = []
+        for provider in enabledForDisplay {
+            if self.statusItems[provider] == nil {
+                missingProviders.append(provider)
+            } else if let item = self.statusItems[provider], !item.isVisible {
+                hiddenProviders.append(provider)
+            }
+        }
+        if !missingProviders.isEmpty || !hiddenProviders.isEmpty {
+            self.menuLogger.error(
+                "Status item missing or hidden; restoring",
+                metadata: [
+                    "reason": reason,
+                    "missing": missingProviders.map(\.rawValue).joined(separator: ","),
+                    "hidden": hiddenProviders.map(\.rawValue).joined(separator: ","),
+                ])
+            self.updateVisibility()
+            self.updateIcons()
+        }
+
+        // (3) blocked snapshot 감지 — destructive recreate 라 메뉴 열림 중엔 미룸.
+        guard self.openMenus.isEmpty else { return }
+        let items = self.startupVisibilityStatusItems
+        let snapshots = MenuBarVisibilityWatcher.visibilitySnapshots(items)
+        guard MenuBarVisibilityWatcher.hasAnyBlockedVisibleSnapshot(snapshots) else { return }
+        self.menuLogger.error(
+            "Status items blocked; recreating",
+            metadata: [
+                "reason": reason,
+                "snapshots": snapshots.map(\.description).joined(separator: " | "),
+            ])
+        self.recreateStatusItemsForVisibilityRecovery()
     }
 
     /// "Not fetched yet" 자가 회복. enabled 인데 snapshot 도 errors 도 없고 in-flight

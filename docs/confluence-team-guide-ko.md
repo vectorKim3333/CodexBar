@@ -7,6 +7,7 @@
 
 | 버전 | 날짜 | 주요 변경 |
 |---|---|---|
+| **1.4.1** | 2026-05-27 | 메뉴바 캐릭터 + 사용량 pill 이 원인 모르게 사라지던 문제 근본 수정. wake notification 직후 1.5초 단발 체크만으로는 long-uptime / display-only sleep / 장시간 idle 후의 NSStatusItem evict 를 못 잡던 문제 — `StatusItemController` heartbeat 를 30초 주기로 줄이고 매 주기마다 blocked/missing 자동 복구, `screensDidWake` + `didBecomeActive` 알림에도 동일 복구 wire, `CompanionStatusItemController` 의 30초 observation 루프에도 같은 watchdog 추가. 사용자가 토글을 끄지 않는 이상 메뉴바 아이콘은 절대 사라지지 않습니다. |
 | **1.4.0** | 2026-05-27 | 새 버전 출시 시 메뉴에 "🆕 X.Y.Z 사용 가능 — 설치 안내" 한 줄로 알림 추가. 1시간마다 `https://raw.githubusercontent.com/vectorKim3333/CodexBar/main/version.env` 를 익명으로 polling, 현재 버전보다 높으면 표시. 클릭하면 Confluence 설치 가이드 페이지가 열립니다. 메뉴 외 토스트/뱃지 알림 없음 — 거슬리지 않는 단일 surface. |
 | **1.3.6** | 2026-05-27 | Claude/Codex 카드에 raw 에러(예: `HTTP 429 – { rate_limit_error ... }`)가 그대로 노출되던 문제 수정. 자주 발생하는 HTTP 429 / 401 / 5xx / 네트워크 오류를 한국어 친화 메시지(원인 + 해결방안)로 자동 변환. 매핑되지 않은 오류는 기존처럼 raw 메시지 유지. |
 | **1.3.5** | 2026-05-27 | Companion 메뉴 상태 라인에서 "tok/분" 표시 및 관련 로직 전체 제거. burn rate 는 세션 % 단일 신호로만 분류. 토큰 카운트 자체는 메뉴의 "오늘 X tokens" 줄에 그대로 표시. |
