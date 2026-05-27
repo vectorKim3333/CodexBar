@@ -106,6 +106,24 @@ final class CompanionMenuBuilder: NSObject, NSMenuDelegate {
             menu.addItem(item)
         }
 
+        // Update available — shown only when a newer version is on main branch
+        if UpdateChecker.shared.hasUpdate, let latest = UpdateChecker.shared.latestVersion {
+            menu.addItem(.separator())
+            let text = String(format: L("companion.menu.update_available"), latest)
+            let updateItem = NSMenuItem(
+                title: text,
+                action: #selector(UpdateChecker.shared.openInstallGuide),
+                keyEquivalent: "")
+            updateItem.target = UpdateChecker.shared
+            updateItem.attributedTitle = NSAttributedString(
+                string: text,
+                attributes: [
+                    .foregroundColor: NSColor.systemBlue,
+                    .font: NSFont.boldSystemFont(ofSize: NSFont.systemFontSize),
+                ])
+            menu.addItem(updateItem)
+        }
+
         menu.addItem(.separator())
 
         // 7) Preferences + Quit

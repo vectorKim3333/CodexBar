@@ -535,6 +535,7 @@
 "companion.menu.provider_section" = "Tracking";
 "companion.menu.preferences" = "Preferences…";
 "companion.menu.quit" = "Quit ClCoBar";
+"companion.menu.update_available" = "🆕 %@ available — install guide";
 "companion.menu.just_now" = "just now";
 "companion.menu.seconds_ago" = "%ds ago";
 "companion.menu.minutes_ago" = "%dm ago";

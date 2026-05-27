@@ -136,6 +136,8 @@ struct MenuContent: View {
             self.actions.quit()
         case let .copyError(message):
             self.actions.copyError(message)
+        case .updateAvailable:
+            UpdateChecker.shared.openInstallGuide()
         }
     }
 }

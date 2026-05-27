@@ -546,6 +546,7 @@
 "companion.menu.provider_section" = "추적 대상";
 "companion.menu.preferences" = "환경설정…";
 "companion.menu.quit" = "ClCoBar 종료";
+"companion.menu.update_available" = "🆕 %@ 사용 가능 — 설치 안내";
 "companion.menu.just_now" = "방금 전";
 "companion.menu.seconds_ago" = "%d초 전";
 "companion.menu.minutes_ago" = "%d분 전";

@@ -257,6 +257,10 @@ extension StatusItemController: StatusItemMenuPersistentActionDelegate {
         }
     }
 
+    @objc func openInstallGuide() {
+        UpdateChecker.shared.openInstallGuide()
+    }
+
     @objc func quit() {
         NSApp.terminate(nil)
     }

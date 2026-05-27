@@ -151,6 +151,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         AppNotifications.shared.requestAuthorizationOnStartup()
         self.ensureStatusController()
         self.setupCompanionControllerIfPossible()
+        UpdateChecker.shared.start()
         KeyboardShortcuts.onKeyUp(for: .openMenu) { [weak self] in
             Task { @MainActor [weak self] in
                 self?.statusController?.openMenuFromShortcut()
