@@ -73,10 +73,113 @@ struct DisplayPane: View {
                         subtitle: L("show_credits_extra_usage_subtitle"),
                         binding: self.$settings.showOptionalCreditsAndExtraUsage)
                 }
+
+                Divider()
+
+                self.companionSection
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 20)
             .padding(.vertical, 12)
         }
+    }
+
+    @ViewBuilder
+    private var companionSection: some View {
+        SettingsSection(contentSpacing: 12) {
+            HStack {
+                Text(L("companion.section.title"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .textCase(.uppercase)
+                if !self.settings.companionFeatureSeen {
+                    Text(L("companion.new.badge"))
+                        .font(.caption2.weight(.bold))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.accentColor)
+                        .foregroundStyle(.white)
+                        .clipShape(Capsule())
+                }
+            }
+
+            PreferenceToggleRow(
+                title: L("companion.toggle.label"),
+                subtitle: L("companion.toggle.subtitle"),
+                binding: Binding(
+                    get: { self.settings.companionEnabled },
+                    set: { newValue in
+                        let wasOff = !self.settings.companionEnabled
+                        let wasUnseen = !self.settings.companionFeatureSeen
+                        self.settings.companionEnabled = newValue
+                        self.settings.companionFeatureSeen = true
+                        if newValue, wasOff, wasUnseen {
+                            Self.showFirstEnableNotification()
+                        }
+                    }
+                ))
+
+            if self.settings.companionEnabled {
+                self.companionCharacterRow
+                self.companionTargetRow
+                CompanionPreviewView(character: self.settings.companionCharacter)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var companionCharacterRow: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Text(L("companion.character.label"))
+                .font(.body)
+            Spacer()
+            Picker(L("companion.character.label"),
+                   selection: Binding(
+                    get: { self.settings.companionCharacter },
+                    set: { self.settings.companionCharacter = $0 })) {
+                ForEach(CompanionCharacter.allCases, id: \.self) { char in
+                    Text(self.characterLabel(char)).tag(char)
+                }
+            }
+            .labelsHidden()
+            .pickerStyle(.menu)
+            .frame(maxWidth: 200)
+        }
+    }
+
+    @ViewBuilder
+    private var companionTargetRow: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Text(L("companion.target.label"))
+                .font(.body)
+            Spacer()
+            Picker(L("companion.target.label"),
+                   selection: Binding(
+                    get: { self.settings.companionProvider },
+                    set: { self.settings.companionProvider = $0 })) {
+                Text("Claude").tag(UsageProvider.claude)
+                Text("Codex").tag(UsageProvider.codex)
+            }
+            .labelsHidden()
+            .pickerStyle(.segmented)
+            .frame(maxWidth: 200)
+        }
+    }
+
+    private func characterLabel(_ c: CompanionCharacter) -> String {
+        switch c {
+        case .catPixel: return L("companion.character.catPixel")
+        case .catLine:  return L("companion.character.catLine")
+        case .dogPixel: return L("companion.character.dogPixel")
+        case .dogLine:  return L("companion.character.dogLine")
+        }
+    }
+
+    static func showFirstEnableNotification() {
+        AppNotifications.shared.post(
+            idPrefix: "companion-first-enable",
+            title: L("companion.first.toast"),
+            body: "",
+            soundEnabled: false)
     }
 }

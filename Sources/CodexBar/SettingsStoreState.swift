@@ -57,4 +57,10 @@ struct SettingsDefaultsState {
     var selectedMenuProviderRaw: String?
     var providerDetectionCompleted: Bool
     var appLanguageRaw: String?
+
+    // Companion feature
+    var companionEnabled: Bool
+    var companionCharacterRaw: String
+    var companionProviderRaw: String
+    var companionFeatureSeen: Bool
 }

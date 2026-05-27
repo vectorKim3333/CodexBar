@@ -508,3 +508,43 @@
 
 /* Cost / token chart hints */
 "top_model_format" = "Top model: %@";
+
+/* Companion */
+"companion.section.title" = "Character";
+"companion.toggle.label" = "Show character in menu bar";
+"companion.toggle.subtitle" = "Adds a character to the menu bar that moves at a speed based on token burn rate.";
+"companion.character.label" = "Character";
+"companion.target.label" = "Target";
+"companion.character.catPixel" = "Cat (pixel)";
+"companion.character.catLine" = "Cat (line)";
+"companion.character.dogPixel" = "Dog (pixel)";
+"companion.character.dogLine" = "Dog (line)";
+"companion.preview.label" = "Preview";
+"companion.new.badge" = "NEW";
+"companion.first.toast" = "🐱 Character added to menu bar";
+"companion.tooltip.idle" = "%@ · idle";
+"companion.tooltip.active" = "%1$@ · %2$@ · %3$.2f%%/min";
+"companion.stage.idle" = "idle";
+"companion.stage.slow" = "slow";
+"companion.stage.normal" = "normal";
+"companion.stage.fast" = "fast";
+"companion.stage.burst" = "burst";
+"companion.menu.idle" = "Idle";
+"companion.menu.no_sample" = "no sample yet";
+"companion.menu.character_section" = "Character";
+"companion.menu.provider_section" = "Tracking";
+"companion.menu.preferences" = "Preferences…";
+"companion.menu.quit" = "Quit ClCoBar";
+"companion.menu.update_available" = "🆕 %@ available — install guide";
+"companion.menu.just_now" = "just now";
+"companion.menu.seconds_ago" = "%ds ago";
+"companion.menu.minutes_ago" = "%dm ago";
+"companion.menu.hours_ago" = "%dh ago";
+"companion.menu.days_ago" = "%dd ago";
+"companion.menu.hourly_pct" = "%.0f%%/h";
+"companion.menu.session_with_reset" = "Session %d%% · resets in %@";
+"companion.menu.session_pct" = "Session %d%%";
+"companion.menu.weekly_pct" = "Weekly %d%%";
+"companion.menu.today_tokens_cost" = "Today %@ tokens · $%.2f";
+"companion.menu.today_tokens" = "Today %@ tokens";
+"companion.menu.top_model" = "Top model: %@";

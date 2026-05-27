@@ -17,12 +17,6 @@ struct PlanUtilizationSeriesName: RawRepresentable, Hashable, Codable, Expressib
     static let opus: Self = "opus"
 }
 
-struct PlanUtilizationHistoryEntry: Codable, Equatable {
-    let capturedAt: Date
-    let usedPercent: Double
-    let resetsAt: Date?
-}
-
 struct PlanUtilizationSeriesHistory: Codable, Equatable {
     let name: PlanUtilizationSeriesName
     let windowMinutes: Int

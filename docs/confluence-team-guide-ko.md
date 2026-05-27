@@ -7,6 +7,14 @@
 
 | 버전 | 날짜 | 주요 변경 |
 |---|---|---|
+| **1.4.0** | 2026-05-27 | 새 버전 출시 시 메뉴에 "🆕 X.Y.Z 사용 가능 — 설치 안내" 한 줄로 알림 추가. 1시간마다 `https://raw.githubusercontent.com/vectorKim3333/CodexBar/main/version.env` 를 익명으로 polling, 현재 버전보다 높으면 표시. 클릭하면 Confluence 설치 가이드 페이지가 열립니다. 메뉴 외 토스트/뱃지 알림 없음 — 거슬리지 않는 단일 surface. |
+| **1.3.6** | 2026-05-27 | Claude/Codex 카드에 raw 에러(예: `HTTP 429 – { rate_limit_error ... }`)가 그대로 노출되던 문제 수정. 자주 발생하는 HTTP 429 / 401 / 5xx / 네트워크 오류를 한국어 친화 메시지(원인 + 해결방안)로 자동 변환. 매핑되지 않은 오류는 기존처럼 raw 메시지 유지. |
+| **1.3.5** | 2026-05-27 | Companion 메뉴 상태 라인에서 "tok/분" 표시 및 관련 로직 전체 제거. burn rate 는 세션 % 단일 신호로만 분류. 토큰 카운트 자체는 메뉴의 "오늘 X tokens" 줄에 그대로 표시. |
+| **1.3.4** | 2026-05-27 | Companion 메뉴 "기준시간" 이 30초마다 갱신되어 항상 "방금 전" 으로 표시되던 버그 수정 (이제 UsageStore snapshot 의 실제 업데이트 시각 표시, "HH:mm · X분 전" 형식). 활발하게 Claude 사용 중에도 휴식 상태에 머물던 문제 추가 보완 — Anthropic OAuth 의 `usedPercent` 가 캐싱되어 변하지 않을 때 로컬 token log (`.jsonl`) 의 tok/분 활동량을 fallback 으로 사용. |
+| **1.3.3** | 2026-05-27 | Companion 캐릭터가 활발한 사용 중에도 휴식 상태에 머물던 문제 수정. burn rate 계산을 주간(weekly) 사용량 대신 **세션(5시간)** 사용량으로 변경. 주간은 변화율이 너무 작아(분당 0.01% 미만) 모든 활동이 idle 임계값 아래로 분류되던 근본 원인. |
+| **1.3.2** | 2026-05-27 | Companion 슬림 메뉴 글자색 정상화 (회색→가독성 좋은 진한 색), 캐릭터가 180° 뒤집혀 렌더링되던 버그 수정 (CG 좌표계 vs sprite 좌표계 불일치), 모델명 표시 단축 (`claude-opus-4-7` → `Opus 4.7`). |
+| **1.3.1** | 2026-05-27 | 메뉴바 Companion UX 개선. status item 너비를 다른 pill 과 동일하게 자동 축소. 4종 캐릭터(고양이/강아지 × 픽셀/라인) silhouette 재설계 — 귀·꼬리·snout 가 명확히 인식됨. Companion 클릭 시 통합 메뉴 대신 전용 슬림 메뉴 표시 (세션%·리셋·주간·오늘 토큰·주요 모델). burn rate 를 "시간당 %" + "tok/분" 형식으로 직관화. |
+| **1.3.0** | 2026-05-27 | 메뉴바에 캐릭터 컴패니언 추가. 환경설정 → 표시 → 캐릭터에서 4종(고양이·강아지 × 픽셀·라인) 중 선택. Claude 또는 Codex 의 토큰 사용 속도(burn rate)에 따라 5단계(휴식/느림/보통/빠름/폭주)로 자동 변속. Reduce Motion / rate-limit backoff / 절전 복구 자동 처리. |
 | **1.2.3** | 2026-05-27 | 장시간 절전 후 메뉴바 아이콘 자체가 사라지던 문제 수정. macOS Tahoe 가 deep sleep 중 NSStatusItem window 를 evict 하면 wake 후 `isVisible` 토글만으론 복구가 안 되던 케이스 — wake notification 1.5 초 뒤 blocked snapshot (`isVisible=true` 인데 button/window/screen 이 nil) 을 감지하면 statusBar 에서 통째로 재등록. |
 | **1.2.2** | 2026-05-21 | 장시간 사용 후 메뉴바에서 Claude 가 사라지거나 "Not fetched yet" 에 갇히던 문제 자가 복구 강화. 토글 OFF → ON 직후 즉시 fetch 트리거, heartbeat 주기에 stale provider 자동 재시도, wake 시 visibility 까지 함께 동기화. |
 | **1.2.1** | 2026-05-20 | 시스템 슬립에서 깬 직후 Claude 등에서 "Not fetched yet" 에 갇히던 문제 수정. wake 이벤트에 자동 새로고침이 자연스럽게 트리거되도록 보강. |
