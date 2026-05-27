@@ -318,6 +318,12 @@ extension SettingsStore {
         let selectedMenuProviderRaw = userDefaults.string(forKey: "selectedMenuProvider")
         let providerDetectionCompleted = userDefaults.object(forKey: "providerDetectionCompleted") as? Bool ?? false
         let appLanguageRaw = userDefaults.string(forKey: "appLanguage")
+        let companionEnabled = userDefaults.bool(forKey: "companion.enabled")
+        let companionCharacterRaw = userDefaults.string(forKey: "companion.character")
+            ?? CompanionCharacter.catPixel.rawValue
+        let companionProviderRaw = userDefaults.string(forKey: "companion.provider")
+            ?? UsageProvider.claude.rawValue
+        let companionFeatureSeen = userDefaults.bool(forKey: "companion.featureSeen")
 
         return SettingsDefaultsState(
             refreshFrequency: refreshFrequency,
@@ -371,7 +377,11 @@ extension SettingsStore {
             mergedOverviewSelectedProvidersRaw: mergedOverviewSelectedProvidersRaw,
             selectedMenuProviderRaw: selectedMenuProviderRaw,
             providerDetectionCompleted: providerDetectionCompleted,
-            appLanguageRaw: appLanguageRaw)
+            appLanguageRaw: appLanguageRaw,
+            companionEnabled: companionEnabled,
+            companionCharacterRaw: companionCharacterRaw,
+            companionProviderRaw: companionProviderRaw,
+            companionFeatureSeen: companionFeatureSeen)
     }
 
     private static func loadMenuBarMetricPreferences(userDefaults: UserDefaults) -> [String: String] {
