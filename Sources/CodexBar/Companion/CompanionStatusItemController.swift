@@ -14,6 +14,8 @@ final class CompanionStatusItemController {
     private var observationTask: Task<Void, Never>?
     private var lastStageChangeAt: Date = .distantPast
     private var lastStage: CompanionPaceStage?
+    private var wakeObserver: NSObjectProtocol?
+    private static let wakeCheckDelay: TimeInterval = 1.5
 
     // Companion-owned 5-minute ring buffer
     private var samples: [PlanUtilizationHistoryEntry] = []
@@ -50,12 +52,14 @@ final class CompanionStatusItemController {
                 character: self.character, stage: self.driver.stage, phase: phase)
         }
         self.driver.start()
+        self.observeSystemWake()
         self.startObservation()
     }
 
     func stop() {
         self.observationTask?.cancel()
         self.observationTask = nil
+        self.removeWakeObserver()
         self.driver.stop()
         if let item = self.statusItem {
             NSStatusBar.system.removeStatusItem(item)
@@ -81,18 +85,45 @@ final class CompanionStatusItemController {
     private func refreshStage() async {
         let now = Date()
         self.recordSampleIfPossible(at: now)
+
+        // (1) Backoff: freeze calculator, keep last stage
+        let inBackoff = self.isProviderInBackoff(provider: self.provider, now: now)
+        if inBackoff {
+            await self.calculator.freeze()
+        } else {
+            await self.calculator.resume()
+        }
+
         let burn = await self.calculator.update(entries: self.samples, now: now)
         let timeSince = now.timeIntervalSince(self.lastStageChangeAt)
-        let newStage = CompanionPace.classify(
-            burnRate: burn,
-            previous: self.lastStage,
-            timeSinceLastChange: timeSince)
+        let reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+        let lastSampleAge: TimeInterval = self.samples.last
+            .map { now.timeIntervalSince($0.capturedAt) } ?? .greatestFiniteMagnitude
+        let stale = lastSampleAge > 300
+
+        let newStage: CompanionPaceStage
+        if reduceMotion || stale {
+            newStage = .idle
+        } else if inBackoff {
+            newStage = self.lastStage ?? .idle   // keep last
+        } else {
+            newStage = CompanionPace.classify(
+                burnRate: burn,
+                previous: self.lastStage,
+                timeSinceLastChange: timeSince)
+        }
+
         if newStage != self.lastStage {
             self.lastStage = newStage
             self.lastStageChangeAt = now
             self.driver.stage = newStage
             self.updateButtonMetadata(stage: newStage, burnRate: burn)
         }
+    }
+
+    private func isProviderInBackoff(provider: UsageProvider, now: Date) -> Bool {
+        guard let until = self.usageStore.rateLimitBackoffUntil[provider] else { return false }
+        return until > now
     }
 
     /// Reads the current weekly usedPercent from UsageStore.snapshots and appends to ring buffer.
@@ -139,5 +170,41 @@ final class CompanionStatusItemController {
         case .fast:   return NSLocalizedString("companion.stage.fast", comment: "")
         case .burst:  return NSLocalizedString("companion.stage.burst", comment: "")
         }
+    }
+
+    private func observeSystemWake() {
+        let center = NSWorkspace.shared.notificationCenter
+        self.wakeObserver = center.addObserver(
+            forName: NSWorkspace.didWakeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(for: .seconds(Self.wakeCheckDelay))
+                self?.recoverIfBlocked()
+            }
+        }
+    }
+
+    private func removeWakeObserver() {
+        if let token = self.wakeObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(token)
+            self.wakeObserver = nil
+        }
+    }
+
+    /// macOS Tahoe evicts NSStatusItem window/screen after long sleep.
+    /// `isVisible=true` 인데 `button.window/screen` 이 nil 인 blocked 상태가 됨.
+    /// Stop+start로 statusBar에 새로 등록.
+    private func recoverIfBlocked() {
+        guard let item = self.statusItem else { return }
+        let blocked = item.isVisible && (item.button?.window == nil || item.button?.window?.screen == nil)
+        guard blocked else { return }
+        let savedCharacter = self.character
+        let savedProvider = self.provider
+        self.stop()
+        self.character = savedCharacter
+        self.provider = savedProvider
+        self.start()
     }
 }
