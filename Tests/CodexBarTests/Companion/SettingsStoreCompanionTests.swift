@@ -12,9 +12,10 @@ struct SettingsStoreCompanionTests {
     }
 
     @Test
-    func companionEnabledDefaultsToFalse() {
+    func companionEnabledDefaultsToTrue() {
+        // 1.5.1 부터 신규 설치 / 키 미지정 사용자에게도 기본 ON.
         let store = freshStore()
-        #expect(store.companionEnabled == false)
+        #expect(store.companionEnabled == true)
     }
 
     @Test
