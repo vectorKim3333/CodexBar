@@ -148,10 +148,10 @@ final class CompanionStatusItemController {
         return until > now
     }
 
-    /// Reads the current weekly usedPercent from UsageStore.snapshots and appends to ring buffer.
+    /// Reads the current session usedPercent from UsageStore.snapshots and appends to ring buffer.
     /// Trims samples older than `sampleWindow`.
     private func recordSampleIfPossible(at now: Date) {
-        guard let percent = self.currentWeeklyPercent(for: self.provider) else { return }
+        guard let percent = self.currentSessionPercent(for: self.provider) else { return }
         self.samples.append(PlanUtilizationHistoryEntry(
             capturedAt: now,
             usedPercent: percent,
@@ -166,10 +166,11 @@ final class CompanionStatusItemController {
         }
     }
 
-    /// Returns the current weekly used-percent from UsageStore.snapshots.
-    /// The "secondary" rate window is Claude/Codex weekly. Returns nil if no snapshot yet.
-    private func currentWeeklyPercent(for provider: UsageProvider) -> Double? {
-        return self.usageStore.snapshots[provider]?.secondary?.usedPercent
+    /// Returns the current 5-hour session used-percent from UsageStore.snapshots.
+    /// The "primary" rate window is Claude/Codex 5-hour session — best signal for
+    /// real-time activity. Weekly (secondary) moves too slowly to drive animation.
+    private func currentSessionPercent(for provider: UsageProvider) -> Double? {
+        return self.usageStore.snapshots[provider]?.primary?.usedPercent
     }
 
     private func updateButtonMetadata(stage: CompanionPaceStage, burnRate: Double) {
