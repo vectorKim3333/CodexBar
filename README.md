@@ -4,6 +4,8 @@
 
 현재 버전: **1.5.0**
 
+<img width="400" height="65" alt="화면 기록 2026-05-27 오후 4 48 56" src="https://github.com/user-attachments/assets/2ea1b8e1-04cb-4937-939e-0754ce257416" />
+
 <img width="520" height="60" alt="image" src="https://github.com/user-attachments/assets/31427d23-5648-4840-9e80-b1ed613ce963" />
 
 
