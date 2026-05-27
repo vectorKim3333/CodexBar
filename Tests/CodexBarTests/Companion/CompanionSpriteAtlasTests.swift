@@ -51,4 +51,14 @@ struct CompanionSpriteAtlasTests {
         }
         #expect(whiskers.count == 2)
     }
+
+    @Test
+    func `dogPixel has all required parts`() {
+        let parts = CompanionSpriteAtlas.parts(for: .dogPixel)
+        let ears = parts.filter { if case .ear = $0.kind { return true } else { return false } }
+        let legs = parts.filter { if case .leg = $0.kind { return true } else { return false } }
+        #expect(ears.count == 2)
+        #expect(legs.count == 4)
+        #expect(parts.contains { if case .tail = $0.kind { return true } else { return false } })
+    }
 }

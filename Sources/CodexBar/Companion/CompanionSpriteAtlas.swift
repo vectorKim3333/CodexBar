@@ -70,6 +70,6 @@ enum CompanionSpriteAtlas {
     // Stubs — populated in subsequent tasks
     static let catPixelParts: [CompanionPart] = _catPixelParts
     static let catLineParts: [CompanionPart] = _catLineParts
-    static let dogPixelParts: [CompanionPart] = []
+    static let dogPixelParts: [CompanionPart] = _dogPixelParts
     static let dogLineParts: [CompanionPart] = []
 }
