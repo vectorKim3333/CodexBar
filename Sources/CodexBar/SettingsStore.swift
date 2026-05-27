@@ -318,7 +318,10 @@ extension SettingsStore {
         let selectedMenuProviderRaw = userDefaults.string(forKey: "selectedMenuProvider")
         let providerDetectionCompleted = userDefaults.object(forKey: "providerDetectionCompleted") as? Bool ?? false
         let appLanguageRaw = userDefaults.string(forKey: "appLanguage")
-        let companionEnabled = userDefaults.bool(forKey: "companion.enabled")
+        // 1.5.1 부터 신규 설치 / 키 미지정 사용자에게도 기본 ON 으로 노출.
+        // `object(forKey:)` 가 nil 이면 키 자체가 없는 상태 → true 반환.
+        // 기존에 사용자가 명시적으로 OFF 한 경우엔 false 가 저장돼 있으므로 그대로 존중.
+        let companionEnabled = userDefaults.object(forKey: "companion.enabled") as? Bool ?? true
         // 1.5.0 마이그레이션: 4종(catPixel/catLine/dogPixel/dogLine) → 1종(.dog) 으로 축소.
         // 기존 저장값이 unknown case 면 default 로 fallback.
         let companionCharacterRaw = CompanionCharacter(
