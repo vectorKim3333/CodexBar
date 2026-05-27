@@ -26,6 +26,7 @@ Personal fork of `steipete/CodexBar`. Tracks **only Claude + Codex** usage in th
 **버전을 올리면 같이 갱신해야 하는 파일** (한 군데라도 빠지면 안내가 어긋남):
 - `version.env` — `MARKETING_VERSION`, `BUILD_NUMBER`
 - `docs/install-guide-ko.md` — zip 파일명 예시 (`ClCoBar-<v>-arm64.zip`) + 1-4 절의 "다음 버전 예시" 도 한 칸씩 위로
+- `docs/confluence-team-guide-ko.md` — "버전 히스토리" 표 맨 위에 새 행 추가 (버전 · 날짜 · 주요 변경 한 줄 요약). 팀원이 보는 가장 가시성 높은 문서라 빠뜨리면 즉시 티남.
 - `Scripts/install_for_team.sh` — 주석의 사용 예시
 
 버전 올린 후엔 기존 `dist/ClCoBar-<이전버전>-arm64.zip` 을 지우고 `./Scripts/build_for_distribution.sh` 로 새 zip 만든 뒤 본인 환경에도 재설치(`pkill ... && ditto ... && open ...`)까지 한 번에 끝낸다.
