@@ -260,6 +260,17 @@ final class CompanionStatusItemController {
     }
 
 
+    /// 외부에서 즉시 visibility 검증 + 복구 요청. AppDelegate 가 provider 토글 변경
+    /// 시 호출 — 사용량 pill 의 추가/제거가 macOS status bar 재배치를 유발해 캐릭터의
+    /// invisible 상태가 가시화되는 race 처리. 즉시 + 1초 후 cascade.
+    func requestVisibilityRecovery(reason _: String) {
+        self.recoverIfMissingOrBlocked()
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(1))
+            self?.recoverIfMissingOrBlocked()
+        }
+    }
+
     /// macOS Tahoe evicts NSStatusItem window/screen after long sleep.
     /// statusItem 이 다음 3가지 상태 중 하나면 복구:
     ///   1. nil (어떤 코드 경로가 stop() 만 호출하고 안 돌아옴)

@@ -711,11 +711,19 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
             self.refreshOpenMenusForStructureChange()
         }
         self.refreshNewlyEnabledProvidersIfNeeded()
+        // 토글 변경 후 macOS status bar 재배치 race 대응. 자기 자신의 status item evict
+        // 가시화 케이스 — cascade recovery.
+        self.requestVisibilityRecovery(reason: "settings-change-\(reason)")
     }
 
     /// 토글 OFF → ON 으로 새로 enabled 된 provider 가 있으면 즉시 fetch 를 트리거한다.
     /// `handleSettingsChange` 가 UI 만 갱신해서 "Not fetched yet" 이 다음 자동 refresh
     /// 주기까지 유지되는 문제 방지. enabled 차집합으로 판정해서 무한 trigger 회피.
+    ///
+    /// 추가로 이전 토글 cycle 에서 in-flight 가 hang 한 채로 `refreshingProviders` 에
+    /// stuck 된 상태를 강제 클리어 — 빠른 OFF/ON 시퀀스에서 fetch task 가 hang 하면
+    /// `recoverStaleProviders` 의 `!refreshingProviders.contains` 가드 때문에
+    /// heartbeat retry 도 영원히 skip 되는 stuck 상태가 발생할 수 있어서.
     private func refreshNewlyEnabledProvidersIfNeeded() {
         let current = Set(self.store.enabledProvidersForDisplay())
         let newlyEnabled = current.subtracting(self.lastDisplayedProviders)
@@ -724,6 +732,8 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
         Task { @MainActor [weak self] in
             guard let self else { return }
             for provider in newlyEnabled {
+                // Stuck in-flight 강제 클리어 (이전 cycle 의 hang 한 fetch 흔적 제거).
+                self.store.refreshingProviders.remove(provider)
                 await self.store.refreshProvider(provider)
             }
         }

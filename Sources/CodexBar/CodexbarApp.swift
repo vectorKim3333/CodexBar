@@ -157,6 +157,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.statusController?.openMenuFromShortcut()
             }
         }
+        // Provider 토글 변경 시 Companion 의 visibility 도 즉시 검증.
+        // `StatusItemController` 가 자기 자신은 handleSettingsChange 에서 recovery 하지만
+        // Companion 은 별도 controller 라 AppDelegate 가 brokering 해야.
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(self.handleProviderConfigDidChangeForCompanionRecovery(_:)),
+            name: .codexbarProviderConfigDidChange,
+            object: nil)
+    }
+
+    @objc private func handleProviderConfigDidChangeForCompanionRecovery(_: Notification) {
+        Task { @MainActor [weak self] in
+            self?.companionController?.requestVisibilityRecovery(reason: "provider-config-change")
+        }
     }
 
     func applicationWillTerminate(_ notification: Notification) {
