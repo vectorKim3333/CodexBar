@@ -15,6 +15,8 @@ final class CompanionStatusItemController {
     private var lastStageChangeAt: Date = .distantPast
     private var lastStage: CompanionPaceStage?
     private var wakeObserver: NSObjectProtocol?
+    private var screensWakeObserver: NSObjectProtocol?
+    private var appActiveObserver: NSObjectProtocol?
     private static let wakeCheckDelay: TimeInterval = 1.5
 
     // Companion-owned 5-minute ring buffer
@@ -77,10 +79,14 @@ final class CompanionStatusItemController {
     }
 
     /// Polls every 30s — append current weekly usedPercent to ring buffer, recompute stage.
+    /// 추가로 매 주기마다 `recoverIfMissingOrBlocked()` 를 호출해 evict 된 status item 을
+    /// 자동 복구한다. wake-once 복구만으론 long-uptime / display-only sleep / Tahoe
+    /// allow-list 변경 등에서 캐릭터가 사라진 채 안 돌아오는 케이스가 잡히지 않음.
     private func startObservation() {
         self.observationTask = Task { @MainActor [weak self] in
             while !Task.isCancelled {
                 await self?.refreshStage()
+                self?.recoverIfMissingOrBlocked()
                 try? await Task.sleep(for: .seconds(30))
             }
         }
@@ -180,32 +186,82 @@ final class CompanionStatusItemController {
     }
 
     private func observeSystemWake() {
-        let center = NSWorkspace.shared.notificationCenter
-        self.wakeObserver = center.addObserver(
+        let workspace = NSWorkspace.shared.notificationCenter
+        let app = NotificationCenter.default
+        // System wake (sleep → wake): macOS 가 status item 을 evict 한 가능성이 가장 큼.
+        self.wakeObserver = workspace.addObserver(
             forName: NSWorkspace.didWakeNotification,
             object: nil,
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
                 try? await Task.sleep(for: .seconds(Self.wakeCheckDelay))
-                self?.recoverIfBlocked()
+                self?.recoverIfMissingOrBlocked()
+            }
+        }
+        // Display 만 슬립에서 깨어난 경우 (lid open / monitor wake) — 시스템은 awake 였어도
+        // 메뉴바 자체가 잠시 evict 되는 케이스가 있어 별도 처리.
+        self.screensWakeObserver = workspace.addObserver(
+            forName: NSWorkspace.screensDidWakeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(for: .seconds(Self.wakeCheckDelay))
+                self?.recoverIfMissingOrBlocked()
+            }
+        }
+        // 사용자가 ClCoBar 에 focus 를 돌려준 순간 — 클릭 직전에 마지막 sanity check.
+        self.appActiveObserver = app.addObserver(
+            forName: NSApplication.didBecomeActiveNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.recoverIfMissingOrBlocked()
             }
         }
     }
 
     private func removeWakeObserver() {
+        let workspace = NSWorkspace.shared.notificationCenter
+        let app = NotificationCenter.default
         if let token = self.wakeObserver {
-            NSWorkspace.shared.notificationCenter.removeObserver(token)
+            workspace.removeObserver(token)
             self.wakeObserver = nil
+        }
+        if let token = self.screensWakeObserver {
+            workspace.removeObserver(token)
+            self.screensWakeObserver = nil
+        }
+        if let token = self.appActiveObserver {
+            app.removeObserver(token)
+            self.appActiveObserver = nil
         }
     }
 
+
     /// macOS Tahoe evicts NSStatusItem window/screen after long sleep.
-    /// `isVisible=true` 인데 `button.window/screen` 이 nil 인 blocked 상태가 됨.
-    /// Stop+start로 statusBar에 새로 등록.
-    private func recoverIfBlocked() {
-        guard let item = self.statusItem else { return }
-        let blocked = item.isVisible && (item.button?.window == nil || item.button?.window?.screen == nil)
+    /// statusItem 이 다음 3가지 상태 중 하나면 복구:
+    ///   1. nil (어떤 코드 경로가 stop() 만 호출하고 안 돌아옴)
+    ///   2. isVisible=false (외부에서 hidden 처리됨)
+    ///   3. isVisible=true 인데 window/screen 이 nil (macOS evict)
+    /// 30s observation tick 마다 호출되어 silent 사라짐을 방지한다.
+    private func recoverIfMissingOrBlocked() {
+        guard let item = self.statusItem else {
+            // 컨트롤러는 살아있지만 status item 이 사라진 경우 → 재시작.
+            // start() 는 `guard self.statusItem == nil` 가드가 있으므로 안전.
+            self.start()
+            return
+        }
+        if !item.isVisible {
+            // Companion 컨트롤러가 살아있다는 것 자체가 companionEnabled=true 라는
+            // 뜻이므로 즉시 다시 보이게 한다. (AppDelegate 가 companionEnabled=false
+            // 일 땐 stop() + nil 처리하므로 여기 도달하지 않음)
+            item.isVisible = true
+            return
+        }
+        let blocked = item.button?.window == nil || item.button?.window?.screen == nil
         guard blocked else { return }
         let savedCharacter = self.character
         let savedProvider = self.provider
