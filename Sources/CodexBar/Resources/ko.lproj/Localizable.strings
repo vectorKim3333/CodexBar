@@ -552,7 +552,6 @@
 "companion.menu.hours_ago" = "%d시간 전";
 "companion.menu.days_ago" = "%d일 전";
 "companion.menu.hourly_pct" = "시간당 %.0f%%";
-"companion.menu.tokens_per_min" = "약 %@ tok/분";
 "companion.menu.session_with_reset" = "세션 %d%% · %@ 후 리셋";
 "companion.menu.session_pct" = "세션 %d%%";
 "companion.menu.weekly_pct" = "주간 %d%%";

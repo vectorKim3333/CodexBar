@@ -21,28 +21,12 @@ final class CompanionStatusItemController {
     private var samples: [PlanUtilizationHistoryEntry] = []
     private let sampleWindow: TimeInterval = 300
 
-    // Token-rate ring buffer — parallel to `samples`, but tracks sessionTokens delta.
-    private var tokenSamples: [(date: Date, tokens: Int)] = []
-
     var character: CompanionCharacter
     var provider: UsageProvider
 
     var currentStage: CompanionPaceStage { self.lastStage ?? .idle }
     var lastSampleAt: Date? { self.samples.last?.capturedAt }
     private(set) var currentBurnRate: Double = 0
-
-    /// Tokens-per-minute rate over the same 5-min window as burn rate.
-    /// Returns nil when fewer than 2 token samples are present (no local CLI logs).
-    var currentTokenRatePerMinute: Double? {
-        guard self.tokenSamples.count >= 2,
-              let first = self.tokenSamples.first,
-              let last = self.tokenSamples.last
-        else { return nil }
-        let dtMinutes = last.date.timeIntervalSince(first.date) / 60.0
-        guard dtMinutes > 0 else { return nil }
-        let delta = max(0, Double(last.tokens - first.tokens))
-        return delta / dtMinutes
-    }
 
     init(character: CompanionCharacter,
          provider: UsageProvider,
@@ -86,7 +70,6 @@ final class CompanionStatusItemController {
         }
         self.statusItem = nil
         self.samples.removeAll()
-        self.tokenSamples.removeAll()
     }
 
     @objc private func handleClick() {
@@ -129,18 +112,10 @@ final class CompanionStatusItemController {
         } else if inBackoff {
             newStage = self.lastStage ?? .idle   // keep last
         } else {
-            let stageFromPct = CompanionPace.classify(
+            newStage = CompanionPace.classify(
                 burnRate: burn,
                 previous: self.lastStage,
                 timeSinceLastChange: timeSince)
-            // Fallback: when % rate is stuck (e.g., API caching), token activity
-            // from local CLI logs still reflects real work. Pick the higher of the two.
-            if let tpm = self.currentTokenRatePerMinute, tpm > 0 {
-                let stageFromTokens = self.tokenRateStage(tpm)
-                newStage = self.maxStage(stageFromPct, stageFromTokens)
-            } else {
-                newStage = stageFromPct
-            }
         }
 
         if newStage != self.lastStage {
@@ -167,11 +142,6 @@ final class CompanionStatusItemController {
         let cutoff = now.addingTimeInterval(-self.sampleWindow)
         self.samples.removeAll { $0.capturedAt < cutoff }
 
-        // Also record session token count for token-rate calculation.
-        if let tokens = self.usageStore.tokenSnapshots[self.provider]?.sessionTokens {
-            self.tokenSamples.append((date: now, tokens: tokens))
-            self.tokenSamples.removeAll { $0.date < cutoff }
-        }
     }
 
     /// Returns the current 5-hour session used-percent from UsageStore.snapshots.
@@ -179,25 +149,6 @@ final class CompanionStatusItemController {
     /// real-time activity. Weekly (secondary) moves too slowly to drive animation.
     private func currentSessionPercent(for provider: UsageProvider) -> Double? {
         return self.usageStore.snapshots[provider]?.primary?.usedPercent
-    }
-
-    /// Map token-rate (tokens/min) to a pace stage.
-    /// Calibration: heavy Claude Code session is ~5k-20k tok/min (cache reads count).
-    /// Light chat is a few hundred. Idle is <50.
-    private func tokenRateStage(_ tpm: Double) -> CompanionPaceStage {
-        if tpm < 50 { return .idle }
-        if tpm < 1_000 { return .slow }
-        if tpm < 10_000 { return .normal }
-        if tpm < 50_000 { return .fast }
-        return .burst
-    }
-
-    /// Returns the more-active of two pace stages.
-    private func maxStage(_ a: CompanionPaceStage, _ b: CompanionPaceStage) -> CompanionPaceStage {
-        let order: [CompanionPaceStage] = [.idle, .slow, .normal, .fast, .burst]
-        let ia = order.firstIndex(of: a) ?? 0
-        let ib = order.firstIndex(of: b) ?? 0
-        return ia >= ib ? a : b
     }
 
     private func updateButtonMetadata(stage: CompanionPaceStage, burnRate: Double) {

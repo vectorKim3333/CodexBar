@@ -47,11 +47,10 @@ final class CompanionMenuBuilder: NSObject, NSMenuDelegate {
             ])
         menu.addItem(header)
 
-        // 2) State line (stage + hourly % + token/min if available)
+        // 2) State line (stage + hourly %)
         let stateLine = self.composeStateLine(
             stage: controller.currentStage,
-            burnPerMinute: controller.currentBurnRate,
-            tokensPerMinute: controller.currentTokenRatePerMinute)
+            burnPerMinute: controller.currentBurnRate)
         let stateItem = NSMenuItem(title: stateLine, action: nil, keyEquivalent: "")
         menu.addItem(stateItem)
 
@@ -123,17 +122,13 @@ final class CompanionMenuBuilder: NSObject, NSMenuDelegate {
     }
 
     private func composeStateLine(stage: CompanionPaceStage,
-                                  burnPerMinute: Double,
-                                  tokensPerMinute: Double?) -> String {
+                                  burnPerMinute: Double) -> String {
         if stage == .idle {
             return L("companion.menu.idle")
         }
         let stageStr = self.stageName(stage)
         let hourly = burnPerMinute * 60.0
-        var parts: [String] = [stageStr, String(format: L("companion.menu.hourly_pct"), hourly)]
-        if let tpm = tokensPerMinute, tpm > 0 {
-            parts.append(String(format: L("companion.menu.tokens_per_min"), Self.formatTokens(tpm)))
-        }
+        let parts: [String] = [stageStr, String(format: L("companion.menu.hourly_pct"), hourly)]
         return parts.joined(separator: " · ")
     }
 
