@@ -509,8 +509,21 @@
 /* Cost / token chart hints */
 "top_model_format" = "Top model: %@";
 
-/* Companion preview */
-"companion.preview.label" = "Current stage";
+/* Companion */
+"companion.section.title" = "Character";
+"companion.toggle.label" = "Show character in menu bar";
+"companion.toggle.subtitle" = "Adds a character to the menu bar that moves at a speed based on token burn rate.";
+"companion.character.label" = "Character";
+"companion.target.label" = "Target";
+"companion.character.catPixel" = "Cat (pixel)";
+"companion.character.catLine" = "Cat (line)";
+"companion.character.dogPixel" = "Dog (pixel)";
+"companion.character.dogLine" = "Dog (line)";
+"companion.preview.label" = "Preview";
+"companion.new.badge" = "NEW";
+"companion.first.toast" = "🐱 Character added to menu bar";
+"companion.tooltip.idle" = "%@ · idle";
+"companion.tooltip.active" = "%1$@ · %2$@ · %3$.2f%%/min";
 "companion.stage.idle" = "idle";
 "companion.stage.slow" = "slow";
 "companion.stage.normal" = "normal";
