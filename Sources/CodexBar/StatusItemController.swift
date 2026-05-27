@@ -323,6 +323,10 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
             self.store.isRefreshing = false
             self.store.refreshingProviders.removeAll()
             self.updateVisibility()
+            // macOS 가 장시간 deep sleep 중 NSStatusItem 의 window 를 evict 하는 경우,
+            // updateVisibility() 의 isVisible 토글만으론 안 보이는 메뉴바를 복구하지 못한다.
+            // 잠시 뒤 blocked snapshot 인지 검사하고 필요하면 statusBar 에서 통째로 재등록.
+            self.scheduleWakeStatusItemVisibilityCheck()
             await self.store.refresh()
         }
     }

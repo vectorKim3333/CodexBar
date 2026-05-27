@@ -45,6 +45,9 @@ enum MenuBarVisibilityWatcher {
     static let guidanceRepeatInterval: TimeInterval = 24 * 60 * 60
     static let startupFreshnessInterval: TimeInterval = 10
     static let startupCheckDelay: TimeInterval = 2
+    /// wake 직후 AppKit / WindowServer 가 메뉴바를 다시 그릴 시간을 준 뒤 blocked 감지.
+    /// 너무 짧으면 false-positive(아직 미복원), 너무 길면 사용자가 빈 메뉴바를 오래 봄.
+    static let wakeCheckDelay: TimeInterval = 1.5
     static let settingsURL = URL(string: "x-apple.systempreferences:com.apple.MenuBarSettings")!
 
     @MainActor
@@ -265,7 +268,33 @@ extension StatusItemController {
         self.recreateStatusItemsForVisibilityRecovery()
     }
 
-    private var startupVisibilityStatusItems: [NSStatusItem] {
+    var startupVisibilityStatusItems: [NSStatusItem] {
         [self.statusItem] + Array(self.statusItems.values)
+    }
+
+    /// macOS 가 장시간 deep sleep 중 NSStatusItem 의 window/screen 을 evict 하면
+    /// 깨어난 시점에 `isVisible=true` 인데 `button.window / screen` 이 nil 인 blocked
+    /// 상태가 된다. `updateVisibility()` 는 `isVisible` 토글만 해서 이걸 못 고친다.
+    /// startup check 는 launch 후 10초까지만 유효(`startupFreshnessInterval`),
+    /// `screenParametersDidChange` 는 lid-only wake 에선 안 터지는 경우가 있어
+    /// wake 전용 복구 경로가 필요하다. AppKit 이 메뉴바를 다시 그릴 시간을 준 뒤
+    /// blocked 면 `recreateStatusItemsForVisibilityRecovery()` 로 statusBar 에서
+    /// 통째로 재등록.
+    func scheduleWakeStatusItemVisibilityCheck() {
+        guard !SettingsStore.isRunningTests else { return }
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(MenuBarVisibilityWatcher.wakeCheckDelay))
+            self?.checkWakeStatusItemVisibility()
+        }
+    }
+
+    private func checkWakeStatusItemVisibility() {
+        let items = self.startupVisibilityStatusItems
+        let snapshots = MenuBarVisibilityWatcher.visibilitySnapshots(items)
+        guard MenuBarVisibilityWatcher.hasAnyBlockedVisibleSnapshot(snapshots) else { return }
+        self.menuLogger.error(
+            "Status items blocked after system wake; recreating",
+            metadata: ["snapshots": snapshots.map(\.description).joined(separator: " | ")])
+        self.recreateStatusItemsForVisibilityRecovery()
     }
 }

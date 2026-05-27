@@ -7,6 +7,7 @@
 
 | 버전 | 날짜 | 주요 변경 |
 |---|---|---|
+| **1.2.3** | 2026-05-27 | 장시간 절전 후 메뉴바 아이콘 자체가 사라지던 문제 수정. macOS Tahoe 가 deep sleep 중 NSStatusItem window 를 evict 하면 wake 후 `isVisible` 토글만으론 복구가 안 되던 케이스 — wake notification 1.5 초 뒤 blocked snapshot (`isVisible=true` 인데 button/window/screen 이 nil) 을 감지하면 statusBar 에서 통째로 재등록. |
 | **1.2.2** | 2026-05-21 | 장시간 사용 후 메뉴바에서 Claude 가 사라지거나 "Not fetched yet" 에 갇히던 문제 자가 복구 강화. 토글 OFF → ON 직후 즉시 fetch 트리거, heartbeat 주기에 stale provider 자동 재시도, wake 시 visibility 까지 함께 동기화. |
 | **1.2.1** | 2026-05-20 | 시스템 슬립에서 깬 직후 Claude 등에서 "Not fetched yet" 에 갇히던 문제 수정. wake 이벤트에 자동 새로고침이 자연스럽게 트리거되도록 보강. |
 | **1.2.0** | 2026-05-19 | 프로바이더 detail 우측 "설정 / 옵션" 섹션 숨김 (자동 동작). 문서·배포 안내 정비. |
