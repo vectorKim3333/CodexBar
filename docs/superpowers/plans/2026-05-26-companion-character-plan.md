@@ -51,8 +51,9 @@
 - `Sources/CodexBar/CodexbarApp.swift` (또는 AppDelegate) — `CompanionStatusItemController` 인스턴스 라이프사이클
 - `Sources/CodexBar/Resources/ko.lproj/Localizable.strings` — 14 entries 추가
 - `Sources/CodexBar/Resources/en.lproj/Localizable.strings` — 동일 키 (영어 폴백)
-- `version.env` — `1.2.2 → 1.3.0`, `BUILD_NUMBER 70 → 71`
+- `version.env` — `1.2.3 → 1.3.0`, `BUILD_NUMBER 71 → 72`
 - `docs/install-guide-ko.md` — zip 파일명 + "다음 버전 예시" 한 칸 위로
+- `docs/confluence-team-guide-ko.md` — "버전 히스토리" 표 맨 위에 1.3.0 행 추가 (CLAUDE.md 새 규칙)
 - `Scripts/install_for_team.sh` — 주석의 사용 예시
 
 ---
@@ -2425,12 +2426,15 @@ git commit -m "feat(companion): PreferencesDisplayPane character section + previ
 
 ---
 
-## Task 18: Edge cases — Reduce Motion + backoff freeze + stale fallback
+## Task 18: Edge cases — Reduce Motion + backoff + stale + sleep/wake recovery
 
-`refreshStage()`에 세 가지 엣지케이스를 추가:
+`refreshStage()`에 세 가지 엣지케이스 + NSStatusItem wake recovery 추가:
 1. **Reduce Motion**: `NSWorkspace.shared.accessibilityDisplayShouldReduceMotion` true → stage = idle
 2. **Backoff freeze**: UsageStore가 rate-limit backoff 상태면 calculator freeze, 마지막 stage 유지
 3. **Stale fallback**: 마지막 sample이 5분 초과 → stage = idle
+4. **Sleep/wake recovery**: macOS Tahoe deep sleep 후 NSStatusItem이 evict되면 (1.2.3 fix와 동일 증상) 1.5s 후 button.window/screen 검사해 blocked면 stop()+start()로 재등록
+
+> **배경**: 1.2.3에서 `StatusItemController.handleSystemDidWake`가 `scheduleWakeStatusItemVisibilityCheck()` 호출해 동일한 문제를 해결함. Companion도 자체 NSStatusItem을 갖기에 같은 보호가 필요. 단, 기존 `MenuBarVisibilityWatcher`의 `startupVisibilityStatusItems`에 끼워넣지 않고(SharedState 회피) Companion controller가 자체적으로 wake notification 구독.
 
 **Files:**
 - Modify: `Sources/CodexBar/Companion/CompanionStatusItemController.swift`
@@ -2500,7 +2504,56 @@ Replace `refreshStage()` body:
     }
 ```
 
-- [ ] **Step 3: Manual verification**
+- [ ] **Step 3: Add sleep/wake recovery (NSWorkspace.didWakeNotification)**
+
+Add to `CompanionStatusItemController`:
+
+```swift
+    private var wakeObserver: NSObjectProtocol?
+    private static let wakeCheckDelay: TimeInterval = 1.5
+
+    // Call from start() AFTER status item creation:
+    private func observeSystemWake() {
+        let center = NSWorkspace.shared.notificationCenter
+        self.wakeObserver = center.addObserver(
+            forName: NSWorkspace.didWakeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(for: .seconds(Self.wakeCheckDelay))
+                self?.recoverIfBlocked()
+            }
+        }
+    }
+
+    // Call from stop():
+    private func removeWakeObserver() {
+        if let token = self.wakeObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(token)
+            self.wakeObserver = nil
+        }
+    }
+
+    /// macOS Tahoe evicts NSStatusItem window/screen after long sleep.
+    /// `isVisible=true` 인데 `button.window/screen` 이 nil 인 blocked 상태가 됨.
+    /// Stop+start로 statusBar에 새로 등록.
+    private func recoverIfBlocked() {
+        guard let item = self.statusItem else { return }
+        let blocked = item.isVisible && (item.button?.window == nil || item.button?.window?.screen == nil)
+        guard blocked else { return }
+        let savedCharacter = self.character
+        let savedProvider = self.provider
+        self.stop()
+        self.character = savedCharacter
+        self.provider = savedProvider
+        self.start()
+    }
+```
+
+Wire `observeSystemWake()` into `start()` (after creating `statusItem`), and `removeWakeObserver()` into `stop()`.
+
+- [ ] **Step 4: Manual verification**
 
 (a) Reduce Motion: System Preferences → Accessibility → Display → "Reduce motion" ON. Character should freeze to idle.
 
@@ -2508,11 +2561,17 @@ Replace `refreshStage()` body:
 
 (c) Backoff: Force a 429 by manually setting `rateLimitBackoffUntil` (or wait for natural occurrence). Stage should hold whatever value it had.
 
-- [ ] **Step 4: Commit**
+(d) Sleep/wake (manual, ideally with closed lid 30+ min):
+    1. Close MacBook lid, leave overnight or for 30+ min in deep sleep.
+    2. Open lid.
+    3. After ~2s, companion character must still be visible.
+    4. If it disappeared, log line `Status items blocked after system wake; recreating` should appear (or for Companion, our own recovery should kick in).
+
+- [ ] **Step 5: Commit**
 
 ```bash
 git add Sources/CodexBar/Companion/CompanionStatusItemController.swift
-git commit -m "feat(companion): edge cases (Reduce Motion, backoff freeze, stale fallback)"
+git commit -m "feat(companion): edge cases (Reduce Motion + backoff + stale + sleep/wake recovery)"
 ```
 
 ---
@@ -2733,6 +2792,8 @@ Verify manually:
 - [ ] System Preferences → Reduce Motion ON → 캐릭터 idle 고정
 - [ ] ⌘드래그로 캐릭터 위치 이동 → 재시작 후 위치 유지
 - [ ] 캐릭터 OFF → 메뉴바에서 사라짐, 다른 ClCoBar pill은 그대로
+- [ ] **Sleep/wake recovery**: 노트북 뚜껑 닫고 30분 이상 deep sleep → 깨어난 뒤 ~2s 이내 캐릭터 정상 표시 (1.2.3에서 기존 pill에 적용된 fix와 동일한 수준의 복구)
+- [ ] 캐릭터 status item 우클릭 → 좌클릭과 동일 메뉴
 
 - [ ] **Step 4: Commit**
 
@@ -2745,11 +2806,12 @@ git commit -m "test(companion): integration sanity tests"
 
 ## Task 22: 배포 — version bump + docs + build
 
-CLAUDE.md 버전 정책에 따라 MINOR 올림 (1.2.2 → 1.3.0).
+CLAUDE.md 버전 정책에 따라 MINOR 올림 (1.2.3 → 1.3.0). **CLAUDE.md가 plan 작성 후 업데이트되어 `confluence-team-guide-ko.md` 갱신도 필수**가 됨.
 
 **Files:**
 - Modify: `version.env`
 - Modify: `docs/install-guide-ko.md`
+- Modify: `docs/confluence-team-guide-ko.md`
 - Modify: `Scripts/install_for_team.sh`
 
 - [ ] **Step 1: Bump version.env**
@@ -2757,30 +2819,40 @@ CLAUDE.md 버전 정책에 따라 MINOR 올림 (1.2.2 → 1.3.0).
 ```bash
 # Current values
 cat version.env
-# MARKETING_VERSION=1.2.2
-# BUILD_NUMBER=70
+# MARKETING_VERSION=1.2.3
+# BUILD_NUMBER=71
 ```
 
 Replace contents of `version.env`:
 
 ```
 MARKETING_VERSION=1.3.0
-BUILD_NUMBER=71
+BUILD_NUMBER=72
 ```
 
 - [ ] **Step 2: Update install-guide-ko.md**
 
-Open `docs/install-guide-ko.md`. Find references to the current version (e.g. `ClCoBar-1.2.2-arm64.zip`) and replace with `ClCoBar-1.3.0-arm64.zip`. Also update the "다음 버전 예시" — bump that one too (next would be 1.3.1).
+Open `docs/install-guide-ko.md`. Find references to the current version (e.g. `ClCoBar-1.2.3-arm64.zip`) and replace with `ClCoBar-1.3.0-arm64.zip`. Also update the "다음 버전 예시" — bump that one too (next minor would be 1.3.1 or 1.4.0).
 
-Run: `grep -n "1.2.2\|1.2.1\|다음 버전" docs/install-guide-ko.md` and update each occurrence.
+Run: `grep -n "1.2.3\|1.2.2\|다음 버전" docs/install-guide-ko.md` and update each occurrence.
 
-- [ ] **Step 3: Update install_for_team.sh**
+- [ ] **Step 3: Update confluence-team-guide-ko.md**
 
-Open `Scripts/install_for_team.sh`. Find the version in the usage comment (likely "ClCoBar-1.2.2-arm64.zip") and replace with `1.3.0`.
+Open `docs/confluence-team-guide-ko.md`. Find the "버전 히스토리" 표 (versions table). Add a new row at the **top** of the table:
 
-Run: `grep -n "1.2.2\|1.2.1" Scripts/install_for_team.sh` and update.
+```
+| 1.3.0 | YYYY-MM-DD | 메뉴바 캐릭터 컴패니언 추가 (burn rate에 따라 움직이는 4종 캐릭터) |
+```
 
-- [ ] **Step 4: Build distribution zip**
+Replace `YYYY-MM-DD` with today's date. Verify the row alignment matches existing rows.
+
+- [ ] **Step 4: Update install_for_team.sh**
+
+Open `Scripts/install_for_team.sh`. Find the version in the usage comment (likely "ClCoBar-1.2.3-arm64.zip") and replace with `1.3.0`.
+
+Run: `grep -n "1.2.3\|1.2.2" Scripts/install_for_team.sh` and update.
+
+- [ ] **Step 5: Build distribution zip**
 
 ```bash
 ./Scripts/build_for_distribution.sh
@@ -2791,7 +2863,7 @@ If `SKIP_TEST` is needed for CLI environments (no Xcode), use `SKIP_TEST=1 ./Scr
 
 Expected: `dist/ClCoBar-1.3.0-arm64.zip` exists, swift tests pass (or skipped explicitly).
 
-- [ ] **Step 5: Reinstall locally and final verification**
+- [ ] **Step 6: Reinstall locally and final verification**
 
 ```bash
 pkill -x CodexBar || true
@@ -2802,17 +2874,17 @@ xattr -dr com.apple.quarantine /Applications/ClCoBar.app
 open /Applications/ClCoBar.app
 ```
 
-- [ ] **Step 6: Remove previous-version zip (optional)**
+- [ ] **Step 7: Remove previous-version zip**
 
 ```bash
-rm -f dist/ClCoBar-1.2.2-arm64.zip
+rm -f dist/ClCoBar-1.2.3-arm64.zip
 ```
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
-git add version.env docs/install-guide-ko.md Scripts/install_for_team.sh
-git commit -m "chore(release): bump 1.2.2 → 1.3.0 (companion character feature)"
+git add version.env docs/install-guide-ko.md docs/confluence-team-guide-ko.md Scripts/install_for_team.sh
+git commit -m "chore(release): bump 1.2.3 → 1.3.0 (companion character feature)"
 ```
 
 ---
