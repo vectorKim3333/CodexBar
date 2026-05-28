@@ -165,6 +165,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         TTYCommandRunner.terminateActiveProcessesForAppShutdown()
     }
 
+    /// 1.6.1: 사용자가 이미 실행 중인 ClCoBar 를 Finder/Spotlight/Launchpad 에서 다시
+    /// 열려고 시도하는 시점. catch-22 escape — 메뉴바 아이콘이 모두 사라진 상태에서
+    /// 사용자가 메뉴 / ⌘, 도 못 쓸 때의 최종 수단. 환경설정 자동 표시 + status item 강제
+    /// 복구. ClCoBar 는 LSUIElement 라 Dock 아이콘 없지만 macOS 가 이 콜백을 발화함.
+    func applicationShouldHandleReopen(_: NSApplication, hasVisibleWindows _: Bool) -> Bool {
+        self.forceRecoverAllMenuBarItems()
+        self.preferencesSelection?.tab = .general
+        NSApp.activate(ignoringOtherApps: true)
+        _ = NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
+        return true
+    }
+
     func runProviderLoginFlow(_ provider: UsageProvider) async {
         self.ensureStatusController()
         guard let statusController else { return }
