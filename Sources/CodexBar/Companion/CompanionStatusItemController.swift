@@ -95,9 +95,54 @@ final class CompanionStatusItemController {
     /// 은 유지하고 `isVisible` 만 토글. macOS status bar 의 add/remove race 차단.
     ///
     /// `userEnabled` flag 도 같이 set 해서 watchdog 이 사용자 OFF 와 macOS evict 를 구분.
+    ///
+    /// 1.5.6: visible=true 호출 시 기존 statusItem 이 unhealthy 상태 (button.window/image
+    /// 가 nil 또는 image.size 가 zero) 면 즉시 강제 재생성. 사용자가 메뉴에서 OFF/ON 해도
+    /// 안 보이던 stuck 케이스 직접 복구.
     func setVisible(_ visible: Bool) {
         self.userEnabled = visible
-        self.statusItem?.isVisible = visible
+        if visible {
+            if self.statusItem == nil {
+                self.start()
+                return
+            }
+            if !self.isStatusItemHealthy() {
+                self.recreateStatusItem()
+                return
+            }
+            self.statusItem?.isVisible = true
+        } else {
+            self.statusItem?.isVisible = false
+        }
+    }
+
+    /// statusItem 이 macOS 에 정상 등록되어 표시 가능한 상태인지 검증.
+    /// 하나라도 missing 이면 stuck 상태 — 강제 재생성 필요.
+    private func isStatusItemHealthy() -> Bool {
+        guard let item = self.statusItem,
+              let button = item.button,
+              button.window != nil,
+              button.window?.screen != nil,
+              let image = button.image,
+              image.size.width > 0,
+              image.size.height > 0
+        else { return false }
+        return true
+    }
+
+    /// statusItem 을 통째로 새로 생성. character/provider/userEnabled 상태는 보존.
+    /// 1.5.6: display sleep 후 macOS 가 status item 을 reject 한 상태에서 사용자
+    /// 토글로 직접 복구 가능하게 하는 escape hatch.
+    private func recreateStatusItem() {
+        let savedCharacter = self.character
+        let savedProvider = self.provider
+        let savedEnabled = self.userEnabled
+        self.stop()
+        self.character = savedCharacter
+        self.provider = savedProvider
+        self.start()
+        self.userEnabled = savedEnabled
+        self.statusItem?.isVisible = savedEnabled
     }
 
     @objc private func handleClick() {
@@ -221,19 +266,15 @@ final class CompanionStatusItemController {
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
-                // 장시간 deep sleep 후 wake 에선 macOS 가 status bar 재배치하는 시간이
-                // 단발 1.5초로 안 잡힐 수 있음. 1.5s + 5s + 15s cascade 로 여러 번 검증.
-                // recoverIfMissingOrBlocked 는 idempotent 라 중복 호출 안전.
+                // 1.5.6: 장시간 sleep 후 wake 에선 macOS 가 NSStatusItem 의 button image /
+                // window 를 evict 시켜 표시 안 되는 stuck 상태가 됨. recover... 의 보수적
+                // 체크는 못 잡는 케이스가 많아서 1.5s 대기 후 무조건 strong recovery.
                 try? await Task.sleep(for: .seconds(Self.wakeCheckDelay))
-                self?.recoverIfMissingOrBlocked()
-                try? await Task.sleep(for: .seconds(5 - Self.wakeCheckDelay))
-                self?.recoverIfMissingOrBlocked()
-                try? await Task.sleep(for: .seconds(10))
-                self?.recoverIfMissingOrBlocked()
+                self?.strongWakeRecovery()
             }
         }
-        // Display 만 슬립에서 깨어난 경우 (lid open / monitor wake) — 시스템은 awake 였어도
-        // 메뉴바 자체가 잠시 evict 되는 케이스가 있어 별도 처리.
+        // Display 만 슬립에서 깨어난 경우 (사용자가 화면만 끔, lid open / monitor wake).
+        // 1.5.6 사용자 보고: display sleep 후 캐릭터만 사라지는 케이스 빈번 → strong recovery.
         self.screensWakeObserver = workspace.addObserver(
             forName: NSWorkspace.screensDidWakeNotification,
             object: nil,
@@ -241,7 +282,7 @@ final class CompanionStatusItemController {
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
                 try? await Task.sleep(for: .seconds(Self.wakeCheckDelay))
-                self?.recoverIfMissingOrBlocked()
+                self?.strongWakeRecovery()
             }
         }
         // 사용자가 ClCoBar 에 focus 를 돌려준 순간 — 클릭 직전에 마지막 sanity check.
@@ -273,6 +314,15 @@ final class CompanionStatusItemController {
         }
     }
 
+
+    /// Wake 이벤트 (system/display) 후 호출. macOS 가 NSStatusItem 을 reject 한 stuck
+    /// 상태에서 isVisible toggle 만으론 못 풀리는 케이스 (1.5.6 사용자 보고) 대응 위해
+    /// **무조건 stop+start** 으로 인스턴스 통째 재생성. cross-effect 우려는 wake 시점 한정
+    /// + Companion 만 재생성 (사용량 pill 안 건드림) 으로 user-perceived 영향 최소화.
+    private func strongWakeRecovery() {
+        guard self.userEnabled else { return }
+        self.recreateStatusItem()
+    }
 
     /// macOS Tahoe evicts NSStatusItem window/screen after long sleep.
     /// statusItem 이 다음 상태 중 하나면 복구:
