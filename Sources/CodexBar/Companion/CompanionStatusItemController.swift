@@ -207,7 +207,14 @@ final class CompanionStatusItemController {
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
+                // 장시간 deep sleep 후 wake 에선 macOS 가 status bar 재배치하는 시간이
+                // 단발 1.5초로 안 잡힐 수 있음. 1.5s + 5s + 15s cascade 로 여러 번 검증.
+                // recoverIfMissingOrBlocked 는 idempotent 라 중복 호출 안전.
                 try? await Task.sleep(for: .seconds(Self.wakeCheckDelay))
+                self?.recoverIfMissingOrBlocked()
+                try? await Task.sleep(for: .seconds(5 - Self.wakeCheckDelay))
+                self?.recoverIfMissingOrBlocked()
+                try? await Task.sleep(for: .seconds(10))
                 self?.recoverIfMissingOrBlocked()
             }
         }
@@ -252,6 +259,17 @@ final class CompanionStatusItemController {
         }
     }
 
+
+    /// 외부에서 즉시 visibility 검증 + 복구 요청. AppDelegate 가 provider 토글 변경
+    /// 시 호출 — 사용량 pill 의 추가/제거가 macOS status bar 재배치를 유발해 캐릭터의
+    /// invisible 상태가 가시화되는 race 처리. 즉시 + 1초 후 cascade.
+    func requestVisibilityRecovery(reason _: String) {
+        self.recoverIfMissingOrBlocked()
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(1))
+            self?.recoverIfMissingOrBlocked()
+        }
+    }
 
     /// macOS Tahoe evicts NSStatusItem window/screen after long sleep.
     /// statusItem 이 다음 3가지 상태 중 하나면 복구:

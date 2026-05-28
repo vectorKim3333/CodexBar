@@ -11,6 +11,12 @@ protocol StatusItemControlling: AnyObject {
     func runLoginFlowFromSettings(provider: UsageProvider) async
     func celebrationOriginPoint(for provider: UsageProvider?) -> CGPoint?
     func sharedMenu() -> NSMenu
+    /// 외부에서 즉시 visibility 검증 + 복구 요청.
+    ///
+    /// Companion controller 가 NSStatusItem 을 stop/start 할 때 macOS 가 status bar 를
+    /// 재배치하면서 이미 evict 상태였던 사용량 pill 의 invisible 상태가 가시화되는 케이스
+    /// 가 있음. 그런 시점에서 외부가 호출해주면 30초 heartbeat 안 기다리고 즉시 복구.
+    func requestVisibilityRecovery(reason: String)
 }
 
 extension StatusItemControlling {
@@ -18,6 +24,7 @@ extension StatusItemControlling {
         nil
     }
     func sharedMenu() -> NSMenu { NSMenu() }
+    func requestVisibilityRecovery(reason _: String) {}
 }
 
 @MainActor
@@ -357,9 +364,24 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
             self.updateVisibility()
             // macOS 가 장시간 deep sleep 중 NSStatusItem 의 window 를 evict 하는 경우,
             // updateVisibility() 의 isVisible 토글만으론 안 보이는 메뉴바를 복구하지 못한다.
-            // 잠시 뒤 blocked snapshot 인지 검사하고 필요하면 statusBar 에서 통째로 재등록.
+            // 1.5.2 부터 cascade: 1.5s + 5s + 15s 세 번 검증 — 장시간 sleep 후 wake
+            // 시점에 macOS 가 status bar 재배치하는 시간이 길어 단발 1.5초 체크만으론
+            // 못 잡는 케이스 있었음.
             self.scheduleWakeStatusItemVisibilityCheck()
+            self.scheduleCascadeWakeRecovery()
             await self.store.refresh()
+        }
+    }
+
+    /// 장시간 deep sleep 후 wake 에서 1.5s 단발 검증으론 NSStatusItem evict 가 못 잡히는
+    /// 케이스 대응. 5초 / 15초 시점에 한 번씩 더 visibility recovery 발화.
+    /// `recoverInvisibleOrBlockedStatusItemsIfNeeded` 는 idempotent 라 중복 호출 안전.
+    private func scheduleCascadeWakeRecovery() {
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(5))
+            self?.recoverInvisibleOrBlockedStatusItemsIfNeeded(reason: "wake-cascade-5s")
+            try? await Task.sleep(for: .seconds(10))
+            self?.recoverInvisibleOrBlockedStatusItemsIfNeeded(reason: "wake-cascade-15s")
         }
     }
 
@@ -469,6 +491,20 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
                 "snapshots": snapshots.map(\.description).joined(separator: " | "),
             ])
         self.recreateStatusItemsForVisibilityRecovery()
+    }
+
+    /// `StatusItemControlling.requestVisibilityRecovery` 의 실제 구현.
+    ///
+    /// 즉시 한 번 + 500ms 후 한 번 더 cascade 호출. macOS 가 status bar 를 재배치
+    /// 하는 짧은 시간 동안 evict 상태가 확정되는 케이스가 있어 한 번만으론 못 잡을 수
+    /// 있음. `recoverInvisibleOrBlockedStatusItemsIfNeeded` 자체는 idempotent 라
+    /// 중복 호출 안전.
+    func requestVisibilityRecovery(reason: String) {
+        self.recoverInvisibleOrBlockedStatusItemsIfNeeded(reason: reason)
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(500))
+            self?.recoverInvisibleOrBlockedStatusItemsIfNeeded(reason: "\(reason)-delayed")
+        }
     }
 
     /// "Not fetched yet" 자가 회복. enabled 인데 snapshot 도 errors 도 없고 in-flight
@@ -675,11 +711,19 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
             self.refreshOpenMenusForStructureChange()
         }
         self.refreshNewlyEnabledProvidersIfNeeded()
+        // 토글 변경 후 macOS status bar 재배치 race 대응. 자기 자신의 status item evict
+        // 가시화 케이스 — cascade recovery.
+        self.requestVisibilityRecovery(reason: "settings-change-\(reason)")
     }
 
     /// 토글 OFF → ON 으로 새로 enabled 된 provider 가 있으면 즉시 fetch 를 트리거한다.
     /// `handleSettingsChange` 가 UI 만 갱신해서 "Not fetched yet" 이 다음 자동 refresh
     /// 주기까지 유지되는 문제 방지. enabled 차집합으로 판정해서 무한 trigger 회피.
+    ///
+    /// 추가로 이전 토글 cycle 에서 in-flight 가 hang 한 채로 `refreshingProviders` 에
+    /// stuck 된 상태를 강제 클리어 — 빠른 OFF/ON 시퀀스에서 fetch task 가 hang 하면
+    /// `recoverStaleProviders` 의 `!refreshingProviders.contains` 가드 때문에
+    /// heartbeat retry 도 영원히 skip 되는 stuck 상태가 발생할 수 있어서.
     private func refreshNewlyEnabledProvidersIfNeeded() {
         let current = Set(self.store.enabledProvidersForDisplay())
         let newlyEnabled = current.subtracting(self.lastDisplayedProviders)
@@ -688,6 +732,8 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
         Task { @MainActor [weak self] in
             guard let self else { return }
             for provider in newlyEnabled {
+                // Stuck in-flight 강제 클리어 (이전 cycle 의 hang 한 fetch 흔적 제거).
+                self.store.refreshingProviders.remove(provider)
                 await self.store.refreshProvider(provider)
             }
         }
