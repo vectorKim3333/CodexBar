@@ -237,6 +237,12 @@ extension StatusItemController {
         let currentScreenCount = NSScreen.screens.count
         self.pendingScreenChangePreviousCount = previousScreenCount
         self.lastKnownScreenCount = currentScreenCount
+        // 1.5.9: 외장 모니터 연결/해제 시점에 macOS 가 status bar overflow 처리하면서 일부
+        // status item 을 hide 한 채 다시 안 돌려놓는 케이스 (사용자 보고: 32" 모니터 ↔ 맥북
+        // 내장 모니터 전환). image cache 즉시 invalidate — 다음 cascade 시점의 updateIcons
+        // 가 새 image 강제 그림.
+        self.lastAppliedMergedIconRenderSignature = nil
+        self.lastAppliedProviderIconRenderSignatures.removeAll()
         self.scheduleScreenChangeStatusItemVisibilityCheck(
             previousScreenCount: previousScreenCount,
             currentScreenCount: currentScreenCount)
@@ -249,36 +255,43 @@ extension StatusItemController {
         guard !SettingsStore.isRunningTests else { return }
         self.screenChangeVisibilityTask?.cancel()
         self.screenChangeVisibilityTask = Task { @MainActor [weak self] in
-            do {
-                try await Task.sleep(for: .milliseconds(750))
-            } catch {
-                return
-            }
+            // 750ms: macOS 가 status bar 재배치 마치는 시간 대기.
+            try? await Task.sleep(for: .milliseconds(750))
             self?.checkScreenChangeStatusItemVisibility(
                 previousScreenCount: previousScreenCount,
                 currentScreenCount: currentScreenCount)
+            // 3s + 10s: 외장 모니터 연결 후에도 macOS overflow 가 풀리지 않는 케이스 대응.
+            // 단발 check 만으론 못 잡혀서 cascade 필수.
+            try? await Task.sleep(for: .seconds(3))
+            self?.recoverInvisibleOrBlockedStatusItemsIfNeeded(reason: "screen-change-3s")
+            try? await Task.sleep(for: .seconds(7))
+            self?.recoverInvisibleOrBlockedStatusItemsIfNeeded(reason: "screen-change-10s")
         }
     }
 
     private func checkScreenChangeStatusItemVisibility(previousScreenCount: Int, currentScreenCount: Int) {
         self.pendingScreenChangePreviousCount = nil
         let snapshots = MenuBarVisibilityWatcher.visibilitySnapshots(self.startupVisibilityStatusItems)
-        guard MenuBarVisibilityWatcher.shouldAttemptScreenChangeRecovery(
+        let needsRecovery = MenuBarVisibilityWatcher.shouldAttemptScreenChangeRecovery(
             previousScreenCount: previousScreenCount,
             currentScreenCount: currentScreenCount,
             snapshots: snapshots)
-        else {
-            return
-        }
+        // 1.5.9: screen count 증가 (외장 모니터 연결) 도 무조건 recovery 시도.
+        // macOS 가 이전 화면 폭에서 hide 처리한 상태를 자동으로 안 돌려놓는 케이스가 있음.
+        let screenCountIncreased = currentScreenCount > previousScreenCount
+        guard needsRecovery || screenCountIncreased else { return }
 
         self.menuLogger.error(
-            "Display configuration changed; recreating status items",
+            "Display configuration changed; recovering individual blocked status items",
             metadata: [
                 "previousScreenCount": "\(previousScreenCount)",
                 "currentScreenCount": "\(currentScreenCount)",
                 "snapshots": snapshots.map(\.description).joined(separator: " | "),
             ])
-        self.recreateStatusItemsForVisibilityRecovery()
+        // 1.5.9: 전체 wipe (`recreateStatusItemsForVisibilityRecovery`) 대신 단일 provider
+        // 단위 recovery. cross-effect / 깜빡임 최소화. 1.5.7 의 `hasImage` 검증이 macOS
+        // overflow 로 hide 된 케이스도 잡음.
+        self.recoverInvisibleOrBlockedStatusItemsIfNeeded(reason: "screen-change")
     }
 
     var startupVisibilityStatusItems: [NSStatusItem] {

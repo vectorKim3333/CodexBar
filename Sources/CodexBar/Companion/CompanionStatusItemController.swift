@@ -17,6 +17,7 @@ final class CompanionStatusItemController {
     private var wakeObserver: NSObjectProtocol?
     private var screensWakeObserver: NSObjectProtocol?
     private var appActiveObserver: NSObjectProtocol?
+    private var screenParamsObserver: NSObjectProtocol?
     private static let wakeCheckDelay: TimeInterval = 1.5
 
     /// 사용자가 명시적으로 OFF 한 상태인지. watchdog (`recoverIfMissingOrBlocked`) 가
@@ -295,6 +296,22 @@ final class CompanionStatusItemController {
                 self?.recoverIfMissingOrBlocked()
             }
         }
+        // 1.5.9: 외장 모니터 연결/해제 시점에 macOS status bar overflow 로 캐릭터가
+        // 잘려서 안 보이게 되는 케이스 대응. 750ms + 3s + 10s cascade strong recovery.
+        self.screenParamsObserver = app.addObserver(
+            forName: NSApplication.didChangeScreenParametersNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(for: .milliseconds(750))
+                self?.strongWakeRecovery()
+                try? await Task.sleep(for: .seconds(3))
+                self?.strongWakeRecovery()
+                try? await Task.sleep(for: .seconds(7))
+                self?.strongWakeRecovery()
+            }
+        }
     }
 
     private func removeWakeObserver() {
@@ -311,6 +328,10 @@ final class CompanionStatusItemController {
         if let token = self.appActiveObserver {
             app.removeObserver(token)
             self.appActiveObserver = nil
+        }
+        if let token = self.screenParamsObserver {
+            app.removeObserver(token)
+            self.screenParamsObserver = nil
         }
     }
 
