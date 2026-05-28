@@ -157,20 +157,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.statusController?.openMenuFromShortcut()
             }
         }
-        // Provider 토글 변경 시 Companion 의 visibility 도 즉시 검증.
-        // `StatusItemController` 가 자기 자신은 handleSettingsChange 에서 recovery 하지만
-        // Companion 은 별도 controller 라 AppDelegate 가 brokering 해야.
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(self.handleProviderConfigDidChangeForCompanionRecovery(_:)),
-            name: .codexbarProviderConfigDidChange,
-            object: nil)
-    }
-
-    @objc private func handleProviderConfigDidChangeForCompanionRecovery(_: Notification) {
-        Task { @MainActor [weak self] in
-            self?.companionController?.requestVisibilityRecovery(reason: "provider-config-change")
-        }
+        // 1.5.4: 1.5.3 의 `.codexbarProviderConfigDidChange` cross-broker observer 제거.
+        // 두 status item 의 동작은 독립적이어야 한다는 사용자 요구사항.
     }
 
     func applicationWillTerminate(_ notification: Notification) {
@@ -267,39 +255,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         store: UsageStore,
         statusController: StatusItemControlling)
     {
+        // 1.5.5: companionController instance 는 앱 lifetime 동안 한 번만 생성하고
+        // 절대 stop+nil 처리하지 않음. 사용자 OFF 는 `setVisible(false)` 로 표현 —
+        // NSStatusItem 인스턴스는 그대로 살려두고 isVisible 만 토글. macOS status bar 의
+        // add/remove race 가 cross-effect (사용량 pill ↔ Companion) 의 root cause 였음.
+        // observation task / wake observer / animation driver 는 그대로 계속 동작.
+        // CPU 부담 미미 (30초 tick).
         let updateController: @MainActor () -> Void = { [weak self] in
             guard let self else { return }
-            if settings.companionEnabled {
-                if self.companionController == nil {
-                    // Two-step setup: controller must exist before menuBuilder can reference it.
-                    var builderRef: CompanionMenuBuilder?
-                    let controller = CompanionStatusItemController(
-                        character: settings.companionCharacter,
-                        provider: settings.companionProvider,
-                        usageStore: store,
-                        menuProvider: { builderRef?.makeMenu() ?? NSMenu() })
-                    builderRef = CompanionMenuBuilder(
-                        controller: controller,
-                        settings: settings,
-                        usageStore: store)
-                    controller.start()
-                    self.companionController = controller
-                    self.companionMenuBuilder = builderRef
-                    // Companion 의 새 NSStatusItem 추가가 macOS 의 status bar 재배치를
-                    // 유발 → 이미 evict 상태였던 사용량 pill 의 invisible 상태가 가시화
-                    // 되는 케이스 있음. 즉시 visibility 복구 요청.
-                    self.statusController?.requestVisibilityRecovery(reason: "companion-start")
-                } else {
-                    self.companionController?.character = settings.companionCharacter
-                    self.companionController?.provider = settings.companionProvider
-                }
-            } else {
-                self.companionController?.stop()
-                self.companionController = nil
-                self.companionMenuBuilder = nil
-                // Companion 의 NSStatusItem 제거도 동일하게 status bar 재배치 유발.
-                self.statusController?.requestVisibilityRecovery(reason: "companion-stop")
+            if self.companionController == nil {
+                // Two-step setup: controller must exist before menuBuilder can reference it.
+                var builderRef: CompanionMenuBuilder?
+                let controller = CompanionStatusItemController(
+                    character: settings.companionCharacter,
+                    provider: settings.companionProvider,
+                    usageStore: store,
+                    menuProvider: { builderRef?.makeMenu() ?? NSMenu() })
+                builderRef = CompanionMenuBuilder(
+                    controller: controller,
+                    settings: settings,
+                    usageStore: store)
+                controller.start()
+                self.companionController = controller
+                self.companionMenuBuilder = builderRef
             }
+            self.companionController?.character = settings.companionCharacter
+            self.companionController?.provider = settings.companionProvider
+            // 사용자 토글 반영 — isVisible 토글만, instance lifetime 영구.
+            self.companionController?.setVisible(settings.companionEnabled)
         }
         updateController()
 

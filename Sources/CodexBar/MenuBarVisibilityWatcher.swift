@@ -80,7 +80,11 @@ enum MenuBarVisibilityWatcher {
     static func isBlockedSnapshot(snapshot: StatusItemVisibilitySnapshot) -> Bool {
         guard snapshot.isVisible else { return false }
         guard snapshot.hasButton else { return true }
-        return !snapshot.hasWindow || !snapshot.hasScreen || !snapshot.isOnCurrentScreen || snapshot.buttonWidth <= 0
+        // 1.5.4 부터 `buttonWidth <= 0` 체크 제거. image set 직전 신생 NSStatusItem 이
+        // 잠시 width=0 인 상태인데 이를 evict 로 잘못 판정해 destructive recreate 가 발화,
+        // recreate 직후 또 width=0 신생 → 또 recreate 의 false-positive loop 가 있었음.
+        // 진짜 evict 는 button.window/screen 이 nil 인 케이스. width 가 아닌 window 로만 판정.
+        return !snapshot.hasWindow || !snapshot.hasScreen || !snapshot.isOnCurrentScreen
     }
 
     static func hasBlockedVisibleSnapshots(_ snapshots: [StatusItemVisibilitySnapshot]) -> Bool {
