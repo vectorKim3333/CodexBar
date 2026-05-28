@@ -255,39 +255,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         store: UsageStore,
         statusController: StatusItemControlling)
     {
-        // 1.5.4: 1.5.2 / 1.5.3 에서 추가했던 cross-broker (Companion stop/start →
-        // statusController.requestVisibilityRecovery) 제거. 두 status item 이 독립적으로
-        // 동작해야 한다는 사용자 요구사항 반영. macOS status bar 의 재배치는 어차피
-        // 일어나지만 우리가 강제 recovery 발화시켜 destructive recreate 를 호출하는 게
-        // false-positive loop 의 원인이었음. 자연스러운 macOS 동작에 맡기고 wake observer
-        // + 30초 heartbeat 가 진짜 evict 만 잡도록 함.
+        // 1.5.5: companionController instance 는 앱 lifetime 동안 한 번만 생성하고
+        // 절대 stop+nil 처리하지 않음. 사용자 OFF 는 `setVisible(false)` 로 표현 —
+        // NSStatusItem 인스턴스는 그대로 살려두고 isVisible 만 토글. macOS status bar 의
+        // add/remove race 가 cross-effect (사용량 pill ↔ Companion) 의 root cause 였음.
+        // observation task / wake observer / animation driver 는 그대로 계속 동작.
+        // CPU 부담 미미 (30초 tick).
         let updateController: @MainActor () -> Void = { [weak self] in
             guard let self else { return }
-            if settings.companionEnabled {
-                if self.companionController == nil {
-                    // Two-step setup: controller must exist before menuBuilder can reference it.
-                    var builderRef: CompanionMenuBuilder?
-                    let controller = CompanionStatusItemController(
-                        character: settings.companionCharacter,
-                        provider: settings.companionProvider,
-                        usageStore: store,
-                        menuProvider: { builderRef?.makeMenu() ?? NSMenu() })
-                    builderRef = CompanionMenuBuilder(
-                        controller: controller,
-                        settings: settings,
-                        usageStore: store)
-                    controller.start()
-                    self.companionController = controller
-                    self.companionMenuBuilder = builderRef
-                } else {
-                    self.companionController?.character = settings.companionCharacter
-                    self.companionController?.provider = settings.companionProvider
-                }
-            } else {
-                self.companionController?.stop()
-                self.companionController = nil
-                self.companionMenuBuilder = nil
+            if self.companionController == nil {
+                // Two-step setup: controller must exist before menuBuilder can reference it.
+                var builderRef: CompanionMenuBuilder?
+                let controller = CompanionStatusItemController(
+                    character: settings.companionCharacter,
+                    provider: settings.companionProvider,
+                    usageStore: store,
+                    menuProvider: { builderRef?.makeMenu() ?? NSMenu() })
+                builderRef = CompanionMenuBuilder(
+                    controller: controller,
+                    settings: settings,
+                    usageStore: store)
+                controller.start()
+                self.companionController = controller
+                self.companionMenuBuilder = builderRef
             }
+            self.companionController?.character = settings.companionCharacter
+            self.companionController?.provider = settings.companionProvider
+            // 사용자 토글 반영 — isVisible 토글만, instance lifetime 영구.
+            self.companionController?.setVisible(settings.companionEnabled)
         }
         updateController()
 

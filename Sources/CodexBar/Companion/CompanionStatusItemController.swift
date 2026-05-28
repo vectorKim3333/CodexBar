@@ -19,6 +19,11 @@ final class CompanionStatusItemController {
     private var appActiveObserver: NSObjectProtocol?
     private static let wakeCheckDelay: TimeInterval = 1.5
 
+    /// 사용자가 명시적으로 OFF 한 상태인지. watchdog (`recoverIfMissingOrBlocked`) 가
+    /// 사용자 OFF 와 macOS evict 를 구분하는 데 사용 — `false` 면 visibility 강제 복구
+    /// 안 함. AppDelegate 가 `setVisible(_:)` 로 set.
+    private var userEnabled: Bool = true
+
     // Companion-owned 5-minute ring buffer
     private var samples: [PlanUtilizationHistoryEntry] = []
     private let sampleWindow: TimeInterval = 300
@@ -84,6 +89,15 @@ final class CompanionStatusItemController {
         }
         self.statusItem = nil
         self.samples.removeAll()
+    }
+
+    /// 사용자 토글 상태 반영 — 1.5.5 부터 토글 OFF 시에도 controller instance / NSStatusItem
+    /// 은 유지하고 `isVisible` 만 토글. macOS status bar 의 add/remove race 차단.
+    ///
+    /// `userEnabled` flag 도 같이 set 해서 watchdog 이 사용자 OFF 와 macOS evict 를 구분.
+    func setVisible(_ visible: Bool) {
+        self.userEnabled = visible
+        self.statusItem?.isVisible = visible
     }
 
     @objc private func handleClick() {
@@ -261,22 +275,24 @@ final class CompanionStatusItemController {
 
 
     /// macOS Tahoe evicts NSStatusItem window/screen after long sleep.
-    /// statusItem 이 다음 3가지 상태 중 하나면 복구:
+    /// statusItem 이 다음 상태 중 하나면 복구:
     ///   1. nil (어떤 코드 경로가 stop() 만 호출하고 안 돌아옴)
-    ///   2. isVisible=false (외부에서 hidden 처리됨)
+    ///   2. isVisible=false 이지만 사용자가 OFF 안 했음 (macOS evict)
     ///   3. isVisible=true 인데 window/screen 이 nil (macOS evict)
-    /// 30s observation tick 마다 호출되어 silent 사라짐을 방지한다.
+    ///
+    /// 1.5.5: AppDelegate 가 instance lifetime 영구 유지하면서 setVisible 로 토글만
+    /// 하기 때문에, `isVisible=false` 가 사용자 OFF 인지 macOS evict 인지 구분 필요.
+    /// `userEnabled` flag 로 판단 — false 면 사용자 의도이므로 복구 안 함.
     private func recoverIfMissingOrBlocked() {
+        // 사용자가 명시적으로 OFF 한 상태면 어떤 복구도 안 함. 토글 무시 방지.
+        guard self.userEnabled else { return }
         guard let item = self.statusItem else {
             // 컨트롤러는 살아있지만 status item 이 사라진 경우 → 재시작.
-            // start() 는 `guard self.statusItem == nil` 가드가 있으므로 안전.
             self.start()
             return
         }
         if !item.isVisible {
-            // Companion 컨트롤러가 살아있다는 것 자체가 companionEnabled=true 라는
-            // 뜻이므로 즉시 다시 보이게 한다. (AppDelegate 가 companionEnabled=false
-            // 일 땐 stop() + nil 처리하므로 여기 도달하지 않음)
+            // userEnabled=true 인데 isVisible=false → macOS 가 evict 한 케이스.
             item.isVisible = true
             return
         }
@@ -288,5 +304,6 @@ final class CompanionStatusItemController {
         self.character = savedCharacter
         self.provider = savedProvider
         self.start()
+        // start() 후 userEnabled 가 default true 로 reset 되지 않음 (변수 그대로).
     }
 }

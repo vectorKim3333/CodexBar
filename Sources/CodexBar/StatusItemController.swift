@@ -792,14 +792,16 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
         // shows. The legacy single-status-item path (`self.statusItem`) is
         // unused (merge mode is removed) so we keep it permanently hidden.
         self.statusItem.isVisible = false
+        // 1.5.5: NSStatusItem 인스턴스의 lifetime 을 앱 lifetime 과 동일하게 유지.
+        // 토글 OFF 시 `statusBar.removeStatusItem` 으로 인스턴스를 통째로 제거하던 이전
+        // 패턴은 macOS status bar 의 짧은 시간 add → remove → add race 를 일으켜 다른
+        // status item (특히 Companion) 의 visibility 까지 깨뜨리는 cross-effect 의
+        // root cause 였음. `isVisible` 토글만 하면 macOS 가 status bar 재배치 없이
+        // 인스턴스의 hide/show 만 처리해서 cross-effect 발생 안 함 — Apple 권장 패턴.
         for provider in self.settings.orderedProviders() {
             let shouldBeVisible = enabledForDisplay.contains(provider) || force
-            if shouldBeVisible {
-                let item = self.lazyStatusItem(for: provider)
-                item.isVisible = true
-            } else {
-                self.removeProviderStatusItem(for: provider)
-            }
+            let item = self.lazyStatusItem(for: provider)
+            item.isVisible = shouldBeVisible
         }
         self.attachMenus(fallback: nil)
         self.updateAnimationState()
