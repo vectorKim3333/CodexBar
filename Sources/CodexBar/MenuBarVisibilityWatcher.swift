@@ -8,6 +8,10 @@ struct StatusItemVisibilitySnapshot: Equatable {
     let hasScreen: Bool
     let isOnCurrentScreen: Bool
     let buttonWidth: CGFloat
+    /// 1.5.7: button.image 가 non-nil + zero-size 아닌지. macOS 가 image 가 깨진
+    /// 상태의 NSStatusItem 을 자동 hide 시키는 케이스 (사용자 보고: 절전 없이 갑자기
+    /// 사라짐) 감지용.
+    let hasImage: Bool
 
     init(
         isVisible: Bool,
@@ -15,7 +19,8 @@ struct StatusItemVisibilitySnapshot: Equatable {
         hasWindow: Bool,
         hasScreen: Bool,
         isOnCurrentScreen: Bool = true,
-        buttonWidth: CGFloat)
+        buttonWidth: CGFloat,
+        hasImage: Bool = true)
     {
         self.isVisible = isVisible
         self.hasButton = hasButton
@@ -23,6 +28,7 @@ struct StatusItemVisibilitySnapshot: Equatable {
         self.hasScreen = hasScreen
         self.isOnCurrentScreen = isOnCurrentScreen
         self.buttonWidth = buttonWidth
+        self.hasImage = hasImage
     }
 }
 
@@ -53,13 +59,16 @@ enum MenuBarVisibilityWatcher {
     @MainActor
     static func visibilitySnapshot(_ item: NSStatusItem) -> StatusItemVisibilitySnapshot {
         let screen = item.button?.window?.screen
+        let image = item.button?.image
+        let hasImage = image != nil && (image?.size.width ?? 0) > 0 && (image?.size.height ?? 0) > 0
         return StatusItemVisibilitySnapshot(
             isVisible: item.isVisible,
             hasButton: item.button != nil,
             hasWindow: item.button?.window != nil,
             hasScreen: screen != nil,
             isOnCurrentScreen: screen.map(self.isCurrentScreen) ?? false,
-            buttonWidth: item.button?.frame.size.width ?? 0)
+            buttonWidth: item.button?.frame.size.width ?? 0,
+            hasImage: hasImage)
     }
 
     @MainActor
@@ -80,11 +89,11 @@ enum MenuBarVisibilityWatcher {
     static func isBlockedSnapshot(snapshot: StatusItemVisibilitySnapshot) -> Bool {
         guard snapshot.isVisible else { return false }
         guard snapshot.hasButton else { return true }
-        // 1.5.4 부터 `buttonWidth <= 0` 체크 제거. image set 직전 신생 NSStatusItem 이
-        // 잠시 width=0 인 상태인데 이를 evict 로 잘못 판정해 destructive recreate 가 발화,
-        // recreate 직후 또 width=0 신생 → 또 recreate 의 false-positive loop 가 있었음.
-        // 진짜 evict 는 button.window/screen 이 nil 인 케이스. width 가 아닌 window 로만 판정.
-        return !snapshot.hasWindow || !snapshot.hasScreen || !snapshot.isOnCurrentScreen
+        // 1.5.4: `buttonWidth <= 0` false-positive 제거 (신생 status item 의 width=0 정상 상태).
+        // 1.5.7: `hasImage` 추가 — macOS 가 button.image 가 nil/zero-size 인 status item 을
+        // 자동 hide 시켜 사용량 pill 이 사라지는 케이스 (절전 없이 갑자기 사라짐) 감지.
+        return !snapshot.hasWindow || !snapshot.hasScreen
+            || !snapshot.isOnCurrentScreen || !snapshot.hasImage
     }
 
     static func hasBlockedVisibleSnapshots(_ snapshots: [StatusItemVisibilitySnapshot]) -> Bool {

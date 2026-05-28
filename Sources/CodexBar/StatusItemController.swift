@@ -472,18 +472,53 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
             self.updateIcons()
         }
 
-        // (3) blocked snapshot 감지 — destructive recreate 라 메뉴 열림 중엔 미룸.
+        // (3) blocked snapshot 감지 — 1.5.7 부터 **단일 provider 만** recreate 로 변경.
+        // 이전 `recreateStatusItemsForVisibilityRecovery` 는 모든 provider statusItem 통째
+        // wipe → 깜빡임 + 다른 status item cross-effect 위험 있었음. 정말 blocked 인 provider
+        // 만 골라서 본인 instance 만 재생성. 다른 provider 영향 0.
         guard self.openMenus.isEmpty else { return }
-        let items = self.startupVisibilityStatusItems
-        let snapshots = MenuBarVisibilityWatcher.visibilitySnapshots(items)
-        guard MenuBarVisibilityWatcher.hasAnyBlockedVisibleSnapshot(snapshots) else { return }
+        var blockedProviders: [UsageProvider] = []
+        for (provider, item) in self.statusItems {
+            let snapshot = MenuBarVisibilityWatcher.visibilitySnapshot(item)
+            if MenuBarVisibilityWatcher.isBlockedSnapshot(snapshot: snapshot) {
+                blockedProviders.append(provider)
+            }
+        }
+        guard !blockedProviders.isEmpty else { return }
         self.menuLogger.error(
-            "Status items blocked; recreating",
+            "Provider status items blocked; recreating individually",
             metadata: [
                 "reason": reason,
-                "snapshots": snapshots.map(\.description).joined(separator: " | "),
+                "blocked": blockedProviders.map(\.rawValue).joined(separator: ","),
             ])
-        self.recreateStatusItemsForVisibilityRecovery()
+        for provider in blockedProviders {
+            self.recreateProviderStatusItem(for: provider)
+        }
+    }
+
+    /// 단일 provider 의 NSStatusItem 만 통째 재생성. 다른 provider 영향 없음.
+    /// 1.5.7: `recreateStatusItemsForVisibilityRecovery` 의 전체 wipe 대신 evict 된
+    /// provider 만 골라 처리. cross-effect 위험 최소화.
+    private func recreateProviderStatusItem(for provider: UsageProvider) {
+        // 기존 instance 제거 (dictionary + statusBar 양쪽).
+        if let menu = self.providerMenus.removeValue(forKey: provider) {
+            let menuID = ObjectIdentifier(menu)
+            self.menuProviders.removeValue(forKey: menuID)
+            self.menuVersions.removeValue(forKey: menuID)
+            self.openMenus.removeValue(forKey: menuID)
+            self.menuRefreshTasks.removeValue(forKey: menuID)?.cancel()
+        }
+        if let item = self.statusItems.removeValue(forKey: provider) {
+            item.menu = nil
+            self.statusBar.removeStatusItem(item)
+        }
+        self.lastAppliedProviderIconRenderSignatures.removeValue(forKey: provider)
+        // 새 instance 생성 (lazyStatusItem) + visibility + icon + menu 다시 부착.
+        let newItem = self.lazyStatusItem(for: provider)
+        let enabledForDisplay = Set(self.store.enabledProvidersForDisplay())
+        newItem.isVisible = enabledForDisplay.contains(provider)
+        self.updateIcons()
+        self.attachMenus(fallback: nil)
     }
 
 

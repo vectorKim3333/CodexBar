@@ -46,6 +46,7 @@ Personal fork of `steipete/CodexBar`. Tracks **only Claude + Codex** usage in th
 - **Cross-broker 안티패턴 (같은 사건).** "토글 A 변경 시 status item B 의 visibility 도 강제 복구하자" 는 발상 (NotificationCenter broker / cascade recovery 등) **절대 추가 금지**. false-positive recovery loop 일으킴 — 토글 1번 = recovery 호출 3번 = destructive `recreateStatusItemsForVisibilityRecovery` 발화 가능 = 신생 status item 의 width=0 false-positive 가 또 recreate 발화 = 무한 loop. 두 status item 은 진짜 독립 동작이어야 하고 macOS evict 는 각자의 wake observer / 30초 heartbeat 가 잡음.
 - **`isBlockedSnapshot` 의 `buttonWidth ≤ 0` 금지.** 신생 NSStatusItem 은 image set 직전 잠시 buttonWidth=0 인 정상 상태. 이걸 evict 로 판정하면 destructive recreate → 또 신생 → 무한 loop. evict 판정은 `button.window / screen nil` 만으로.
 - **Visibility/Recovery fix 전에 step-by-step 시뮬레이션 필수.** 사용자가 정확한 시나리오 보고하면 (예: "프 OFF → ON → OFF → ON → 캐 OFF") 단계별로 머릿속에서 시뮬레이션해 정상 동작 검증한 *뒤에* fix push. 우회 fix (broker / cascade) 부터 추가하면 root cause 못 잡고 새 bug 만 만들어 사용자가 같은 문제로 여러 번 보고하게 됨.
+- **NSStatusItem 보호 fix 는 두 컨트롤러 모두에 적용 (1.5.6/1.5.7 사건).** Companion (`CompanionStatusItemController`) 과 사용량 pill (`StatusItemController`) 은 별개 클래스라 한쪽에만 health check / fallback / recovery 적용하면 곧 반대편이 같은 문제로 사라짐. NSStatusItem 관련 보호 (image fallback, health check, recovery cascade) 추가 시 **반드시 두 컨트롤러 모두 동등 적용** 여부 self-review. `isBlockedSnapshot` / `MenuBarVisibilityWatcher` 도 두 컨트롤러 공통 진단 채널이라 거기 강화하면 양쪽 다 자동 cover.
 
 ## 메뉴바 아이콘
 
