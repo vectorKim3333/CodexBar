@@ -523,6 +523,31 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
         }
     }
 
+    /// detection 우회. 모든 enabled provider 의 NSStatusItem 을 강제로 단일 단위 재생성.
+    /// 1.5.10: screen change 시 macOS overflow hide 가 우리 detection 채널 (`isBlockedSnapshot`)
+    /// 로 못 잡히는 케이스가 있어 (button.window 살아있고 width 만 0 등), screen 변화 시점에
+    /// detection 없이 무조건 recreate. user-perceived 깜빡임은 모니터 변화 시점의 자연스러운
+    /// 일부로 인지됨.
+    func forceRecreateAllEnabledProviders(reason: String) {
+        #if DEBUG
+        guard !self.isReleasedForTesting else { return }
+        #endif
+        guard !SettingsStore.isRunningTests else { return }
+        guard self.openMenus.isEmpty else { return }
+        let enabledForDisplay = Set(self.store.enabledProvidersForDisplay())
+        let targets = enabledForDisplay.filter { self.statusItems[$0] != nil }
+        guard !targets.isEmpty else { return }
+        self.menuLogger.error(
+            "Force recreate all enabled provider status items",
+            metadata: [
+                "reason": reason,
+                "providers": targets.map(\.rawValue).joined(separator: ","),
+            ])
+        for provider in targets {
+            self.recreateProviderStatusItem(for: provider)
+        }
+    }
+
     /// 단일 provider 의 NSStatusItem 만 통째 재생성. 다른 provider 영향 없음.
     /// 1.5.7: `recreateStatusItemsForVisibilityRecovery` 의 전체 wipe 대신 evict 된
     /// provider 만 골라 처리. cross-effect 위험 최소화.
