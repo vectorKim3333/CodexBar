@@ -6,7 +6,7 @@
 #   bash <(curl -fsSL <link-to-this-script>) ~/Downloads/CodexBar.zip
 #
 # Or after downloading the zip manually:
-#   ./install_for_team.sh ~/Downloads/CodexBar-1.5.7-arm64.zip
+#   ./install_for_team.sh ~/Downloads/CodexBar-1.5.8-arm64.zip
 #
 # If no path is given, scans ~/Downloads for the newest CodexBar-*.zip.
 

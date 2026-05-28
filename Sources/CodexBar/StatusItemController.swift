@@ -154,6 +154,9 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
     var pendingScreenChangePreviousCount: Int?
     var screenChangeVisibilityTask: Task<Void, Never>?
     var iconHeartbeatTask: Task<Void, Never>?
+    /// 1.5.8: provider 가 blocked 상태로 진입한 시점. 60초 이상 stuck 이면 macOS allow-list
+    /// guidance alert. 우리 코드 recreate 가 못 풀리는 OS-level 케이스 사용자에게 안내.
+    var providerBlockedSince: [UsageProvider: Date] = [:]
     let loginLogger = CodexBarLog.logger(LogCategories.login)
     let menuLogger = CodexBarLog.logger(LogCategories.app)
     var selectedMenuProvider: UsageProvider? {
@@ -422,7 +425,9 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
         self.iconHeartbeatTask?.cancel()
         self.iconHeartbeatTask = Task { @MainActor [weak self] in
             while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(30))
+                // 1.5.8: 30s → 15s 단축. 사용자가 자리 비웠다 돌아왔을 때 status item evict
+                // 자동 복구까지 기다리는 시간 절반. CPU 부담 미미 (idle 시 거의 0).
+                try? await Task.sleep(for: .seconds(15))
                 guard let self else { return }
                 self.updateIcons()
                 self.recoverStaleProviders()
@@ -478,11 +483,33 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
         // 만 골라서 본인 instance 만 재생성. 다른 provider 영향 0.
         guard self.openMenus.isEmpty else { return }
         var blockedProviders: [UsageProvider] = []
+        let now = Date()
         for (provider, item) in self.statusItems {
             let snapshot = MenuBarVisibilityWatcher.visibilitySnapshot(item)
             if MenuBarVisibilityWatcher.isBlockedSnapshot(snapshot: snapshot) {
                 blockedProviders.append(provider)
+                if self.providerBlockedSince[provider] == nil {
+                    self.providerBlockedSince[provider] = now
+                }
+            } else {
+                self.providerBlockedSince.removeValue(forKey: provider)
             }
+        }
+        // 1.5.8: 어떤 provider 라도 60초 이상 stuck 이면 macOS allow-list guidance alert.
+        // 우리 recreate 시도가 못 풀리는 OS-level 케이스 (Tahoe "Allow in Menu Bar" OFF) 안내.
+        let stuckTooLong = blockedProviders.contains { provider in
+            if let since = self.providerBlockedSince[provider] {
+                return now.timeIntervalSince(since) > 60
+            }
+            return false
+        }
+        if stuckTooLong, #available(macOS 26.0, *),
+           MenuBarVisibilityWatcher.shouldShowGuidance(defaults: self.settings.userDefaults, now: now)
+        {
+            self.menuLogger.error(
+                "Provider status item stuck >60s; presenting macOS allow-list guidance",
+                metadata: ["reason": reason])
+            MenuBarVisibilityWatcher.presentGuidance(defaults: self.settings.userDefaults, now: now)
         }
         guard !blockedProviders.isEmpty else { return }
         self.menuLogger.error(
@@ -726,11 +753,13 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
             self.refreshOpenMenusForStructureChange()
         }
         self.refreshNewlyEnabledProvidersIfNeeded()
-        // 1.5.4: 1.5.3 에서 추가했던 self.requestVisibilityRecovery 호출 제거.
-        // 토글마다 destructive cascade 발화시켜 다른 status item 까지 영향 주는
-        // cross-effect 가 사용자가 보고한 "토글 후 사용량 안 나옴" 의 root cause 였음.
-        // settings 변경 자체는 evict 일으키지 않으므로 recovery 불필요. 진짜 evict 는
-        // wake observer + 30초 heartbeat 가 잡음.
+        // 1.5.8: 사용자 토글 시 즉시 health check + 필요 시 단일 provider 재생성.
+        // 1.5.7 까진 토글 ON 시 `isVisible=true` 만 set 하고 instance 의 unhealthy
+        // (image nil / window 깨짐) 상태는 그대로 유지되어 사용자가 토글 OFF→ON 해도
+        // 사용량 pill 복구 안 되던 문제. 1.5.7 의 `isBlockedSnapshot.hasImage` 검증 +
+        // 단일 provider recreate 로 false-positive 없음 (1.5.3 cross-broker 와 달리
+        // self-recovery 라 다른 status item 안 건드림).
+        self.recoverInvisibleOrBlockedStatusItemsIfNeeded(reason: "settings-change-\(reason)")
     }
 
     /// 토글 OFF → ON 으로 새로 enabled 된 provider 가 있으면 즉시 fetch 를 트리거한다.

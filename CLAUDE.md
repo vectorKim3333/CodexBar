@@ -47,6 +47,8 @@ Personal fork of `steipete/CodexBar`. Tracks **only Claude + Codex** usage in th
 - **`isBlockedSnapshot` 의 `buttonWidth ≤ 0` 금지.** 신생 NSStatusItem 은 image set 직전 잠시 buttonWidth=0 인 정상 상태. 이걸 evict 로 판정하면 destructive recreate → 또 신생 → 무한 loop. evict 판정은 `button.window / screen nil` 만으로.
 - **Visibility/Recovery fix 전에 step-by-step 시뮬레이션 필수.** 사용자가 정확한 시나리오 보고하면 (예: "프 OFF → ON → OFF → ON → 캐 OFF") 단계별로 머릿속에서 시뮬레이션해 정상 동작 검증한 *뒤에* fix push. 우회 fix (broker / cascade) 부터 추가하면 root cause 못 잡고 새 bug 만 만들어 사용자가 같은 문제로 여러 번 보고하게 됨.
 - **NSStatusItem 보호 fix 는 두 컨트롤러 모두에 적용 (1.5.6/1.5.7 사건).** Companion (`CompanionStatusItemController`) 과 사용량 pill (`StatusItemController`) 은 별개 클래스라 한쪽에만 health check / fallback / recovery 적용하면 곧 반대편이 같은 문제로 사라짐. NSStatusItem 관련 보호 (image fallback, health check, recovery cascade) 추가 시 **반드시 두 컨트롤러 모두 동등 적용** 여부 self-review. `isBlockedSnapshot` / `MenuBarVisibilityWatcher` 도 두 컨트롤러 공통 진단 채널이라 거기 강화하면 양쪽 다 자동 cover.
+- **사용자 토글 ON 경로에서 즉시 health check 필수 (1.5.8 사건).** instance lifetime 영구 유지 패턴 (1.5.5+) 의 부작용: 한 번 unhealthy stuck 상태가 되면 `isVisible` 토글만으로 못 풀림. 사용자가 직접 토글 OFF/ON 했을 때 즉시 health check + 필요 시 instance 재생성 보장해야 사용자 자가 복구 가능. Companion `setVisible(_:)` 의 `isStatusItemHealthy` 가드 + StatusItemController `handleSettingsChange` 끝의 `recoverInvisibleOrBlockedStatusItemsIfNeeded` 호출 두 경로 모두 필요. self-recovery (자기 자신만 다룸) 는 cross-broker (다른 controller 강제 호출) 와 다르므로 안전 — 1.5.3 의 false-positive loop 와 혼동하지 말 것.
+- **60초 이상 blocked stuck = OS-level 가능성, 사용자 안내.** 우리 recovery 가 못 풀리는 케이스 (macOS Tahoe "Allow in Menu Bar" 자동 OFF 등) 대비. `recoverInvisibleOrBlockedStatusItemsIfNeeded` 가 60초 이상 동일 provider 가 blocked 면 `MenuBarVisibilityWatcher.presentGuidance` 발화해 사용자에게 시스템 설정 안내. 무한히 stuck 인 채 두지 않음.
 
 ## 메뉴바 아이콘
 
