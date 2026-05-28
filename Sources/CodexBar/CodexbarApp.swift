@@ -171,6 +171,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         await statusController.runLoginFlowFromSettings(provider: provider)
     }
 
+    /// 1.6.0: 사용자가 환경설정 / 메뉴의 "메뉴바 아이콘 복구" 버튼을 클릭했을 때 호출.
+    /// 모든 enabled status item (사용량 pill + Companion) 을 사용자가 설정한 상태로
+    /// 강제 재생성. macOS 의 알 수 없는 hide stuck 상태의 최종 escape hatch.
+    @MainActor
+    func forceRecoverAllMenuBarItems() {
+        if let controller = self.statusController as? StatusItemController {
+            controller.forceRecreateAllEnabledProviders(reason: "user-manual-recover")
+        }
+        self.companionController?.forceRecreateIfEnabled()
+        // 토스트 알림으로 사용자에게 동작 확인.
+        AppNotifications.shared.post(
+            idPrefix: "menubar-recover",
+            title: L("menubar.recover.toast.title"),
+            body: L("menubar.recover.toast.body"))
+    }
+
     /// Use the classic (non-Liquid Glass) app icon on macOS versions before 26.
     private func configureAppIconForMacOSVersion() {
         if #unavailable(macOS 26) {

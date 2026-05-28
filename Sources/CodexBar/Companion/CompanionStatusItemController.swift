@@ -345,6 +345,14 @@ final class CompanionStatusItemController {
         self.recreateStatusItem()
     }
 
+    /// 1.6.0: 사용자가 환경설정 / 메뉴의 "메뉴바 아이콘 복구" 버튼을 클릭했을 때 호출.
+    /// `userEnabled` true 일 때만 강제 재생성. 자동 detection 이 못 잡는 모든 stuck
+    /// 케이스의 최종 escape hatch.
+    func forceRecreateIfEnabled() {
+        guard self.userEnabled else { return }
+        self.recreateStatusItem()
+    }
+
     /// macOS Tahoe evicts NSStatusItem window/screen after long sleep.
     /// statusItem 이 다음 상태 중 하나면 복구:
     ///   1. nil (어떤 코드 경로가 stop() 만 호출하고 안 돌아옴)

@@ -19,6 +19,7 @@ extension StatusItemController {
         case .quit: (#selector(self.quit), nil)
         case let .copyError(message): (#selector(self.copyError(_:)), message)
         case .updateAvailable: (#selector(self.openInstallGuide), nil)
+        case .recoverMenuBar: (#selector(self.recoverMenuBarFromMenu), nil)
         }
     }
 

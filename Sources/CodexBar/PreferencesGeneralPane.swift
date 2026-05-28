@@ -20,6 +20,26 @@ struct GeneralPane: View {
                         title: L("start_at_login_title"),
                         subtitle: L("start_at_login_subtitle"),
                         binding: self.$settings.launchAtLogin)
+
+                    // 1.6.0: 메뉴바 아이콘 강제 복구 escape hatch. macOS overflow hide /
+                    // Tahoe allow-list / 알 수 없는 stuck 등 자동 detection 으로 못 잡는
+                    // 케이스의 최종 수단. 클릭 시 사용자가 설정한 enabled 상태대로
+                    // 모든 status item 강제 재생성.
+                    VStack(alignment: .leading, spacing: 6) {
+                        Button(action: {
+                            (NSApp.delegate as? AppDelegate)?.forceRecoverAllMenuBarItems()
+                        }) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "arrow.clockwise.circle")
+                                Text(L("menubar.recover.button"))
+                                    .font(.body)
+                            }
+                        }
+                        Text(L("menubar.recover.subtitle"))
+                            .font(.footnote)
+                            .foregroundStyle(.tertiary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
 
                 Divider()

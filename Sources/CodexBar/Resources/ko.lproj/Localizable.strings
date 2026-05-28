@@ -527,6 +527,11 @@
 "companion.character.label" = "캐릭터";
 "companion.target.label" = "대상";
 "companion.character.dog" = "강아지";
+"menubar.recover.button" = "메뉴바 아이콘 복구";
+"menubar.recover.subtitle" = "캐릭터나 사용량이 사라졌을 때 클릭하면 현재 설정대로 다시 표시합니다. macOS 의 메뉴바 자동 숨김 등 자동 복구가 못 잡는 경우의 escape hatch.";
+"menubar.recover.menu_item" = "메뉴바 아이콘 복구";
+"menubar.recover.toast.title" = "메뉴바 복구";
+"menubar.recover.toast.body" = "캐릭터와 사용량 아이콘을 현재 설정대로 다시 표시했습니다.";
 "companion.character.cat" = "고양이";
 "companion.character.hare" = "토끼";
 "companion.character.tortoise" = "거북이";

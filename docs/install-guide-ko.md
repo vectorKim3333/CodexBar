@@ -21,7 +21,7 @@ cd /Users/madup/Developer/CodexBar
 
 ```
 ✅ Distribution build ready:
-   dist/ClCoBar-1.5.10-arm64.zip  (5.4M)
+   dist/ClCoBar-1.6.0-arm64.zip  (5.4M)
 ```
 
 기본은 **현재 빌드 머신 아키텍처만** 빌드합니다 (대부분 `arm64`).
@@ -80,7 +80,7 @@ zip 을 `~/Downloads` 에 받은 후, 터미널에서:
 
 ```bash
 # 다운로드 받은 zip 이름은 환경에 맞게 변경
-ZIP="$HOME/Downloads/ClCoBar-1.5.10-arm64.zip"
+ZIP="$HOME/Downloads/ClCoBar-1.6.0-arm64.zip"
 bash <(cat <<'INSTALL'
 set -e
 ZIP="${ZIP:?}"
@@ -104,7 +104,7 @@ INSTALL
 
 ```bash
 chmod +x ~/Downloads/install_for_team.sh
-~/Downloads/install_for_team.sh ~/Downloads/ClCoBar-1.5.10-arm64.zip
+~/Downloads/install_for_team.sh ~/Downloads/ClCoBar-1.6.0-arm64.zip
 ```
 
 스크립트 없이 zip 만 받았는데 터미널을 쓰고 싶다면 **방법 B** 사용.

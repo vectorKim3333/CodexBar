@@ -127,7 +127,15 @@ final class CompanionMenuBuilder: NSObject, NSMenuDelegate {
 
         menu.addItem(.separator())
 
-        // 7) Preferences + Quit
+        // 7) Recover menu bar (1.6.0) + Preferences + Quit
+        let recover = NSMenuItem(title: L("menubar.recover.menu_item"),
+                                 action: #selector(self.recoverMenuBar),
+                                 keyEquivalent: "")
+        recover.target = self
+        recover.image = NSImage(systemSymbolName: "arrow.clockwise.circle",
+                                accessibilityDescription: nil)
+        menu.addItem(recover)
+
         let prefs = NSMenuItem(title: L("companion.menu.preferences"),
                                action: #selector(self.openPreferences),
                                keyEquivalent: ",")
@@ -138,6 +146,10 @@ final class CompanionMenuBuilder: NSObject, NSMenuDelegate {
                               action: #selector(NSApplication.terminate(_:)),
                               keyEquivalent: "q")
         menu.addItem(quit)
+    }
+
+    @objc private func recoverMenuBar() {
+        (NSApp.delegate as? AppDelegate)?.forceRecoverAllMenuBarItems()
     }
 
     private func composeStateLine(stage: CompanionPaceStage,

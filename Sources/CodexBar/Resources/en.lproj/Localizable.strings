@@ -516,6 +516,11 @@
 "companion.character.label" = "Character";
 "companion.target.label" = "Target";
 "companion.character.dog" = "Dog";
+"menubar.recover.button" = "Recover menu bar icons";
+"menubar.recover.subtitle" = "If the character or usage pill disappears, click to force restore them with current settings. Escape hatch for cases that automatic recovery (macOS overflow / allow-list etc.) cannot catch.";
+"menubar.recover.menu_item" = "Recover menu bar icons";
+"menubar.recover.toast.title" = "Menu bar recovered";
+"menubar.recover.toast.body" = "Character and usage icons restored with current settings.";
 "companion.character.cat" = "Cat";
 "companion.character.hare" = "Hare";
 "companion.character.tortoise" = "Tortoise";
