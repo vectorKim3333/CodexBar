@@ -11,12 +11,6 @@ protocol StatusItemControlling: AnyObject {
     func runLoginFlowFromSettings(provider: UsageProvider) async
     func celebrationOriginPoint(for provider: UsageProvider?) -> CGPoint?
     func sharedMenu() -> NSMenu
-    /// 외부에서 즉시 visibility 검증 + 복구 요청.
-    ///
-    /// Companion controller 가 NSStatusItem 을 stop/start 할 때 macOS 가 status bar 를
-    /// 재배치하면서 이미 evict 상태였던 사용량 pill 의 invisible 상태가 가시화되는 케이스
-    /// 가 있음. 그런 시점에서 외부가 호출해주면 30초 heartbeat 안 기다리고 즉시 복구.
-    func requestVisibilityRecovery(reason: String)
 }
 
 extension StatusItemControlling {
@@ -24,7 +18,6 @@ extension StatusItemControlling {
         nil
     }
     func sharedMenu() -> NSMenu { NSMenu() }
-    func requestVisibilityRecovery(reason _: String) {}
 }
 
 @MainActor
@@ -493,19 +486,6 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
         self.recreateStatusItemsForVisibilityRecovery()
     }
 
-    /// `StatusItemControlling.requestVisibilityRecovery` 의 실제 구현.
-    ///
-    /// 즉시 한 번 + 500ms 후 한 번 더 cascade 호출. macOS 가 status bar 를 재배치
-    /// 하는 짧은 시간 동안 evict 상태가 확정되는 케이스가 있어 한 번만으론 못 잡을 수
-    /// 있음. `recoverInvisibleOrBlockedStatusItemsIfNeeded` 자체는 idempotent 라
-    /// 중복 호출 안전.
-    func requestVisibilityRecovery(reason: String) {
-        self.recoverInvisibleOrBlockedStatusItemsIfNeeded(reason: reason)
-        Task { @MainActor [weak self] in
-            try? await Task.sleep(for: .milliseconds(500))
-            self?.recoverInvisibleOrBlockedStatusItemsIfNeeded(reason: "\(reason)-delayed")
-        }
-    }
 
     /// "Not fetched yet" 자가 회복. enabled 인데 snapshot 도 errors 도 없고 in-flight
     /// 도 아닌 provider 가 있으면 → 마지막 자동 refresh 가 어떤 이유로 결과를 남기지
@@ -711,9 +691,11 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
             self.refreshOpenMenusForStructureChange()
         }
         self.refreshNewlyEnabledProvidersIfNeeded()
-        // 토글 변경 후 macOS status bar 재배치 race 대응. 자기 자신의 status item evict
-        // 가시화 케이스 — cascade recovery.
-        self.requestVisibilityRecovery(reason: "settings-change-\(reason)")
+        // 1.5.4: 1.5.3 에서 추가했던 self.requestVisibilityRecovery 호출 제거.
+        // 토글마다 destructive cascade 발화시켜 다른 status item 까지 영향 주는
+        // cross-effect 가 사용자가 보고한 "토글 후 사용량 안 나옴" 의 root cause 였음.
+        // settings 변경 자체는 evict 일으키지 않으므로 recovery 불필요. 진짜 evict 는
+        // wake observer + 30초 heartbeat 가 잡음.
     }
 
     /// 토글 OFF → ON 으로 새로 enabled 된 provider 가 있으면 즉시 fetch 를 트리거한다.

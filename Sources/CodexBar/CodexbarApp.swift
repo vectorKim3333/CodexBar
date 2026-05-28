@@ -157,20 +157,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.statusController?.openMenuFromShortcut()
             }
         }
-        // Provider 토글 변경 시 Companion 의 visibility 도 즉시 검증.
-        // `StatusItemController` 가 자기 자신은 handleSettingsChange 에서 recovery 하지만
-        // Companion 은 별도 controller 라 AppDelegate 가 brokering 해야.
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(self.handleProviderConfigDidChangeForCompanionRecovery(_:)),
-            name: .codexbarProviderConfigDidChange,
-            object: nil)
-    }
-
-    @objc private func handleProviderConfigDidChangeForCompanionRecovery(_: Notification) {
-        Task { @MainActor [weak self] in
-            self?.companionController?.requestVisibilityRecovery(reason: "provider-config-change")
-        }
+        // 1.5.4: 1.5.3 의 `.codexbarProviderConfigDidChange` cross-broker observer 제거.
+        // 두 status item 의 동작은 독립적이어야 한다는 사용자 요구사항.
     }
 
     func applicationWillTerminate(_ notification: Notification) {
@@ -267,6 +255,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         store: UsageStore,
         statusController: StatusItemControlling)
     {
+        // 1.5.4: 1.5.2 / 1.5.3 에서 추가했던 cross-broker (Companion stop/start →
+        // statusController.requestVisibilityRecovery) 제거. 두 status item 이 독립적으로
+        // 동작해야 한다는 사용자 요구사항 반영. macOS status bar 의 재배치는 어차피
+        // 일어나지만 우리가 강제 recovery 발화시켜 destructive recreate 를 호출하는 게
+        // false-positive loop 의 원인이었음. 자연스러운 macOS 동작에 맡기고 wake observer
+        // + 30초 heartbeat 가 진짜 evict 만 잡도록 함.
         let updateController: @MainActor () -> Void = { [weak self] in
             guard let self else { return }
             if settings.companionEnabled {
@@ -285,10 +279,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     controller.start()
                     self.companionController = controller
                     self.companionMenuBuilder = builderRef
-                    // Companion 의 새 NSStatusItem 추가가 macOS 의 status bar 재배치를
-                    // 유발 → 이미 evict 상태였던 사용량 pill 의 invisible 상태가 가시화
-                    // 되는 케이스 있음. 즉시 visibility 복구 요청.
-                    self.statusController?.requestVisibilityRecovery(reason: "companion-start")
                 } else {
                     self.companionController?.character = settings.companionCharacter
                     self.companionController?.provider = settings.companionProvider
@@ -297,8 +287,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self.companionController?.stop()
                 self.companionController = nil
                 self.companionMenuBuilder = nil
-                // Companion 의 NSStatusItem 제거도 동일하게 status bar 재배치 유발.
-                self.statusController?.requestVisibilityRecovery(reason: "companion-stop")
             }
         }
         updateController()
