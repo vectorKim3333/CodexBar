@@ -24,6 +24,9 @@ final class CompanionStatusItemController {
     /// 사용자 OFF 와 macOS evict 를 구분하는 데 사용 — `false` 면 visibility 강제 복구
     /// 안 함. AppDelegate 가 `setVisible(_:)` 로 set.
     private var userEnabled: Bool = true
+    /// 1.7.2: stuck 진입 timestamp. `isStuckWhileUserEnabled()` 호출 시 set/clear.
+    /// 자동 process restart escalation 판단에 사용.
+    private var stuckSince: Date?
 
     // Companion-owned 5-minute ring buffer
     private var samples: [PlanUtilizationHistoryEntry] = []
@@ -136,9 +139,25 @@ final class CompanionStatusItemController {
 
     /// 1.7.1: 외부 (AppDelegate) 에서 process restart escalation 시 호출.
     /// userEnabled=true 인데 stuck 상태면 true. 사용자 OFF 한 케이스는 stuck 아님.
+    /// 1.7.2: stuck 진입 시점 timestamp 추적 → `stuckDuration()` 으로 자동 restart 판단.
     func isStuckWhileUserEnabled() -> Bool {
-        guard self.userEnabled else { return false }
-        return !self.isStatusItemHealthy()
+        guard self.userEnabled else {
+            self.stuckSince = nil
+            return false
+        }
+        let unhealthy = !self.isStatusItemHealthy()
+        if unhealthy {
+            if self.stuckSince == nil { self.stuckSince = Date() }
+        } else {
+            self.stuckSince = nil
+        }
+        return unhealthy
+    }
+
+    /// stuck 상태가 시작된 시점부터의 경과 시간. nil 이면 정상.
+    func stuckDuration() -> TimeInterval? {
+        guard let since = self.stuckSince else { return nil }
+        return Date().timeIntervalSince(since)
     }
 
     /// statusItem 을 통째로 새로 생성. character/provider/userEnabled 상태는 보존.

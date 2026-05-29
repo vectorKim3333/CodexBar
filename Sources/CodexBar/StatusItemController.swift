@@ -417,6 +417,9 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
                 self.updateIcons()
                 self.recoverStaleProviders()
                 self.recoverInvisibleOrBlockedStatusItemsIfNeeded(reason: "heartbeat")
+                // 1.7.2: 자동 복구가 2분 이상 못 풀고 있으면 자동 process restart escalation.
+                // 사용자가 자리 비웠다 돌아왔을 때 manual button 누를 필요 없이 자동 복구 보장.
+                (NSApp.delegate as? AppDelegate)?.autoRestartIfProlongedStuck()
             }
         }
     }
@@ -516,6 +519,21 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
             guard let item = self.statusItems[provider] else { return true }
             let snapshot = MenuBarVisibilityWatcher.visibilitySnapshot(item)
             if MenuBarVisibilityWatcher.isBlockedSnapshot(snapshot: snapshot) {
+                return true
+            }
+        }
+        return false
+    }
+
+    /// 1.7.2: enabled provider 중 stuck 상태가 N초 이상 지속된 게 있으면 true.
+    /// `providerBlockedSince` 가 `recoverInvisibleOrBlockedStatusItemsIfNeeded` 안에서
+    /// heartbeat 마다 update 되므로 정확한 stuck 지속 시간 추적 가능.
+    func hasAnyEnabledStuckLongerThan(seconds: TimeInterval) -> Bool {
+        let now = Date()
+        let enabledForDisplay = Set(self.store.enabledProvidersForDisplay())
+        for (provider, since) in self.providerBlockedSince {
+            guard enabledForDisplay.contains(provider) else { continue }
+            if now.timeIntervalSince(since) > seconds {
                 return true
             }
         }

@@ -227,9 +227,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// 1.7.0: ClCoBar process 자체를 재시작. 새 process 가 NSStatusBar 에 다시 register
     /// 하면서 OS-level stuck 완전 해소. 자동 recovery + manual button 도 못 풀리는
-    /// 최종 escape — 사용자가 alert 에서 동의해야 발화.
+    /// 최종 escape — 사용자가 alert 에서 동의해야 발화 (또는 1.7.2 부터 자동 escalation).
     @MainActor
-    private func relaunchApp() {
+    func relaunchApp() {
         let bundleURL = Bundle.main.bundleURL
         let task = Process()
         task.launchPath = "/usr/bin/open"
@@ -238,6 +238,40 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // 새 process 가 launch 할 시간을 200ms 정도 주고 종료.
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
             exit(0)
+        }
+    }
+
+    /// 1.7.2: heartbeat 가 호출. 자동 process restart escalation.
+    /// 조건:
+    ///   - 사용량 pill 또는 Companion 중 하나라도 stuck 이 2분 이상 지속
+    ///   - 이전 자동 restart 후 1시간 cooldown 경과
+    /// 둘 다 만족하면 시스템 알림 post 후 즉시 process restart.
+    /// 사용자가 자리 비웠다 돌아왔을 때 manual button 누를 필요 없이 자동 복구 보장.
+    @MainActor
+    func autoRestartIfProlongedStuck() {
+        let stuckThreshold: TimeInterval = 120  // 2분
+        let cooldown: TimeInterval = 3600       // 1시간
+
+        let defaults = UserDefaults.standard
+        let lastRestart = defaults.double(forKey: "menubar.autoRestart.lastAt")
+        let now = Date().timeIntervalSince1970
+        guard now - lastRestart > cooldown else { return }
+
+        let statusStuck = (self.statusController as? StatusItemController)?
+            .hasAnyEnabledStuckLongerThan(seconds: stuckThreshold) ?? false
+        let companionStuckLong = (self.companionController?.stuckDuration() ?? 0) > stuckThreshold
+        guard statusStuck || companionStuckLong else { return }
+
+        // Restart 기록 + 사용자에게 시스템 알림.
+        defaults.set(now, forKey: "menubar.autoRestart.lastAt")
+        AppNotifications.shared.post(
+            idPrefix: "menubar-auto-restart",
+            title: L("menubar.restart.auto.title"),
+            body: L("menubar.restart.auto.body"))
+        // 알림이 표시될 시간 짧게 주고 restart.
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(1))
+            self?.relaunchApp()
         }
     }
 
