@@ -358,26 +358,11 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
             self.store.isRefreshing = false
             self.store.refreshingProviders.removeAll()
             self.updateVisibility()
-            // macOS 가 장시간 deep sleep 중 NSStatusItem 의 window 를 evict 하는 경우,
-            // updateVisibility() 의 isVisible 토글만으론 안 보이는 메뉴바를 복구하지 못한다.
-            // 1.5.2 부터 cascade: 1.5s + 5s + 15s 세 번 검증 — 장시간 sleep 후 wake
-            // 시점에 macOS 가 status bar 재배치하는 시간이 길어 단발 1.5초 체크만으론
-            // 못 잡는 케이스 있었음.
+            // 1.7.0: 1.5.2 의 5s + 15s cascade 제거. 15s heartbeat 가 어차피 그 시점 cover.
+            // 사용자가 wake 후 30초 이상 stuck 이면 60s guidance alert + manual recover
+            // button + (최종) process restart escape 가 있음. cascade 단순화.
             self.scheduleWakeStatusItemVisibilityCheck()
-            self.scheduleCascadeWakeRecovery()
             await self.store.refresh()
-        }
-    }
-
-    /// 장시간 deep sleep 후 wake 에서 1.5s 단발 검증으론 NSStatusItem evict 가 못 잡히는
-    /// 케이스 대응. 5초 / 15초 시점에 한 번씩 더 visibility recovery 발화.
-    /// `recoverInvisibleOrBlockedStatusItemsIfNeeded` 는 idempotent 라 중복 호출 안전.
-    private func scheduleCascadeWakeRecovery() {
-        Task { @MainActor [weak self] in
-            try? await Task.sleep(for: .seconds(5))
-            self?.recoverInvisibleOrBlockedStatusItemsIfNeeded(reason: "wake-cascade-5s")
-            try? await Task.sleep(for: .seconds(10))
-            self?.recoverInvisibleOrBlockedStatusItemsIfNeeded(reason: "wake-cascade-15s")
         }
     }
 
@@ -521,6 +506,20 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
         for provider in blockedProviders {
             self.recreateProviderStatusItem(for: provider)
         }
+    }
+
+    /// 1.7.0: enabled provider 중 macOS hide / stuck 상태인 게 하나라도 있으면 true.
+    /// `forceRecoverAllMenuBarItems` escalation 의 1초 후 health check 용.
+    func hasAnyBlockedEnabledStatusItem() -> Bool {
+        let enabledForDisplay = Set(self.store.enabledProvidersForDisplay())
+        for provider in enabledForDisplay {
+            guard let item = self.statusItems[provider] else { return true }
+            let snapshot = MenuBarVisibilityWatcher.visibilitySnapshot(item)
+            if MenuBarVisibilityWatcher.isBlockedSnapshot(snapshot: snapshot) {
+                return true
+            }
+        }
+        return false
     }
 
     /// detection 우회. 모든 enabled provider 의 NSStatusItem 을 강제로 단일 단위 재생성.
@@ -778,13 +777,10 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
             self.refreshOpenMenusForStructureChange()
         }
         self.refreshNewlyEnabledProvidersIfNeeded()
-        // 1.5.8: 사용자 토글 시 즉시 health check + 필요 시 단일 provider 재생성.
-        // 1.5.7 까진 토글 ON 시 `isVisible=true` 만 set 하고 instance 의 unhealthy
-        // (image nil / window 깨짐) 상태는 그대로 유지되어 사용자가 토글 OFF→ON 해도
-        // 사용량 pill 복구 안 되던 문제. 1.5.7 의 `isBlockedSnapshot.hasImage` 검증 +
-        // 단일 provider recreate 로 false-positive 없음 (1.5.3 cross-broker 와 달리
-        // self-recovery 라 다른 status item 안 건드림).
-        self.recoverInvisibleOrBlockedStatusItemsIfNeeded(reason: "settings-change-\(reason)")
+        // 1.7.0: 1.5.8 의 self-recovery 호출 제거. heartbeat (15s) 가 어차피 unhealthy
+        // status item 자동 복구. 사용자가 즉시 복구 원하면 manual recover 버튼 사용
+        // (1.6.0) — heartbeat 도 manual button 도 못 풀리는 진짜 stuck 은 process
+        // restart 로 해결 (1.7.0). settings 변경 자체는 evict 안 일으키므로 recovery 불필요.
     }
 
     /// 토글 OFF → ON 으로 새로 enabled 된 provider 가 있으면 즉시 fetch 를 트리거한다.

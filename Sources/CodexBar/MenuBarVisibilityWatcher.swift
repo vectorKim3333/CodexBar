@@ -261,23 +261,20 @@ extension StatusItemController {
     }
 
     private func scheduleScreenChangeStatusItemVisibilityCheck(
-        previousScreenCount: Int,
-        currentScreenCount: Int)
+        previousScreenCount _: Int,
+        currentScreenCount _: Int)
     {
         guard !SettingsStore.isRunningTests else { return }
         self.screenChangeVisibilityTask?.cancel()
         self.screenChangeVisibilityTask = Task { @MainActor [weak self] in
-            // 1.5.10: screen change cascade 의 각 시점에서 **detection 우회 강제 recreate**.
-            // macOS overflow hide 는 button.window 살아있고 width 만 0 인 케이스가 있어
-            // `isBlockedSnapshot` 만으론 못 잡힘. 사용자가 모니터 변경 시점이라 instance
-            // 재생성으로 인한 짧은 깜빡임은 user-perceived 자연스러움.
+            // 1.5.10: screen change 시점에 detection 우회 강제 recreate. macOS overflow
+            // hide 는 button.window 살아있고 width 만 0 인 케이스 있어 detection 만으론
+            // 못 잡힘. 사용자가 모니터 변경 시점이라 instance 재생성 깜빡임 자연스러움.
+            // 1.7.0: cascade (3s + 10s) 제거. 15s heartbeat 가 후속 cover, 정말 안 풀리면
+            // 사용자가 manual recover button → process restart.
             try? await Task.sleep(for: .milliseconds(750))
             self?.pendingScreenChangePreviousCount = nil
-            self?.forceRecreateAllEnabledProviders(reason: "screen-change-750ms")
-            try? await Task.sleep(for: .seconds(3))
-            self?.forceRecreateAllEnabledProviders(reason: "screen-change-3s")
-            try? await Task.sleep(for: .seconds(7))
-            self?.forceRecreateAllEnabledProviders(reason: "screen-change-10s")
+            self?.forceRecreateAllEnabledProviders(reason: "screen-change")
         }
     }
 

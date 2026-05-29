@@ -261,21 +261,20 @@ final class CompanionStatusItemController {
         let workspace = NSWorkspace.shared.notificationCenter
         let app = NotificationCenter.default
         // System wake (sleep → wake): macOS 가 status item 을 evict 한 가능성이 가장 큼.
+        // 1.7.0: wake / screen change cascade 단순화 (이전 1.5s + 5s + 15s, 750ms + 3s + 10s).
+        // 30초 observation tick 안에서 자동 recovery 호출되고, 그래도 안 풀리는 진짜 stuck
+        // 은 사용자가 manual recover button → process restart 로 escape. 자동 cascade 복잡도
+        // 줄임.
         self.wakeObserver = workspace.addObserver(
             forName: NSWorkspace.didWakeNotification,
             object: nil,
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
-                // 1.5.6: 장시간 sleep 후 wake 에선 macOS 가 NSStatusItem 의 button image /
-                // window 를 evict 시켜 표시 안 되는 stuck 상태가 됨. recover... 의 보수적
-                // 체크는 못 잡는 케이스가 많아서 1.5s 대기 후 무조건 strong recovery.
                 try? await Task.sleep(for: .seconds(Self.wakeCheckDelay))
                 self?.strongWakeRecovery()
             }
         }
-        // Display 만 슬립에서 깨어난 경우 (사용자가 화면만 끔, lid open / monitor wake).
-        // 1.5.6 사용자 보고: display sleep 후 캐릭터만 사라지는 케이스 빈번 → strong recovery.
         self.screensWakeObserver = workspace.addObserver(
             forName: NSWorkspace.screensDidWakeNotification,
             object: nil,
@@ -286,7 +285,6 @@ final class CompanionStatusItemController {
                 self?.strongWakeRecovery()
             }
         }
-        // 사용자가 ClCoBar 에 focus 를 돌려준 순간 — 클릭 직전에 마지막 sanity check.
         self.appActiveObserver = app.addObserver(
             forName: NSApplication.didBecomeActiveNotification,
             object: nil,
@@ -296,8 +294,6 @@ final class CompanionStatusItemController {
                 self?.recoverIfMissingOrBlocked()
             }
         }
-        // 1.5.9: 외장 모니터 연결/해제 시점에 macOS status bar overflow 로 캐릭터가
-        // 잘려서 안 보이게 되는 케이스 대응. 750ms + 3s + 10s cascade strong recovery.
         self.screenParamsObserver = app.addObserver(
             forName: NSApplication.didChangeScreenParametersNotification,
             object: nil,
@@ -305,10 +301,6 @@ final class CompanionStatusItemController {
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
                 try? await Task.sleep(for: .milliseconds(750))
-                self?.strongWakeRecovery()
-                try? await Task.sleep(for: .seconds(3))
-                self?.strongWakeRecovery()
-                try? await Task.sleep(for: .seconds(7))
                 self?.strongWakeRecovery()
             }
         }

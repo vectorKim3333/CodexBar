@@ -184,19 +184,57 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     /// 1.6.0: 사용자가 환경설정 / 메뉴의 "메뉴바 아이콘 복구" 버튼을 클릭했을 때 호출.
-    /// 모든 enabled status item (사용량 pill + Companion) 을 사용자가 설정한 상태로
-    /// 강제 재생성. macOS 의 알 수 없는 hide stuck 상태의 최종 escape hatch.
+    /// 1.7.0: 1초 후 health check 추가 — 단일 recreate 로 못 풀리는 OS-level stuck 케이스
+    /// 에 사용자에게 process restart 옵션 제공. 우리 코드가 새 NSStatusItem 만들어도
+    /// macOS 가 거부하는 상태는 process 재시작이 NSStatusBar 의 registration 을
+    /// 완전히 reset 하므로 가장 확실한 escape.
     @MainActor
     func forceRecoverAllMenuBarItems() {
         if let controller = self.statusController as? StatusItemController {
             controller.forceRecreateAllEnabledProviders(reason: "user-manual-recover")
         }
         self.companionController?.forceRecreateIfEnabled()
-        // 토스트 알림으로 사용자에게 동작 확인.
         AppNotifications.shared.post(
             idPrefix: "menubar-recover",
             title: L("menubar.recover.toast.title"),
             body: L("menubar.recover.toast.body"))
+        // Escalation: 1초 후 still unhealthy 면 process restart alert.
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(1))
+            self?.promptRestartIfRecoveryFailed()
+        }
+    }
+
+    @MainActor
+    private func promptRestartIfRecoveryFailed() {
+        guard let controller = self.statusController as? StatusItemController else { return }
+        guard controller.hasAnyBlockedEnabledStatusItem() else { return }
+        let alert = NSAlert()
+        alert.messageText = L("menubar.recover.restart.title")
+        alert.informativeText = L("menubar.recover.restart.body")
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: L("menubar.recover.restart.confirm"))
+        alert.addButton(withTitle: L("menubar.recover.restart.cancel"))
+        NSApp.activate(ignoringOtherApps: true)
+        if alert.runModal() == .alertFirstButtonReturn {
+            self.relaunchApp()
+        }
+    }
+
+    /// 1.7.0: ClCoBar process 자체를 재시작. 새 process 가 NSStatusBar 에 다시 register
+    /// 하면서 OS-level stuck 완전 해소. 자동 recovery + manual button 도 못 풀리는
+    /// 최종 escape — 사용자가 alert 에서 동의해야 발화.
+    @MainActor
+    private func relaunchApp() {
+        let bundleURL = Bundle.main.bundleURL
+        let task = Process()
+        task.launchPath = "/usr/bin/open"
+        task.arguments = ["-n", "-a", bundleURL.path]
+        try? task.run()
+        // 새 process 가 launch 할 시간을 200ms 정도 주고 종료.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            exit(0)
+        }
     }
 
     /// Use the classic (non-Liquid Glass) app icon on macOS versions before 26.

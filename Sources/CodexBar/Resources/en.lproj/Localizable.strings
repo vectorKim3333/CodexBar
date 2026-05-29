@@ -521,6 +521,10 @@
 "menubar.recover.menu_item" = "Recover menu bar icons";
 "menubar.recover.toast.title" = "Menu bar recovered";
 "menubar.recover.toast.body" = "Character and usage icons restored with current settings.";
+"menubar.recover.restart.title" = "Menu bar recovery failed";
+"menubar.recover.restart.body" = "macOS-level stuck that simple recovery can't resolve. Restarting the app will definitely fix it. Restart now?";
+"menubar.recover.restart.confirm" = "Restart app";
+"menubar.recover.restart.cancel" = "Cancel";
 "companion.character.cat" = "Cat";
 "companion.character.hare" = "Hare";
 "companion.character.tortoise" = "Tortoise";
