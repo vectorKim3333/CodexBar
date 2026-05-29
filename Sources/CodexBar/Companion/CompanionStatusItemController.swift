@@ -128,7 +128,17 @@ final class CompanionStatusItemController {
               image.size.width > 0,
               image.size.height > 0
         else { return false }
+        // 1.7.1: image 정상 set 됐는데도 button.frame.width=0 = macOS overflow hide.
+        // StatusItemController 의 `isBlockedSnapshot` 과 같은 detection.
+        if button.frame.size.width <= 0 { return false }
         return true
+    }
+
+    /// 1.7.1: 외부 (AppDelegate) 에서 process restart escalation 시 호출.
+    /// userEnabled=true 인데 stuck 상태면 true. 사용자 OFF 한 케이스는 stuck 아님.
+    func isStuckWhileUserEnabled() -> Bool {
+        guard self.userEnabled else { return false }
+        return !self.isStatusItemHealthy()
     }
 
     /// statusItem 을 통째로 새로 생성. character/provider/userEnabled 상태는 보존.

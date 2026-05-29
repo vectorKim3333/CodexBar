@@ -207,8 +207,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     private func promptRestartIfRecoveryFailed() {
-        guard let controller = self.statusController as? StatusItemController else { return }
-        guard controller.hasAnyBlockedEnabledStatusItem() else { return }
+        // 1.7.1: 사용량 pill + Companion 둘 다 검증. 1.7.0 까진 사용량 pill 만 봐서
+        // 캐릭터만 stuck 인 케이스에 restart alert 가 안 떴음 — 사용자 보고 root cause.
+        let statusStuck = (self.statusController as? StatusItemController)?
+            .hasAnyBlockedEnabledStatusItem() ?? false
+        let companionStuck = self.companionController?.isStuckWhileUserEnabled() ?? false
+        guard statusStuck || companionStuck else { return }
         let alert = NSAlert()
         alert.messageText = L("menubar.recover.restart.title")
         alert.informativeText = L("menubar.recover.restart.body")
