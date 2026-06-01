@@ -248,6 +248,16 @@ enum CostUsagePricing {
             outputCostPerTokenAboveThreshold: nil,
             cacheCreationInputCostPerTokenAboveThreshold: nil,
             cacheReadInputCostPerTokenAboveThreshold: nil),
+        "claude-opus-4-8": ClaudePricing(
+            inputCostPerToken: 5e-6,
+            outputCostPerToken: 2.5e-5,
+            cacheCreationInputCostPerToken: 6.25e-6,
+            cacheReadInputCostPerToken: 5e-7,
+            thresholdTokens: nil,
+            inputCostPerTokenAboveThreshold: nil,
+            outputCostPerTokenAboveThreshold: nil,
+            cacheCreationInputCostPerTokenAboveThreshold: nil,
+            cacheReadInputCostPerTokenAboveThreshold: nil),
         "claude-sonnet-4-5": ClaudePricing(
             inputCostPerToken: 3e-6,
             outputCostPerToken: 1.5e-5,
@@ -496,13 +506,25 @@ enum CostUsagePricing {
         }
 
         let key = self.normalizeClaudeModel(model)
-        guard let pricing = self.claude[key] else { return nil }
+        let resolved = self.claude[key] ?? self.claudeFamilyFallbackPricing(for: key)
+        guard let pricing = resolved else { return nil }
         return self.claudeCostUSD(
             pricing: pricing,
             inputTokens: inputTokens,
             cacheReadInputTokens: cacheReadInputTokens,
             cacheCreationInputTokens: cacheCreationInputTokens,
             outputTokens: outputTokens)
+    }
+
+    /// 가격표에 정확히 없는 (대개 새로 나온) Claude 모델용 family fallback.
+    /// 신규 모델 출시 때마다 가격표가 없으면 비용이 0 으로 잡혀 cost 기반 표시가 틀어진다
+    /// (예: opus-4-8 출시 직후 cost=$0 → Opus 가 "주요 모델"(=최대 비용)에서 누락).
+    /// 해당 family 의 최신 알려진 단가로 대체해 0 비용을 방지한다.
+    private static func claudeFamilyFallbackPricing(for normalizedKey: String) -> ClaudePricing? {
+        if normalizedKey.contains("opus") { return self.claude["claude-opus-4-8"] }
+        if normalizedKey.contains("sonnet") { return self.claude["claude-sonnet-4-6"] }
+        if normalizedKey.contains("haiku") { return self.claude["claude-haiku-4-5"] }
+        return nil
     }
 
     private static func claudeCostUSD(
