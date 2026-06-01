@@ -71,6 +71,37 @@ enum MenuBarVisibilityWatcher {
             hasImage: hasImage)
     }
 
+    /// 1.8.1 진단: NSStatusItem 의 전체 geometry 를 한 줄로. notch overflow 가설 검증용 —
+    /// window/button frame 의 x 위치, 소속 screen, notch safe-area / aux area 까지 찍어서
+    /// "isVisible=true 인데 실제론 안 보이는" 케이스가 폭 부족(overflow) 인지 evict 인지
+    /// 파일 로그로 사후 판별 가능하게 한다.
+    @MainActor
+    static func diagnosticDescription(_ item: NSStatusItem) -> String {
+        let button = item.button
+        let window = button?.window
+        let screen = window?.screen
+        let image = button?.image
+        func r(_ rect: CGRect?) -> String {
+            guard let rect else { return "nil" }
+            return String(
+                format: "(x%.0f y%.0f w%.0f h%.0f)",
+                rect.origin.x, rect.origin.y, rect.size.width, rect.size.height)
+        }
+        var notch = "screen=nil"
+        if let screen {
+            var aux = ""
+            if #available(macOS 12.0, *) {
+                aux = " auxTL=\(r(screen.auxiliaryTopLeftArea)) auxTR=\(r(screen.auxiliaryTopRightArea))"
+                aux += " safeTop=\(String(format: "%.0f", screen.safeAreaInsets.top))"
+            }
+            notch = "screen=\(screen.localizedName) frame=\(r(screen.frame))\(aux)"
+        }
+        return "visible=\(item.isVisible) btn=\(button != nil) win=\(window != nil)"
+            + " winFrame=\(r(window?.frame)) btnFrame=\(r(button?.frame))"
+            + " img=\(image.map { String(format: "%.0fx%.0f", $0.size.width, $0.size.height) } ?? "nil")"
+            + " \(notch)"
+    }
+
     @MainActor
     private static func isCurrentScreen(_ screen: NSScreen) -> Bool {
         let screenNumber = self.screenNumber(screen)
@@ -106,6 +137,48 @@ enum MenuBarVisibilityWatcher {
             return true
         }
         return false
+    }
+
+    /// 1.8.0: 복구 행동 결정. `isBlockedSnapshot` 의 단일 boolean 을 4단계로 분리한다.
+    ///
+    /// 핵심 통찰: `button.window / screen` 이 살아있는데 width=0 / image 깨짐인 경우는
+    /// macOS 의 overflow-hide / redraw 누락이지 진짜 evict 가 아니다. 이건 `removeStatusItem`
+    /// 없이 **image 재설정 + isVisible 재확정** 만으로 풀린다 (비파괴). 진짜 evict
+    /// (`window / screen == nil`) 만 인스턴스 recreate 가 불가피하다.
+    ///
+    /// 1.5.5~1.7.2 의 root cause 는 모든 복구 경로가 overflow-hide 케이스에까지
+    /// `removeStatusItem` + 재생성을 썼고, 두 컨트롤러 (사용량 pill + Companion) 가 같은
+    /// 타이밍에 그걸 동시에 실행해 macOS status bar 의 add→remove→add race 를 매 wake /
+    /// screen-change 마다 일으킨 것. 그 race 가 한 status item 을 invisible 로 떨궜다.
+    /// recreate 를 진짜 evict 로 한정하고 나머지를 비파괴로 돌리면 race 트리거 자체가 사라진다.
+    enum RecoveryAction: Equatable {
+        /// 정상. 아무것도 안 함.
+        case none
+        /// `isVisible == false` 인데 사용자가 켜둠 (macOS 가 hide). 같은 인스턴스의
+        /// `isVisible = true` 토글만으로 복구 — add/remove race 없음.
+        case reassertVisible
+        /// `window` 는 살아있는데 width=0 / image 깨짐 (overflow-hide / redraw 누락).
+        /// image 재설정 + isVisible 재확정으로 비파괴 복구. `removeStatusItem` 금지.
+        case redraw
+        /// `window / screen / button` 자체가 nil = 진짜 evict. 인스턴스 recreate 불가피.
+        case recreate
+    }
+
+    /// 단일 status item snapshot 에 대한 복구 행동. caller 는 사용자가 켜둔
+    /// (enabled / userEnabled) provider 에 대해서만 호출해야 한다 — `.reassertVisible`
+    /// 은 "사용자가 켰는데 안 보임" 을 전제로 한다.
+    static func recoveryAction(snapshot: StatusItemVisibilitySnapshot) -> RecoveryAction {
+        guard snapshot.isVisible else { return .reassertVisible }
+        guard snapshot.hasButton else { return .recreate }
+        // window / screen 자체가 사라짐 = 진짜 evict. isVisible 토글 / redraw 로 못 풂.
+        if !snapshot.hasWindow || !snapshot.hasScreen || !snapshot.isOnCurrentScreen {
+            return .recreate
+        }
+        // window 는 살아있는데 image 깨짐 / width=0 = overflow-hide / redraw 누락. 비파괴.
+        if !snapshot.hasImage || snapshot.buttonWidth <= 0 {
+            return .redraw
+        }
+        return .none
     }
 
     static func hasBlockedVisibleSnapshots(_ snapshots: [StatusItemVisibilitySnapshot]) -> Bool {
@@ -247,64 +320,23 @@ extension StatusItemController {
             self.pendingScreenChangePreviousCount ?? self.lastKnownScreenCount,
             self.lastKnownScreenCount)
         let currentScreenCount = NSScreen.screens.count
-        self.pendingScreenChangePreviousCount = previousScreenCount
+        self.pendingScreenChangePreviousCount = nil
         self.lastKnownScreenCount = currentScreenCount
+        _ = previousScreenCount
         // 1.5.9: 외장 모니터 연결/해제 시점에 macOS 가 status bar overflow 처리하면서 일부
         // status item 을 hide 한 채 다시 안 돌려놓는 케이스 (사용자 보고: 32" 모니터 ↔ 맥북
-        // 내장 모니터 전환). image cache 즉시 invalidate — 다음 cascade 시점의 updateIcons
-        // 가 새 image 강제 그림.
+        // 내장 모니터 전환). image cache 즉시 invalidate — 복구 패스의 updateIcons 가 새
+        // image 강제 그림.
         self.lastAppliedMergedIconRenderSignature = nil
         self.lastAppliedProviderIconRenderSignatures.removeAll()
-        self.scheduleScreenChangeStatusItemVisibilityCheck(
-            previousScreenCount: previousScreenCount,
-            currentScreenCount: currentScreenCount)
-    }
-
-    private func scheduleScreenChangeStatusItemVisibilityCheck(
-        previousScreenCount _: Int,
-        currentScreenCount _: Int)
-    {
-        guard !SettingsStore.isRunningTests else { return }
-        self.screenChangeVisibilityTask?.cancel()
-        self.screenChangeVisibilityTask = Task { @MainActor [weak self] in
-            // 1.5.10: screen change 시점에 detection 우회 강제 recreate. macOS overflow
-            // hide 는 button.window 살아있고 width 만 0 인 케이스 있어 detection 만으론
-            // 못 잡힘. 사용자가 모니터 변경 시점이라 instance 재생성 깜빡임 자연스러움.
-            // 1.7.0: cascade (3s + 10s) 제거. 15s heartbeat 가 후속 cover, 정말 안 풀리면
-            // 사용자가 manual recover button → process restart.
-            try? await Task.sleep(for: .milliseconds(750))
-            self?.pendingScreenChangePreviousCount = nil
-            self?.forceRecreateAllEnabledProviders(reason: "screen-change")
-        }
+        self.logMenuBarDiagnostics(reason: "screen-change@event")
+        // 1.8.0: 무조건 강제 recreate (1.5.10) 대신 coalesced 비파괴-우선 복구. overflow-hide
+        // (window 살아있고 width=0) 는 image redraw 로 풀리고, 진짜 evict 만 recreate.
+        // Companion 은 자체적으로 더 늦은 1.4s 에 복구해 동시 removeStatusItem 을 피한다.
+        self.requestStatusItemRecovery(reason: "screen-change", delay: 0.75)
     }
 
     var startupVisibilityStatusItems: [NSStatusItem] {
         [self.statusItem] + Array(self.statusItems.values)
-    }
-
-    /// macOS 가 장시간 deep sleep 중 NSStatusItem 의 window/screen 을 evict 하면
-    /// 깨어난 시점에 `isVisible=true` 인데 `button.window / screen` 이 nil 인 blocked
-    /// 상태가 된다. `updateVisibility()` 는 `isVisible` 토글만 해서 이걸 못 고친다.
-    /// startup check 는 launch 후 10초까지만 유효(`startupFreshnessInterval`),
-    /// `screenParametersDidChange` 는 lid-only wake 에선 안 터지는 경우가 있어
-    /// wake 전용 복구 경로가 필요하다. AppKit 이 메뉴바를 다시 그릴 시간을 준 뒤
-    /// blocked 면 `recreateStatusItemsForVisibilityRecovery()` 로 statusBar 에서
-    /// 통째로 재등록.
-    func scheduleWakeStatusItemVisibilityCheck() {
-        guard !SettingsStore.isRunningTests else { return }
-        Task { @MainActor [weak self] in
-            try? await Task.sleep(for: .seconds(MenuBarVisibilityWatcher.wakeCheckDelay))
-            self?.checkWakeStatusItemVisibility()
-        }
-    }
-
-    private func checkWakeStatusItemVisibility() {
-        let items = self.startupVisibilityStatusItems
-        let snapshots = MenuBarVisibilityWatcher.visibilitySnapshots(items)
-        guard MenuBarVisibilityWatcher.hasAnyBlockedVisibleSnapshot(snapshots) else { return }
-        self.menuLogger.error(
-            "Status items blocked after system wake; recreating",
-            metadata: ["snapshots": snapshots.map(\.description).joined(separator: " | ")])
-        self.recreateStatusItemsForVisibilityRecovery()
     }
 }

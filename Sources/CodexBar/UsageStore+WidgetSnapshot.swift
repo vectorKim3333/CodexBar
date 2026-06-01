@@ -5,8 +5,20 @@ import WidgetKit
 #endif
 
 extension UsageStore {
+    /// 1.8.3: 마지막 사용량 snapshot 을 warm-start 캐시에 비동기 저장. 성공한 fetch 마다
+    /// 호출 — 다음 cold start (디스플레이 변경 자동 재시작) 에서 즉시 복원해 빈 pill /
+    /// "인증 만료" 문구 flash 제거.
+    func saveUsageSnapshotCache() {
+        let snapshots = self.snapshots
+        Task.detached(priority: .utility) {
+            UsageSnapshotCache.save(snapshots)
+        }
+    }
+
     func persistWidgetSnapshot(reason: String) {
         let snapshot = self.makeWidgetSnapshot()
+        // 1.8.3: warm-start 캐시도 같은 시점에 보존 (마지막 사용량 snapshot).
+        let usageSnapshots = self.snapshots
         let previousTask = self.widgetSnapshotPersistTask
         self.widgetSnapshotPersistTask = Task { @MainActor in
             _ = await previousTask?.result
@@ -18,6 +30,7 @@ extension UsageStore {
 
             await Task.detached(priority: .utility) {
                 WidgetSnapshotStore.save(snapshot)
+                UsageSnapshotCache.save(usageSnapshots)
             }.value
             #if canImport(WidgetKit)
             WidgetCenter.shared.reloadAllTimelines()

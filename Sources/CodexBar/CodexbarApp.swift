@@ -128,6 +128,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var companionController: CompanionStatusItemController?
     private var companionMenuBuilder: CompanionMenuBuilder?
     private var companionObservationTask: Task<Void, Never>?
+    /// 1.8.2: 마지막으로 관측한 디스플레이(NSScreenNumber) 집합. 디스플레이가 실제로
+    /// 추가/제거됐는지 판정 — 해상도/배치만 바뀐 spurious screenParams 알림은 무시.
+    private var lastDisplaySet: Set<UInt32> = []
+    private var displayChangeRelaunchTask: Task<Void, Never>?
+    /// 디스플레이 구성이 바뀐 뒤 macOS 가 메뉴바를 다시 배치할 시간을 주고 재시작.
+    private static let displayChangeSettleDelay: TimeInterval = 2.5
+    /// 재시작 loop / 도킹 중 연속 알림 폭주 방지용 최소 간격.
+    private static let displayChangeRestartCooldown: TimeInterval = 15
     private var store: UsageStore?
     private var settings: SettingsStore?
     private var account: AccountInfo?
@@ -148,9 +156,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // 파일 로그는 기본 비활성 (`debugFileLoggingEnabled`, 기본 false) — SettingsStore 가
+        // 설정값대로 켠다. 강제 활성화하지 않으므로 일반 사용자에겐 로그 파일이 생기지 않는다.
+        // 메뉴바 진단이 다시 필요하면:
+        //   defaults write com.steipete.codexbar debugFileLoggingEnabled -bool true
+        // 후 앱 재시작 → 재현 → ~/Library/Logs/CodexBar/CodexBar.log 의 MENUBAR-DIAG 확인.
         AppNotifications.shared.requestAuthorizationOnStartup()
         self.ensureStatusController()
         self.setupCompanionControllerIfPossible()
+        // 1.8.2: 디스플레이 구성 변경 시 메뉴바 항목 재배치를 위한 자동 재시작 감시.
+        // baseline 을 현재 화면 집합으로 초기화 → 첫 실제 변경부터 감지 (launch 직후
+        // 자기 자신을 재시작하는 loop 방지).
+        self.lastDisplaySet = Self.currentDisplaySet()
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(self.handleDisplayConfigurationChange),
+            name: NSApplication.didChangeScreenParametersNotification,
+            object: nil)
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(self.handleDisplayConfigurationChange),
+            name: NSWorkspace.didWakeNotification,
+            object: nil)
         UpdateChecker.shared.start()
         KeyboardShortcuts.onKeyUp(for: .openMenu) { [weak self] in
             Task { @MainActor [weak self] in
@@ -183,46 +210,96 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         await statusController.runLoginFlowFromSettings(provider: provider)
     }
 
-    /// 1.6.0: 사용자가 환경설정 / 메뉴의 "메뉴바 아이콘 복구" 버튼을 클릭했을 때 호출.
-    /// 1.7.0: 1초 후 health check 추가 — 단일 recreate 로 못 풀리는 OS-level stuck 케이스
-    /// 에 사용자에게 process restart 옵션 제공. 우리 코드가 새 NSStatusItem 만들어도
-    /// macOS 가 거부하는 상태는 process 재시작이 NSStatusBar 의 registration 을
-    /// 완전히 reset 하므로 가장 확실한 escape.
+    /// 사용자가 "메뉴바 아이콘 복구" 버튼을 클릭했을 때 호출 (환경설정 / Provider 메뉴 /
+    /// Companion 메뉴 3곳).
+    /// 1.8.2: **무조건 process 재시작.** in-process recreate 는 macOS 다중 디스플레이
+    /// orphan / hidden 상태를 못 푸는 게 실측으로 확정됨 — 재생성해도 `screen=nil` 로
+    /// 남고, "정상으로 보이는데 숨겨진" 모드는 detection 자체가 불가능. 새 프로세스가
+    /// NSStatusBar 에 깨끗이 재등록하는 것만 확실한 복구. detection 없이 항상 재시작.
     @MainActor
     func forceRecoverAllMenuBarItems() {
-        if let controller = self.statusController as? StatusItemController {
-            controller.forceRecreateAllEnabledProviders(reason: "user-manual-recover")
-        }
-        self.companionController?.forceRecreateIfEnabled()
         AppNotifications.shared.post(
             idPrefix: "menubar-recover",
             title: L("menubar.recover.toast.title"),
             body: L("menubar.recover.toast.body"))
-        // Escalation: 1초 후 still unhealthy 면 process restart alert.
+        CodexBarLog.logger(LogCategories.app).error("Manual menu bar recovery; relaunching process")
+        // 토스트가 표시될 짧은 시간을 주고 재시작.
         Task { @MainActor [weak self] in
-            try? await Task.sleep(for: .seconds(1))
-            self?.promptRestartIfRecoveryFailed()
+            try? await Task.sleep(for: .milliseconds(500))
+            self?.relaunchApp()
+        }
+    }
+
+    private static func currentDisplaySet() -> Set<UInt32> {
+        Set(NSScreen.screens.compactMap {
+            ($0.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value
+        })
+    }
+
+    /// 1.8.2: 디스플레이가 실제로 추가/제거됐는지 판정 → 변경됐으면 정착 후 자동 재시작 예약.
+    /// screenParams 는 해상도/배치 변경 등으로도 자주 발화하므로 NSScreenNumber 집합
+    /// 비교로 진짜 구성 변화만 골라낸다. wake 도 같은 경로 (절전 중 외장 모니터 분리 후
+    /// 깨어남 등).
+    @MainActor
+    @objc private func handleDisplayConfigurationChange() {
+        let current = Self.currentDisplaySet()
+        guard current != self.lastDisplaySet else { return }
+        let previous = self.lastDisplaySet
+        self.lastDisplaySet = current
+        CodexBarLog.logger(LogCategories.app).error(
+            "Display set changed; scheduling relaunch",
+            metadata: ["from": "\(previous.count) displays", "to": "\(current.count) displays"])
+        self.scheduleDisplayChangeRelaunch()
+    }
+
+    @MainActor
+    private func scheduleDisplayChangeRelaunch() {
+        self.displayChangeRelaunchTask?.cancel()
+        self.displayChangeRelaunchTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(Self.displayChangeSettleDelay))
+            guard let self, !Task.isCancelled else { return }
+            self.relaunchForDisplayChangeIfSafe()
         }
     }
 
     @MainActor
-    private func promptRestartIfRecoveryFailed() {
-        // 1.7.1: 사용량 pill + Companion 둘 다 검증. 1.7.0 까진 사용량 pill 만 봐서
-        // 캐릭터만 stuck 인 케이스에 restart alert 가 안 떴음 — 사용자 보고 root cause.
-        let statusStuck = (self.statusController as? StatusItemController)?
+    private func relaunchForDisplayChangeIfSafe() {
+        let defaults = UserDefaults.standard
+        let now = Date().timeIntervalSince1970
+        let last = defaults.double(forKey: "menubar.displayChangeRestart.lastAt")
+        guard now - last > Self.displayChangeRestartCooldown else { return }
+
+        // 1.8.5: 디스플레이가 바뀌었어도 아이콘이 실제로 사라지거나 깨지지 않았으면 재시작하지
+        // 않는다. ad-hoc 서명 앱은 재시작마다 macOS TCC "다른 앱의 데이터에 접근" 프롬프트가
+        // 다시 뜨므로 (자격증명 접근 + 비영구 grant), 무조건 재시작은 도킹/언도킹마다 프롬프트를
+        // 유발했다 (사용자 보고). 실제로 깨진 (감지 가능한 — screen=nil / window 없음 / width=0
+        // / image 깨짐) 경우에만 재시작해 프롬프트를 최소화한다. "정상으로 보이는데 숨겨진"
+        // 미감지 케이스는 사용자가 '메뉴바 아이콘 복구' 버튼 (항상 재시작) 으로 해결.
+        let pillBroken = (self.statusController as? StatusItemController)?
             .hasAnyBlockedEnabledStatusItem() ?? false
-        let companionStuck = self.companionController?.isStuckWhileUserEnabled() ?? false
-        guard statusStuck || companionStuck else { return }
-        let alert = NSAlert()
-        alert.messageText = L("menubar.recover.restart.title")
-        alert.informativeText = L("menubar.recover.restart.body")
-        alert.alertStyle = .warning
-        alert.addButton(withTitle: L("menubar.recover.restart.confirm"))
-        alert.addButton(withTitle: L("menubar.recover.restart.cancel"))
-        NSApp.activate(ignoringOtherApps: true)
-        if alert.runModal() == .alertFirstButtonReturn {
-            self.relaunchApp()
+        let companionBroken = self.companionController?.isStuckWhileUserEnabled() ?? false
+        guard pillBroken || companionBroken else {
+            CodexBarLog.logger(LogCategories.app).info(
+                "Display changed but menu bar items healthy; skip relaunch",
+                metadata: ["pillBroken": "\(pillBroken)", "companionBroken": "\(companionBroken)"])
+            return
         }
+
+        // 메뉴 열림 / 로그인 진행 중이면 사용자를 방해하지 않도록 잠시 미룬 뒤 재시도.
+        if !(self.statusController?.canSafelyRelaunch ?? true) {
+            self.displayChangeRelaunchTask?.cancel()
+            self.displayChangeRelaunchTask = Task { @MainActor [weak self] in
+                try? await Task.sleep(for: .seconds(5))
+                guard let self, !Task.isCancelled else { return }
+                self.relaunchForDisplayChangeIfSafe()
+            }
+            return
+        }
+        defaults.set(now, forKey: "menubar.displayChangeRestart.lastAt")
+        CodexBarLog.logger(LogCategories.app).error(
+            "Menu bar item broken after display change; relaunching to re-home",
+            metadata: ["pillBroken": "\(pillBroken)", "companionBroken": "\(companionBroken)"])
+        self.relaunchApp()
     }
 
     /// 1.7.0: ClCoBar process 자체를 재시작. 새 process 가 NSStatusBar 에 다시 register

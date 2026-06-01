@@ -496,23 +496,30 @@ public struct ClaudeUsageFetcher: ClaudeUsageFetching, Sendable {
         }
 
         private func makeAutoFetchPlan() async -> ClaudeFetchPlan {
-            let hasWebSession =
+            let hasOAuth = ClaudeOAuthPlanningAvailability.isAvailable(
+                runtime: self.fetcher.runtime,
+                sourceMode: .auto,
+                environment: self.fetcher.environment)
+            let hasCLI = ClaudeCLIResolver.isAvailable(environment: self.fetcher.environment)
+            // 1.8.4: 브라우저 쿠키 스캔(`hasSessionKey(browserDetection:)`)은 macOS Sequoia/
+            // Tahoe 의 "다른 앱 데이터 접근" TCC 프롬프트를 유발한다. manual header 는 문자열
+            // 파싱이라 안전하고, 브라우저 스캔은 Web 이 실제로 쓰일 수 있을 때만 (OAuth·CLI
+            // 둘 다 없거나 webExtras 켜짐). OAuth 사용자는 매 refresh 마다 안 긁힘.
+            let hasWebSession: Bool =
                 if let header = self.fetcher.manualCookieHeader {
                     ClaudeWebAPIFetcher.hasSessionKey(cookieHeader: header)
-                } else {
+                } else if self.fetcher.useWebExtras || (!hasOAuth && !hasCLI) {
                     ClaudeWebAPIFetcher.hasSessionKey(browserDetection: self.fetcher.browserDetection)
+                } else {
+                    false
                 }
-            let hasCLI = ClaudeCLIResolver.isAvailable(environment: self.fetcher.environment)
             return ClaudeSourcePlanner.resolve(input: ClaudeSourcePlanningInput(
                 runtime: self.fetcher.runtime,
                 selectedDataSource: .auto,
                 webExtrasEnabled: self.fetcher.useWebExtras,
                 hasWebSession: hasWebSession,
                 hasCLI: hasCLI,
-                hasOAuthCredentials: ClaudeOAuthPlanningAvailability.isAvailable(
-                    runtime: self.fetcher.runtime,
-                    sourceMode: .auto,
-                    environment: self.fetcher.environment)))
+                hasOAuthCredentials: hasOAuth))
         }
 
         private func logAutoPlan(_ plan: ClaudeFetchPlan) {

@@ -20,13 +20,21 @@ final class CompanionStatusItemController {
     private var screenParamsObserver: NSObjectProtocol?
     private static let wakeCheckDelay: TimeInterval = 1.5
 
-    /// 사용자가 명시적으로 OFF 한 상태인지. watchdog (`recoverIfMissingOrBlocked`) 가
+    /// 사용자가 명시적으로 OFF 한 상태인지. watchdog (`performRecovery`) 가
     /// 사용자 OFF 와 macOS evict 를 구분하는 데 사용 — `false` 면 visibility 강제 복구
     /// 안 함. AppDelegate 가 `setVisible(_:)` 로 set.
     private var userEnabled: Bool = true
-    /// 1.7.2: stuck 진입 timestamp. `isStuckWhileUserEnabled()` 호출 시 set/clear.
+    /// 1.7.2: stuck 진입 timestamp. `performRecovery()` 가 set/clear.
     /// 자동 process restart escalation 판단에 사용.
     private var stuckSince: Date?
+    /// 1.8.0: wake / screen-change / app-active burst 를 단일 복구 패스로 합치는 coalescer.
+    private var pendingRecoveryTask: Task<Void, Never>?
+    /// 1.8.0: 마지막 recreate (stop+start = removeStatusItem) 시점. cooldown 안에선 재호출
+    /// 돼도 다시 removeStatusItem 안 함.
+    private var lastRecreateAt: Date?
+    private static let recreateCooldown: TimeInterval = 30
+    /// 비파괴 redraw 로 안 풀린 채 이 시간 이상 지속되면 recreate 승격.
+    private static let redrawEscalationThreshold: TimeInterval = 20
 
     // Companion-owned 5-minute ring buffer
     private var samples: [PlanUtilizationHistoryEntry] = []
@@ -86,6 +94,8 @@ final class CompanionStatusItemController {
     func stop() {
         self.observationTask?.cancel()
         self.observationTask = nil
+        self.pendingRecoveryTask?.cancel()
+        self.pendingRecoveryTask = nil
         self.removeWakeObserver()
         self.driver.stop()
         if let item = self.statusItem {
@@ -139,19 +149,10 @@ final class CompanionStatusItemController {
 
     /// 1.7.1: 외부 (AppDelegate) 에서 process restart escalation 시 호출.
     /// userEnabled=true 인데 stuck 상태면 true. 사용자 OFF 한 케이스는 stuck 아님.
-    /// 1.7.2: stuck 진입 시점 timestamp 추적 → `stuckDuration()` 으로 자동 restart 판단.
+    /// 1.8.0: stuckSince 는 `performRecovery()` 가 단독 관리하므로 여기선 read-only.
     func isStuckWhileUserEnabled() -> Bool {
-        guard self.userEnabled else {
-            self.stuckSince = nil
-            return false
-        }
-        let unhealthy = !self.isStatusItemHealthy()
-        if unhealthy {
-            if self.stuckSince == nil { self.stuckSince = Date() }
-        } else {
-            self.stuckSince = nil
-        }
-        return unhealthy
+        guard self.userEnabled else { return false }
+        return !self.isStatusItemHealthy()
     }
 
     /// stuck 상태가 시작된 시점부터의 경과 시간. nil 이면 정상.
@@ -180,14 +181,15 @@ final class CompanionStatusItemController {
     }
 
     /// Polls every 30s — append current weekly usedPercent to ring buffer, recompute stage.
-    /// 추가로 매 주기마다 `recoverIfMissingOrBlocked()` 를 호출해 evict 된 status item 을
+    /// 추가로 매 주기마다 `performRecovery()` 를 호출해 evict 된 status item 을
     /// 자동 복구한다. wake-once 복구만으론 long-uptime / display-only sleep / Tahoe
     /// allow-list 변경 등에서 캐릭터가 사라진 채 안 돌아오는 케이스가 잡히지 않음.
     private func startObservation() {
         self.observationTask = Task { @MainActor [weak self] in
             while !Task.isCancelled {
                 await self?.refreshStage()
-                self?.recoverIfMissingOrBlocked()
+                // 1.8.0: steady-state watchdog — coalescer 없이 직접. 비파괴 우선이라 안전.
+                self?.performRecovery(reason: "tick")
                 try? await Task.sleep(for: .seconds(30))
             }
         }
@@ -290,18 +292,18 @@ final class CompanionStatusItemController {
         let workspace = NSWorkspace.shared.notificationCenter
         let app = NotificationCenter.default
         // System wake (sleep → wake): macOS 가 status item 을 evict 한 가능성이 가장 큼.
-        // 1.7.0: wake / screen change cascade 단순화 (이전 1.5s + 5s + 15s, 750ms + 3s + 10s).
-        // 30초 observation tick 안에서 자동 recovery 호출되고, 그래도 안 풀리는 진짜 stuck
-        // 은 사용자가 manual recover button → process restart 로 escape. 자동 cascade 복잡도
-        // 줄임.
+        // 1.8.0: 모든 이벤트를 단일 coalescer (`requestRecovery`) 로 보내 burst 를 1회로 합침.
+        // 지연값은 사용량 pill (StatusItemController) 보다 의도적으로 더 크게 둬서, 두
+        // 컨트롤러가 같은 run-loop 창에서 동시에 removeStatusItem 하지 않게 stagger 한다
+        // (사용량 pill: wake 1.5s / screen 0.75s / active 0s, Companion: 2.3s / 1.4s / 0.4s).
+        // cross-broker 가 아니라 각자 독립 복구 — 단지 타이밍만 어긋나게.
         self.wakeObserver = workspace.addObserver(
             forName: NSWorkspace.didWakeNotification,
             object: nil,
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
-                try? await Task.sleep(for: .seconds(Self.wakeCheckDelay))
-                self?.strongWakeRecovery()
+                self?.requestRecovery(reason: "system-wake", delay: Self.wakeCheckDelay + 0.8)
             }
         }
         self.screensWakeObserver = workspace.addObserver(
@@ -310,8 +312,7 @@ final class CompanionStatusItemController {
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
-                try? await Task.sleep(for: .seconds(Self.wakeCheckDelay))
-                self?.strongWakeRecovery()
+                self?.requestRecovery(reason: "screens-wake", delay: Self.wakeCheckDelay + 0.8)
             }
         }
         self.appActiveObserver = app.addObserver(
@@ -320,7 +321,7 @@ final class CompanionStatusItemController {
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
-                self?.recoverIfMissingOrBlocked()
+                self?.requestRecovery(reason: "app-active", delay: 0.4)
             }
         }
         self.screenParamsObserver = app.addObserver(
@@ -329,8 +330,7 @@ final class CompanionStatusItemController {
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
-                try? await Task.sleep(for: .milliseconds(750))
-                self?.strongWakeRecovery()
+                self?.requestRecovery(reason: "screen-change", delay: 1.4)
             }
         }
     }
@@ -357,53 +357,87 @@ final class CompanionStatusItemController {
     }
 
 
-    /// Wake 이벤트 (system/display) 후 호출. macOS 가 NSStatusItem 을 reject 한 stuck
-    /// 상태에서 isVisible toggle 만으론 못 풀리는 케이스 (1.5.6 사용자 보고) 대응 위해
-    /// **무조건 stop+start** 으로 인스턴스 통째 재생성. cross-effect 우려는 wake 시점 한정
-    /// + Companion 만 재생성 (사용량 pill 안 건드림) 으로 user-perceived 영향 최소화.
-    private func strongWakeRecovery() {
-        guard self.userEnabled else { return }
-        self.recreateStatusItem()
+    /// 1.8.0: wake / screen-change / app-active burst 용 coalescing 진입점.
+    /// cancel + reschedule 로 1회 패스로 합침. 사용량 pill 보다 늦은 지연으로 stagger.
+    private func requestRecovery(reason: String, delay: TimeInterval) {
+        self.pendingRecoveryTask?.cancel()
+        self.pendingRecoveryTask = Task { @MainActor [weak self] in
+            if delay > 0 {
+                try? await Task.sleep(for: .seconds(delay))
+            }
+            guard let self, !Task.isCancelled else { return }
+            self.performRecovery(reason: reason)
+        }
     }
 
-    /// 1.6.0: 사용자가 환경설정 / 메뉴의 "메뉴바 아이콘 복구" 버튼을 클릭했을 때 호출.
-    /// `userEnabled` true 일 때만 강제 재생성. 자동 detection 이 못 잡는 모든 stuck
-    /// 케이스의 최종 escape hatch.
+    /// 1.6.0: 사용자가 "메뉴바 아이콘 복구" 버튼을 클릭했을 때 호출.
+    /// 1.8.0: 무조건 recreate (1.6.0) 대신 비파괴 우선 복구를 force 모드로 — 진짜 evict /
+    /// 안 풀리는 것만 즉시 recreate. 그래도 안 풀리면 AppDelegate 가 process restart 제안.
     func forceRecreateIfEnabled() {
-        guard self.userEnabled else { return }
-        self.recreateStatusItem()
+        self.performRecovery(reason: "manual", force: true)
     }
 
-    /// macOS Tahoe evicts NSStatusItem window/screen after long sleep.
-    /// statusItem 이 다음 상태 중 하나면 복구:
-    ///   1. nil (어떤 코드 경로가 stop() 만 호출하고 안 돌아옴)
-    ///   2. isVisible=false 이지만 사용자가 OFF 안 했음 (macOS evict)
-    ///   3. isVisible=true 인데 window/screen 이 nil (macOS evict)
+    /// **비파괴 우선** 복구. macOS Tahoe 는 long sleep / overflow 시 status item 을 다양한
+    /// 단계로 망가뜨린다. 이전 (1.5.6~1.7.x) 엔 wake / screen-change 마다 무조건 stop+start
+    /// (= removeStatusItem) 으로 재생성했는데, 사용량 pill 도 같은 타이밍에 그러면서
+    /// status bar add→remove→add race 가 일어나 한쪽이 사라졌다. 이제 다음 순서로 복구:
     ///
-    /// 1.5.5: AppDelegate 가 instance lifetime 영구 유지하면서 setVisible 로 토글만
-    /// 하기 때문에, `isVisible=false` 가 사용자 OFF 인지 macOS evict 인지 구분 필요.
-    /// `userEnabled` flag 로 판단 — false 면 사용자 의도이므로 복구 안 함.
-    private func recoverIfMissingOrBlocked() {
+    ///   1. statusItem == nil           → start() (최초 생성)
+    ///   2. isVisible == false (ON인데)  → isVisible = true 토글 (비파괴)
+    ///   3. window 살아있고 width=0/image 깨짐 → image 재설정 (비파괴, removeStatusItem 없음)
+    ///   4. window/screen nil = 진짜 evict, 또는 비파괴로 오래 안 풀림 → recreate (cooldown)
+    private func performRecovery(reason: String, force: Bool = false) {
+        // 1.8.1 진단: Companion status item geometry 덤프 (캐릭터는 생존하는데 pill 만
+        // 사라지는 비대칭 검증용).
+        if let item = self.statusItem {
+            CodexBarLog.logger(LogCategories.app).info(
+                "MENUBAR-DIAG companion reason=\(reason) userEnabled=\(self.userEnabled) :: "
+                    + MenuBarVisibilityWatcher.diagnosticDescription(item))
+        } else {
+            CodexBarLog.logger(LogCategories.app).info(
+                "MENUBAR-DIAG companion reason=\(reason) userEnabled=\(self.userEnabled) :: <no statusItem>")
+        }
         // 사용자가 명시적으로 OFF 한 상태면 어떤 복구도 안 함. 토글 무시 방지.
-        guard self.userEnabled else { return }
+        guard self.userEnabled else {
+            self.stuckSince = nil
+            return
+        }
         guard let item = self.statusItem else {
-            // 컨트롤러는 살아있지만 status item 이 사라진 경우 → 재시작.
             self.start()
+            self.stuckSince = nil
             return
         }
         if !item.isVisible {
-            // userEnabled=true 인데 isVisible=false → macOS 가 evict 한 케이스.
             item.isVisible = true
+            self.stuckSince = nil
             return
         }
-        let blocked = item.button?.window == nil || item.button?.window?.screen == nil
-        guard blocked else { return }
-        let savedCharacter = self.character
-        let savedProvider = self.provider
-        self.stop()
-        self.character = savedCharacter
-        self.provider = savedProvider
-        self.start()
-        // start() 후 userEnabled 가 default true 로 reset 되지 않음 (변수 그대로).
+        let button = item.button
+        let windowEvicted = button?.window == nil || button?.window?.screen == nil
+        let imageBroken = (button?.image?.size.width ?? 0) <= 0 || (button?.image?.size.height ?? 0) <= 0
+        let widthCollapsed = (button?.frame.size.width ?? 0) <= 0
+
+        guard windowEvicted || imageBroken || widthCollapsed else {
+            self.stuckSince = nil
+            return
+        }
+        if self.stuckSince == nil { self.stuckSince = Date() }
+        let stuckFor = self.stuckSince.map { Date().timeIntervalSince($0) } ?? 0
+
+        // 진짜 evict (window nil) 거나, 비파괴로 충분히 시도해도 안 풀림 → recreate (cooldown).
+        if windowEvicted || force || stuckFor > Self.redrawEscalationThreshold {
+            if !force, let last = self.lastRecreateAt,
+               Date().timeIntervalSince(last) < Self.recreateCooldown
+            {
+                return
+            }
+            self.lastRecreateAt = Date()
+            self.recreateStatusItem()
+            return
+        }
+        // window 는 살아있는데 image 깨짐 / width=0 → 비파괴 redraw. removeStatusItem 없음.
+        button?.image = CompanionSpriteFrameRenderer.render(character: self.character, frameIndex: 0)
+        item.isVisible = true
+        _ = reason
     }
 }
