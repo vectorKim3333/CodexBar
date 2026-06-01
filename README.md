@@ -2,7 +2,7 @@
 
 > Claude(`Cl`) + Codex(`Co`) 두 AI 의 사용량만 macOS 메뉴바에 표시하는 슬림 포크. UI 는 **한국어 전용**. 원본: [steipete/CodexBar](https://github.com/steipete/CodexBar).
 
-현재 버전: **1.5.0**
+현재 버전: **1.8.6**
 
 <img width="400" height="65" alt="화면 기록 2026-05-27 오후 4 48 56" src="https://github.com/user-attachments/assets/2ea1b8e1-04cb-4937-939e-0754ce257416" />
 
@@ -15,7 +15,7 @@
 - Swift 6 toolchain (Xcode 16+ 또는 Command Line Tools)
 - Apple Silicon (arm64) 기본. 인텔까지 지원하려면 universal 빌드 필요.
 
-## 메뉴바 표시 (1.5.0 기준)
+## 메뉴바 표시
 
 환경설정 → 표시 탭에서 메뉴바에 표시할 항목을 자유롭게 조합합니다.
 
@@ -38,8 +38,12 @@
 - 1시간마다 `main` 의 `version.env` 익명 polling
 - 새 버전 출시 시 메뉴에 "🆕 X.Y.Z 사용 가능 — 설치 안내" 한 줄 표시 (클릭 → Confluence 가이드 페이지)
 
-**메뉴바 아이콘 자동 복구** (1.4.1+):
-- macOS 가 NSStatusItem window 를 evict 한 경우 (장시간 idle / display sleep / Tahoe allow-list 등) 30초 안에 자동 복구. 사용자가 토글을 직접 끄지 않는 이상 메뉴바 아이콘은 사라지지 않음.
+**메뉴 카드** (pill 또는 Companion 클릭 시):
+- 세션·주간 사용량 %, 오늘 토큰·비용, **주요 모델** (오늘 비용이 가장 큰 모델) 표시
+
+**메뉴바 아이콘 자동 복구**:
+- 절전·외장 모니터 연결/해제 등 디스플레이 구성 변화로 macOS 가 메뉴바 아이콘을 떨구면, 깨진 게 감지될 때 앱을 자동 재시작해 복구합니다 (마지막 사용량은 즉시 복원되어 빈 채로 보이지 않음).
+- 자동으로 못 잡는 경우를 위해 **"메뉴바 아이콘 복구"** 버튼 제공 (환경설정 일반 탭 / Provider 메뉴 / Companion 메뉴) — 클릭 시 즉시 복구.
 
 ## 빌드 & 실행
 
@@ -76,9 +80,9 @@ ARCHES="arm64 x86_64" ./Scripts/build_for_distribution.sh    # universal
 
 작업 후 `version.env` 의 `MARKETING_VERSION` 을 다음 기준으로 올립니다 (`BUILD_NUMBER` 는 항상 +1).
 
-- **PATCH** (1.5.0 → 1.5.1) — 버그/번역/리팩토링
-- **MINOR** (1.5.0 → 1.6.0) — 새 기능/옵션/토글
-- **MAJOR** (1.5.0 → 2.0.0) — 설정 키 마이그레이션이나 대규모 재설계
+- **PATCH** (1.8.6 → 1.8.7) — 버그/번역/리팩토링
+- **MINOR** (1.8.6 → 1.9.0) — 새 기능/옵션/토글
+- **MAJOR** (1.8.6 → 2.0.0) — 설정 키 마이그레이션이나 대규모 재설계
 
 같이 갱신: `version.env`, `docs/install-guide-ko.md` (zip 이름 + 다음 버전 예시), `docs/confluence-team-guide-ko.md` (히스토리 표 맨 위 새 행), `Scripts/install_for_team.sh` 주석. 상세는 [`CLAUDE.md`](CLAUDE.md) 참고.
 
