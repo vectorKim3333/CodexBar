@@ -499,7 +499,7 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
                 + lines.joined(separator: " || "))
     }
 
-    func performStatusItemRecovery(reason: String, force: Bool = false) {
+    func performStatusItemRecovery(reason: String) {
         #if DEBUG
         guard !self.isReleasedForTesting else { return }
         #endif
@@ -532,7 +532,7 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
                     self.providerBlockedSince[provider] = now
                 }
                 let stuckFor = now.timeIntervalSince(self.providerBlockedSince[provider] ?? now)
-                if force || stuckFor > Self.redrawEscalationThreshold {
+                if stuckFor > Self.redrawEscalationThreshold {
                     // 비파괴로 충분히 시도했는데도 안 풀림 → recreate 승격.
                     recreateProviders.append(provider)
                 } else {
@@ -585,11 +585,10 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
         }
 
         // recreate — 진짜 evict / 승격된 것만. 메뉴 열려있으면 깜빡임 + 닫힘이라 skip,
-        // cooldown 안이면 skip (force 면 무시). 한 번에 하나씩.
+        // cooldown 안이면 skip. 한 번에 하나씩.
         guard self.openMenus.isEmpty, !recreateProviders.isEmpty else { return }
         for provider in recreateProviders {
-            if !force,
-               let last = self.lastRecreateAt[provider],
+            if let last = self.lastRecreateAt[provider],
                now.timeIntervalSince(last) < Self.recreateCooldown
             {
                 continue
@@ -629,16 +628,6 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
             }
         }
         return false
-    }
-
-    /// 1.8.0: 사용자가 "메뉴바 아이콘 복구" 버튼을 눌렀을 때의 진입점.
-    /// 이전 (1.5.10) 엔 detection 우회로 모든 provider 를 무조건 removeStatusItem + 재생성
-    /// 했는데, 그게 Companion 과 동시에 발화하면 status bar race 를 일으켜 오히려 사라지게
-    /// 만들었다 (사용자 보고 root cause). 이제 `force: true` 로 비파괴 우선 복구를 돌리되
-    /// 진짜 evict / 안 풀리는 것만 즉시 recreate (cooldown 무시). 그래도 안 풀리면
-    /// AppDelegate 가 1초 뒤 health check 해서 process restart 를 제안한다.
-    func forceRecreateAllEnabledProviders(reason: String) {
-        self.performStatusItemRecovery(reason: reason, force: true)
     }
 
     /// 단일 provider 의 NSStatusItem 만 통째 재생성. 다른 provider 영향 없음.

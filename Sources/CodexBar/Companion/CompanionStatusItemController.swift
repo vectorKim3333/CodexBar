@@ -370,13 +370,6 @@ final class CompanionStatusItemController {
         }
     }
 
-    /// 1.6.0: 사용자가 "메뉴바 아이콘 복구" 버튼을 클릭했을 때 호출.
-    /// 1.8.0: 무조건 recreate (1.6.0) 대신 비파괴 우선 복구를 force 모드로 — 진짜 evict /
-    /// 안 풀리는 것만 즉시 recreate. 그래도 안 풀리면 AppDelegate 가 process restart 제안.
-    func forceRecreateIfEnabled() {
-        self.performRecovery(reason: "manual", force: true)
-    }
-
     /// **비파괴 우선** 복구. macOS Tahoe 는 long sleep / overflow 시 status item 을 다양한
     /// 단계로 망가뜨린다. 이전 (1.5.6~1.7.x) 엔 wake / screen-change 마다 무조건 stop+start
     /// (= removeStatusItem) 으로 재생성했는데, 사용량 pill 도 같은 타이밍에 그러면서
@@ -386,7 +379,7 @@ final class CompanionStatusItemController {
     ///   2. isVisible == false (ON인데)  → isVisible = true 토글 (비파괴)
     ///   3. window 살아있고 width=0/image 깨짐 → image 재설정 (비파괴, removeStatusItem 없음)
     ///   4. window/screen nil = 진짜 evict, 또는 비파괴로 오래 안 풀림 → recreate (cooldown)
-    private func performRecovery(reason: String, force: Bool = false) {
+    private func performRecovery(reason: String) {
         // 1.8.1 진단: Companion status item geometry 덤프 (캐릭터는 생존하는데 pill 만
         // 사라지는 비대칭 검증용).
         if let item = self.statusItem {
@@ -425,8 +418,8 @@ final class CompanionStatusItemController {
         let stuckFor = self.stuckSince.map { Date().timeIntervalSince($0) } ?? 0
 
         // 진짜 evict (window nil) 거나, 비파괴로 충분히 시도해도 안 풀림 → recreate (cooldown).
-        if windowEvicted || force || stuckFor > Self.redrawEscalationThreshold {
-            if !force, let last = self.lastRecreateAt,
+        if windowEvicted || stuckFor > Self.redrawEscalationThreshold {
+            if let last = self.lastRecreateAt,
                Date().timeIntervalSince(last) < Self.recreateCooldown
             {
                 return
