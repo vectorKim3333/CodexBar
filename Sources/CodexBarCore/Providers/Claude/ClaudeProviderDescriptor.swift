@@ -83,19 +83,38 @@ public enum ClaudeProviderDescriptor {
     private static func makePlanningInput(context: ProviderFetchContext) async -> ClaudeSourcePlanningInput {
         let webExtrasEnabled = context.settings?.claude?.webExtrasEnabled ?? false
         let needsOAuthAvailability = context.runtime == .app && context.sourceMode == .auto
+        let selectedDataSource = Self.sourceDataSource(from: context.sourceMode)
+        let hasOAuth = needsOAuthAvailability && ClaudeOAuthPlanningAvailability.isAvailable(
+            runtime: context.runtime,
+            sourceMode: context.sourceMode,
+            environment: context.env)
+        let hasCLI = ClaudeCLIResolver.isAvailable(environment: context.env)
+
+        // 1.8.4: `isAvailableForFallback` 는 브라우저 쿠키를 스캔(`hasSessionKey(browserDetection:)`)
+        // 하는데, 이게 macOS Sequoia/Tahoe 의 "다른 앱의 데이터에 접근" TCC 프롬프트를 유발한다.
+        // ad-hoc 서명 앱은 그 동의가 launch 간 유지되지 않아 (재)시작마다 다시 묻는다 — 디스플레이
+        // 변경 자동 재시작(1.8.2)과 겹쳐 모니터 연결/분리마다 프롬프트가 떴음 (사용자 보고).
+        // Web 단계가 실제로 쓰일 수 있을 때만 스캔한다:
+        //   - 명시적 Web 소스 선택 / manual cookie header (manual 은 문자열 파싱, 스캔 아님)
+        //   - webExtras 켜짐 (web 데이터로 보강)
+        //   - OAuth·CLI 둘 다 없음 (Web 이 유일한 fallback)
+        // OAuth 로 동작하는 사용자는 매 refresh 마다 브라우저를 긁지 않아 프롬프트가 사라진다.
+        let hasManualHeader = Self.manualCookieHeader(from: context) != nil
+        let explicitWeb = selectedDataSource == .web
+        let needsWebProbe = hasManualHeader || explicitWeb || webExtrasEnabled || (!hasOAuth && !hasCLI)
+        let hasWebSession = needsWebProbe
+            ? ClaudeWebFetchStrategy.isAvailableForFallback(
+                context: context,
+                browserDetection: context.browserDetection)
+            : false
 
         return ClaudeSourcePlanningInput(
             runtime: context.runtime,
-            selectedDataSource: Self.sourceDataSource(from: context.sourceMode),
+            selectedDataSource: selectedDataSource,
             webExtrasEnabled: webExtrasEnabled,
-            hasWebSession: ClaudeWebFetchStrategy.isAvailableForFallback(
-                context: context,
-                browserDetection: context.browserDetection),
-            hasCLI: ClaudeCLIResolver.isAvailable(environment: context.env),
-            hasOAuthCredentials: needsOAuthAvailability && ClaudeOAuthPlanningAvailability.isAvailable(
-                runtime: context.runtime,
-                sourceMode: context.sourceMode,
-                environment: context.env))
+            hasWebSession: hasWebSession,
+            hasCLI: hasCLI,
+            hasOAuthCredentials: hasOAuth)
     }
 
     private static func manualCookieHeader(from context: ProviderFetchContext) -> String? {

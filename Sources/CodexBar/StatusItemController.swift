@@ -11,6 +11,9 @@ protocol StatusItemControlling: AnyObject {
     func runLoginFlowFromSettings(provider: UsageProvider) async
     func celebrationOriginPoint(for provider: UsageProvider?) -> CGPoint?
     func sharedMenu() -> NSMenu
+    /// 1.8.2: 디스플레이 변경 자동 재시작이 사용자를 방해하지 않도록 — 메뉴가 열려있거나
+    /// 로그인 흐름이 진행 중이면 재시작을 미룬다.
+    var canSafelyRelaunch: Bool { get }
 }
 
 extension StatusItemControlling {
@@ -18,6 +21,7 @@ extension StatusItemControlling {
         nil
     }
     func sharedMenu() -> NSMenu { NSMenu() }
+    var canSafelyRelaunch: Bool { true }
 }
 
 @MainActor
@@ -152,13 +156,33 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
     var lastAppliedProviderIconRenderSignatures: [UsageProvider: String] = [:]
     var lastKnownScreenCount: Int
     var pendingScreenChangePreviousCount: Int?
-    var screenChangeVisibilityTask: Task<Void, Never>?
     var iconHeartbeatTask: Task<Void, Never>?
+    /// 1.8.0: wake / screen-change / app-active 이벤트가 각자 복구를 호출하면 같은 시점에
+    /// 여러 번 발화한다. 단일 coalescing task 로 burst 를 1회 패스로 합친다 (cancel +
+    /// reschedule). race 트리거를 줄이는 핵심.
+    var pendingRecoveryTask: Task<Void, Never>?
+    /// 1.8.0: provider 별 마지막 recreate (removeStatusItem) 시점. 진짜 evict 복구가
+    /// 짧은 간격으로 반복 호출돼도 cooldown 안에선 다시 removeStatusItem 하지 않는다 —
+    /// macOS 가 계속 reject 하는 stuck 은 process restart escalation (1.7.2) 이 담당.
+    var lastRecreateAt: [UsageProvider: Date] = [:]
+    /// recreate (removeStatusItem) 최소 간격. 비파괴 redraw 는 이 제한 없음.
+    static let recreateCooldown: TimeInterval = 30
+    /// 비파괴 redraw 로도 width=0 / image 깨짐이 안 풀린 채 이 시간 이상 지속되면
+    /// 해당 provider 만 recreate 로 승격. 비파괴에 먼저 충분한 기회를 준다.
+    static let redrawEscalationThreshold: TimeInterval = 20
+    /// 1.5.8: provider 가 blocked 상태로 진입한 시점. 60초 이상 stuck 이면 macOS allow-list
+    /// guidance alert. 우리 코드 recreate 가 못 풀리는 OS-level 케이스 사용자에게 안내.
+    var providerBlockedSince: [UsageProvider: Date] = [:]
     let loginLogger = CodexBarLog.logger(LogCategories.login)
     let menuLogger = CodexBarLog.logger(LogCategories.app)
     var selectedMenuProvider: UsageProvider? {
         get { self.settings.selectedMenuProvider }
         set { self.settings.selectedMenuProvider = newValue }
+    }
+
+    /// 1.8.2: 메뉴 열림 / 로그인 진행 중이면 false — 디스플레이 변경 자동 재시작을 미룸.
+    var canSafelyRelaunch: Bool {
+        self.openMenus.isEmpty && self.loginTask == nil && self.activeLoginProvider == nil
     }
 
     private static func makeStatusItem(statusBar: NSStatusBar) -> NSStatusItem {
@@ -332,18 +356,15 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
     }
 
     @objc private func handleApplicationDidBecomeActive(_: Notification) {
-        Task { @MainActor [weak self] in
-            self?.recoverInvisibleOrBlockedStatusItemsIfNeeded(reason: "app-active")
-        }
+        // 사용량 pill 은 즉시 (delay 0). Companion 은 자체적으로 0.4s 뒤 복구해
+        // 두 컨트롤러가 같은 run-loop 창에서 recreate 하지 않게 stagger.
+        self.requestStatusItemRecovery(reason: "app-active", delay: 0)
     }
 
     @objc private func handleScreensDidWake(_: Notification) {
-        Task { @MainActor [weak self] in
-            // 디스플레이가 슬립에서 깨어났을 때 evict 상태인 경우가 잦음.
-            // wake 직후 AppKit 이 메뉴바를 다시 그릴 시간을 주고 검증.
-            try? await Task.sleep(for: .seconds(MenuBarVisibilityWatcher.wakeCheckDelay))
-            self?.recoverInvisibleOrBlockedStatusItemsIfNeeded(reason: "screens-wake")
-        }
+        // 디스플레이가 슬립에서 깨어났을 때 evict 상태인 경우가 잦음. wake 직후 AppKit 이
+        // 메뉴바를 다시 그릴 시간을 준 뒤 검증. coalescer 가 system-wake 와 합침.
+        self.requestStatusItemRecovery(reason: "screens-wake", delay: MenuBarVisibilityWatcher.wakeCheckDelay)
     }
 
     @objc private func handleSystemDidWake(_: Notification) {
@@ -354,27 +375,13 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
             // 그려서 메뉴바 상태 / fetch 상태 / 캐시가 한꺼번에 동기화되도록 한다.
             self.store.isRefreshing = false
             self.store.refreshingProviders.removeAll()
+            self.logMenuBarDiagnostics(reason: "system-wake@event")
             self.updateVisibility()
-            // macOS 가 장시간 deep sleep 중 NSStatusItem 의 window 를 evict 하는 경우,
-            // updateVisibility() 의 isVisible 토글만으론 안 보이는 메뉴바를 복구하지 못한다.
-            // 1.5.2 부터 cascade: 1.5s + 5s + 15s 세 번 검증 — 장시간 sleep 후 wake
-            // 시점에 macOS 가 status bar 재배치하는 시간이 길어 단발 1.5초 체크만으론
-            // 못 잡는 케이스 있었음.
-            self.scheduleWakeStatusItemVisibilityCheck()
-            self.scheduleCascadeWakeRecovery()
+            // 1.8.0: 단일 coalescer 로 복구 요청. didWake + screensDidWake + didBecomeActive
+            // 가 모두 들어와도 cancel+reschedule 로 1회 패스로 합쳐져 동시 recreate 폭주 방지.
+            // 복구는 비파괴 우선 (isVisible 재확정 + image redraw), 진짜 evict 만 recreate.
+            self.requestStatusItemRecovery(reason: "system-wake", delay: MenuBarVisibilityWatcher.wakeCheckDelay)
             await self.store.refresh()
-        }
-    }
-
-    /// 장시간 deep sleep 후 wake 에서 1.5s 단발 검증으론 NSStatusItem evict 가 못 잡히는
-    /// 케이스 대응. 5초 / 15초 시점에 한 번씩 더 visibility recovery 발화.
-    /// `recoverInvisibleOrBlockedStatusItemsIfNeeded` 는 idempotent 라 중복 호출 안전.
-    private func scheduleCascadeWakeRecovery() {
-        Task { @MainActor [weak self] in
-            try? await Task.sleep(for: .seconds(5))
-            self?.recoverInvisibleOrBlockedStatusItemsIfNeeded(reason: "wake-cascade-5s")
-            try? await Task.sleep(for: .seconds(10))
-            self?.recoverInvisibleOrBlockedStatusItemsIfNeeded(reason: "wake-cascade-15s")
         }
     }
 
@@ -413,7 +420,7 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
     /// happens when the resolved `resetText` (now part of the signature)
     /// actually changes.
     ///
-    /// 추가로 매 주기마다 `recoverInvisibleOrBlockedStatusItemsIfNeeded` 를
+    /// 추가로 매 주기마다 `performStatusItemRecovery` 를
     /// 호출해 사용자가 켜둔 provider 의 NSStatusItem 이 evict 됐거나 사라진
     /// 상태인지 확인하고 자동 복구한다. wake notification 의 1.5s one-shot 만
     /// 으로는 long-uptime / display-only sleep / Tahoe allow-list 변경 등의
@@ -422,68 +429,230 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
         self.iconHeartbeatTask?.cancel()
         self.iconHeartbeatTask = Task { @MainActor [weak self] in
             while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(30))
+                // 1.5.8: 30s → 15s 단축. 사용자가 자리 비웠다 돌아왔을 때 status item evict
+                // 자동 복구까지 기다리는 시간 절반. CPU 부담 미미 (idle 시 거의 0).
+                try? await Task.sleep(for: .seconds(15))
                 guard let self else { return }
                 self.updateIcons()
                 self.recoverStaleProviders()
-                self.recoverInvisibleOrBlockedStatusItemsIfNeeded(reason: "heartbeat")
+                // 1.8.0: heartbeat 는 steady-state watchdog 이라 coalescer 없이 직접 호출.
+                // 비파괴 우선이므로 매 15s 호출돼도 removeStatusItem 폭주 없음.
+                self.performStatusItemRecovery(reason: "heartbeat")
+                // 1.7.2: 자동 복구가 2분 이상 못 풀고 있으면 자동 process restart escalation.
+                // 사용자가 자리 비웠다 돌아왔을 때 manual button 누를 필요 없이 자동 복구 보장.
+                (NSApp.delegate as? AppDelegate)?.autoRestartIfProlongedStuck()
             }
         }
     }
 
-    /// 사용자가 켜둔 provider 의 NSStatusItem 이 다음 셋 중 하나에 해당하면 복구:
+    /// 1.8.0: wake / screen-change / app-active 등 burst 이벤트용 coalescing 진입점.
+    /// cancel + reschedule 로 짧은 시간에 들어온 여러 트리거를 단일 복구 패스로 합친다.
+    /// 이전엔 didWake / screensDidWake / didBecomeActive / screenChange 가 각자 recreate 를
+    /// 호출 → 같은 시점에 removeStatusItem 다중 발화 → macOS status bar race. 이제 1회로 묶임.
+    func requestStatusItemRecovery(reason: String, delay: TimeInterval) {
+        #if DEBUG
+        guard !self.isReleasedForTesting else { return }
+        #endif
+        guard !SettingsStore.isRunningTests else { return }
+        self.pendingRecoveryTask?.cancel()
+        self.pendingRecoveryTask = Task { @MainActor [weak self] in
+            if delay > 0 {
+                try? await Task.sleep(for: .seconds(delay))
+            }
+            guard let self, !Task.isCancelled else { return }
+            self.performStatusItemRecovery(reason: reason)
+        }
+    }
+
+    /// 사용자가 켜둔 provider 의 NSStatusItem 을 검사해 **비파괴 우선** 으로 복구한다.
+    /// `MenuBarVisibilityWatcher.recoveryAction` 으로 4단계 분류:
     ///
-    ///  1. statusItems[provider] 가 nil → `updateVisibility()` 로 lazy 생성
-    ///  2. isVisible == false 인데 사용자가 켜둠 → `isVisible = true` 강제
-    ///  3. isVisible == true 인데 button.window / screen 이 nil (macOS 가 evict)
-    ///     → `recreateStatusItemsForVisibilityRecovery()` 로 statusBar 에서
-    ///     통째로 재등록
+    ///  - `.none`              정상 → skip
+    ///  - missing              인스턴스 nil → `updateVisibility()` 로 lazy 생성
+    ///  - `.reassertVisible`   isVisible=false 인데 사용자 ON → `isVisible = true` 토글 (비파괴)
+    ///  - `.redraw`            window 살아있는데 width=0 / image 깨짐 (overflow-hide) →
+    ///                         image 재설정 + isVisible 재확정 (비파괴, removeStatusItem 금지)
+    ///  - `.recreate`          window / screen nil = 진짜 evict → 단일 인스턴스 recreate
     ///
-    /// 메뉴가 열려 있는 동안 status item 을 재생성하면 메뉴가 닫히고 깜빡이므로
-    /// `openMenus.isEmpty` 일 때만 destructive 복구를 수행. 가벼운 isVisible
-    /// 토글 / 누락 보충은 메뉴 열림 여부와 무관하게 안전하다.
-    func recoverInvisibleOrBlockedStatusItemsIfNeeded(reason: String) {
+    /// 비파괴 redraw 로 `redrawEscalationThreshold` 이상 안 풀리면 해당 provider 만 recreate
+    /// 로 승격. recreate 는 `openMenus.isEmpty` + `recreateCooldown` 일 때만 (removeStatusItem
+    /// 폭주 방지). 이렇게 하면 monitor reconnect / wake 의 대부분 케이스가 removeStatusItem
+    /// 없이 풀려 1.5.5~1.7.2 의 두-컨트롤러 동시 recreate race 가 사라진다.
+    /// 1.8.1 진단: 사용량 pill status item 전체 geometry 를 파일 로그에 덤프.
+    /// notch overflow vs evict 판별용. heartbeat / wake / screen 이벤트마다 호출.
+    func logMenuBarDiagnostics(reason: String) {
+        guard !SettingsStore.isRunningTests else { return }
+        var lines: [String] = []
+        for provider in self.settings.orderedProviders() {
+            guard self.store.enabledProvidersForDisplay().contains(provider) else { continue }
+            if let item = self.statusItems[provider] {
+                let snapshot = MenuBarVisibilityWatcher.visibilitySnapshot(item)
+                let action = MenuBarVisibilityWatcher.recoveryAction(snapshot: snapshot)
+                lines.append("[\(provider.rawValue) action=\(action)] "
+                    + MenuBarVisibilityWatcher.diagnosticDescription(item))
+            } else {
+                lines.append("[\(provider.rawValue)] <no statusItem>")
+            }
+        }
+        self.menuLogger.info(
+            "MENUBAR-DIAG pill reason=\(reason) screens=\(NSScreen.screens.count) :: "
+                + lines.joined(separator: " || "))
+    }
+
+    func performStatusItemRecovery(reason: String) {
         #if DEBUG
         guard !self.isReleasedForTesting else { return }
         #endif
         guard !SettingsStore.isRunningTests else { return }
 
-        let enabledForDisplay = Set(self.store.enabledProvidersForDisplay())
+        self.logMenuBarDiagnostics(reason: reason)
 
-        // (1)+(2) 누락 / 비가시 보충 — 메뉴 열림과 무관, 항상 즉시 처리.
+        let enabledForDisplay = Set(self.store.enabledProvidersForDisplay())
+        let now = Date()
+
         var missingProviders: [UsageProvider] = []
-        var hiddenProviders: [UsageProvider] = []
+        var redrawProviders: [UsageProvider] = []
+        var recreateProviders: [UsageProvider] = []
+
         for provider in enabledForDisplay {
-            if self.statusItems[provider] == nil {
+            guard let item = self.statusItems[provider] else {
                 missingProviders.append(provider)
-            } else if let item = self.statusItems[provider], !item.isVisible {
-                hiddenProviders.append(provider)
+                continue
+            }
+            let snapshot = MenuBarVisibilityWatcher.visibilitySnapshot(item)
+            switch MenuBarVisibilityWatcher.recoveryAction(snapshot: snapshot) {
+            case .none:
+                self.providerBlockedSince.removeValue(forKey: provider)
+            case .reassertVisible:
+                // 같은 인스턴스의 isVisible 토글 — add/remove race 없음.
+                item.isVisible = true
+                self.providerBlockedSince.removeValue(forKey: provider)
+            case .redraw:
+                if self.providerBlockedSince[provider] == nil {
+                    self.providerBlockedSince[provider] = now
+                }
+                let stuckFor = now.timeIntervalSince(self.providerBlockedSince[provider] ?? now)
+                if stuckFor > Self.redrawEscalationThreshold {
+                    // 비파괴로 충분히 시도했는데도 안 풀림 → recreate 승격.
+                    recreateProviders.append(provider)
+                } else {
+                    redrawProviders.append(provider)
+                }
+            case .recreate:
+                if self.providerBlockedSince[provider] == nil {
+                    self.providerBlockedSince[provider] = now
+                }
+                recreateProviders.append(provider)
             }
         }
-        if !missingProviders.isEmpty || !hiddenProviders.isEmpty {
+        // disabled 됐는데 blockedSince 에 남아있는 흔적 정리.
+        for provider in Array(self.providerBlockedSince.keys) where !enabledForDisplay.contains(provider) {
+            self.providerBlockedSince.removeValue(forKey: provider)
+        }
+
+        // 누락 보충 — 메뉴 열림과 무관, 항상 즉시.
+        if !missingProviders.isEmpty {
             self.menuLogger.error(
-                "Status item missing or hidden; restoring",
-                metadata: [
-                    "reason": reason,
-                    "missing": missingProviders.map(\.rawValue).joined(separator: ","),
-                    "hidden": hiddenProviders.map(\.rawValue).joined(separator: ","),
-                ])
+                "Status item missing; restoring",
+                metadata: ["reason": reason, "missing": missingProviders.map(\.rawValue).joined(separator: ",")])
             self.updateVisibility()
             self.updateIcons()
         }
 
-        // (3) blocked snapshot 감지 — destructive recreate 라 메뉴 열림 중엔 미룸.
-        guard self.openMenus.isEmpty else { return }
-        let items = self.startupVisibilityStatusItems
-        let snapshots = MenuBarVisibilityWatcher.visibilitySnapshots(items)
-        guard MenuBarVisibilityWatcher.hasAnyBlockedVisibleSnapshot(snapshots) else { return }
-        self.menuLogger.error(
-            "Status items blocked; recreating",
-            metadata: [
-                "reason": reason,
-                "snapshots": snapshots.map(\.description).joined(separator: " | "),
-            ])
-        self.recreateStatusItemsForVisibilityRecovery()
+        // 비파괴 redraw — image 재설정으로 macOS 재레이아웃 유도. removeStatusItem 없음.
+        if !redrawProviders.isEmpty {
+            for provider in redrawProviders {
+                self.lastAppliedProviderIconRenderSignatures.removeValue(forKey: provider)
+                self.statusItems[provider]?.isVisible = true
+            }
+            self.menuLogger.info(
+                "Non-destructive redraw recovery",
+                metadata: ["reason": reason, "providers": redrawProviders.map(\.rawValue).joined(separator: ",")])
+            self.updateIcons()
+        }
+
+        // 1.5.8: 어떤 provider 라도 60초 이상 stuck 이면 macOS allow-list guidance alert.
+        let stuckTooLong = self.providerBlockedSince.contains { _, since in
+            now.timeIntervalSince(since) > 60
+        }
+        if stuckTooLong, #available(macOS 26.0, *),
+           MenuBarVisibilityWatcher.shouldShowGuidance(defaults: self.settings.userDefaults, now: now)
+        {
+            self.menuLogger.error(
+                "Provider status item stuck >60s; presenting macOS allow-list guidance",
+                metadata: ["reason": reason])
+            MenuBarVisibilityWatcher.presentGuidance(defaults: self.settings.userDefaults, now: now)
+        }
+
+        // recreate — 진짜 evict / 승격된 것만. 메뉴 열려있으면 깜빡임 + 닫힘이라 skip,
+        // cooldown 안이면 skip. 한 번에 하나씩.
+        guard self.openMenus.isEmpty, !recreateProviders.isEmpty else { return }
+        for provider in recreateProviders {
+            if let last = self.lastRecreateAt[provider],
+               now.timeIntervalSince(last) < Self.recreateCooldown
+            {
+                continue
+            }
+            self.lastRecreateAt[provider] = now
+            self.menuLogger.error(
+                "Provider status item evicted; recreating individually",
+                metadata: ["reason": reason, "provider": provider.rawValue])
+            self.recreateProviderStatusItem(for: provider)
+        }
+    }
+
+    /// 1.7.0: enabled provider 중 macOS hide / stuck 상태인 게 하나라도 있으면 true.
+    /// `forceRecoverAllMenuBarItems` escalation 의 1초 후 health check 용.
+    func hasAnyBlockedEnabledStatusItem() -> Bool {
+        let enabledForDisplay = Set(self.store.enabledProvidersForDisplay())
+        for provider in enabledForDisplay {
+            guard let item = self.statusItems[provider] else { return true }
+            let snapshot = MenuBarVisibilityWatcher.visibilitySnapshot(item)
+            if MenuBarVisibilityWatcher.isBlockedSnapshot(snapshot: snapshot) {
+                return true
+            }
+        }
+        return false
+    }
+
+    /// 1.7.2: enabled provider 중 stuck 상태가 N초 이상 지속된 게 있으면 true.
+    /// `providerBlockedSince` 가 `performStatusItemRecovery` 안에서
+    /// heartbeat 마다 update 되므로 정확한 stuck 지속 시간 추적 가능.
+    func hasAnyEnabledStuckLongerThan(seconds: TimeInterval) -> Bool {
+        let now = Date()
+        let enabledForDisplay = Set(self.store.enabledProvidersForDisplay())
+        for (provider, since) in self.providerBlockedSince {
+            guard enabledForDisplay.contains(provider) else { continue }
+            if now.timeIntervalSince(since) > seconds {
+                return true
+            }
+        }
+        return false
+    }
+
+    /// 단일 provider 의 NSStatusItem 만 통째 재생성. 다른 provider 영향 없음.
+    /// 1.5.7: `recreateStatusItemsForVisibilityRecovery` 의 전체 wipe 대신 evict 된
+    /// provider 만 골라 처리. cross-effect 위험 최소화.
+    private func recreateProviderStatusItem(for provider: UsageProvider) {
+        // 기존 instance 제거 (dictionary + statusBar 양쪽).
+        if let menu = self.providerMenus.removeValue(forKey: provider) {
+            let menuID = ObjectIdentifier(menu)
+            self.menuProviders.removeValue(forKey: menuID)
+            self.menuVersions.removeValue(forKey: menuID)
+            self.openMenus.removeValue(forKey: menuID)
+            self.menuRefreshTasks.removeValue(forKey: menuID)?.cancel()
+        }
+        if let item = self.statusItems.removeValue(forKey: provider) {
+            item.menu = nil
+            self.statusBar.removeStatusItem(item)
+        }
+        self.lastAppliedProviderIconRenderSignatures.removeValue(forKey: provider)
+        // 새 instance 생성 (lazyStatusItem) + visibility + icon + menu 다시 부착.
+        let newItem = self.lazyStatusItem(for: provider)
+        let enabledForDisplay = Set(self.store.enabledProvidersForDisplay())
+        newItem.isVisible = enabledForDisplay.contains(provider)
+        self.updateIcons()
+        self.attachMenus(fallback: nil)
     }
 
 
@@ -691,11 +860,10 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
             self.refreshOpenMenusForStructureChange()
         }
         self.refreshNewlyEnabledProvidersIfNeeded()
-        // 1.5.4: 1.5.3 에서 추가했던 self.requestVisibilityRecovery 호출 제거.
-        // 토글마다 destructive cascade 발화시켜 다른 status item 까지 영향 주는
-        // cross-effect 가 사용자가 보고한 "토글 후 사용량 안 나옴" 의 root cause 였음.
-        // settings 변경 자체는 evict 일으키지 않으므로 recovery 불필요. 진짜 evict 는
-        // wake observer + 30초 heartbeat 가 잡음.
+        // 1.7.0: 1.5.8 의 self-recovery 호출 제거. heartbeat (15s) 가 어차피 unhealthy
+        // status item 자동 복구. 사용자가 즉시 복구 원하면 manual recover 버튼 사용
+        // (1.6.0) — heartbeat 도 manual button 도 못 풀리는 진짜 stuck 은 process
+        // restart 로 해결 (1.7.0). settings 변경 자체는 evict 안 일으키므로 recovery 불필요.
     }
 
     /// 토글 OFF → ON 으로 새로 enabled 된 provider 가 있으면 즉시 fetch 를 트리거한다.
@@ -933,7 +1101,7 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
         self.isReleasedForTesting = true
         self.blinkTask?.cancel()
         self.loginTask?.cancel()
-        self.screenChangeVisibilityTask?.cancel()
+        self.pendingRecoveryTask?.cancel()
         self.pendingScreenChangePreviousCount = nil
         self.animationDriver?.stop()
         self.animationDriver = nil
@@ -974,7 +1142,7 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
         }
         self.blinkTask?.cancel()
         self.loginTask?.cancel()
-        self.screenChangeVisibilityTask?.cancel()
+        self.pendingRecoveryTask?.cancel()
         self.iconHeartbeatTask?.cancel()
         self.pendingScreenChangePreviousCount = nil
         NotificationCenter.default.removeObserver(self)

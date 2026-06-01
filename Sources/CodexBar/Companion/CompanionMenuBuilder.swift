@@ -127,7 +127,15 @@ final class CompanionMenuBuilder: NSObject, NSMenuDelegate {
 
         menu.addItem(.separator())
 
-        // 7) Preferences + Quit
+        // 7) Recover menu bar (1.6.0) + Preferences + Quit
+        let recover = NSMenuItem(title: L("menubar.recover.menu_item"),
+                                 action: #selector(self.recoverMenuBar),
+                                 keyEquivalent: "")
+        recover.target = self
+        recover.image = NSImage(systemSymbolName: "arrow.clockwise.circle",
+                                accessibilityDescription: nil)
+        menu.addItem(recover)
+
         let prefs = NSMenuItem(title: L("companion.menu.preferences"),
                                action: #selector(self.openPreferences),
                                keyEquivalent: ",")
@@ -138,6 +146,10 @@ final class CompanionMenuBuilder: NSObject, NSMenuDelegate {
                               action: #selector(NSApplication.terminate(_:)),
                               keyEquivalent: "q")
         menu.addItem(quit)
+    }
+
+    @objc private func recoverMenuBar() {
+        (NSApp.delegate as? AppDelegate)?.forceRecoverAllMenuBarItems()
     }
 
     private func composeStateLine(stage: CompanionPaceStage,
@@ -194,8 +206,13 @@ final class CompanionMenuBuilder: NSObject, NSMenuDelegate {
     }
 
     private static func topModelName(from snapshot: CostUsageTokenSnapshot?) -> String? {
-        guard let entries = snapshot?.daily, let today = entries.first else { return nil }
-        guard let models = today.modelBreakdowns, !models.isEmpty else { return nil }
+        guard let entries = snapshot?.daily, !entries.isEmpty else { return nil }
+        // 가장 최근 날짜의 entry. 이전엔 `entries.first` 를 썼는데 daily 배열이 오래된 날
+        // 우선으로 정렬돼 있어 옛날 날의 top model 이 고정 표시되던 버그가 있었음
+        // (사용자: 4.8 쓰는데 "주요 모델: Opus 4.7" 계속 표시). date 는 "YYYY-MM-DD" 라
+        // 사전식 비교 = 시간순. "오늘 tokens" 표시(tokenSnapshot 의 most-recent day)와 일치.
+        guard let today = entries.max(by: { $0.date < $1.date }),
+              let models = today.modelBreakdowns, !models.isEmpty else { return nil }
         let top = models.max { (a, b) in (a.costUSD ?? 0) < (b.costUSD ?? 0) }
         return top?.modelName
     }

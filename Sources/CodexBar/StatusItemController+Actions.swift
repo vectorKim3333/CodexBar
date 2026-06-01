@@ -265,6 +265,12 @@ extension StatusItemController: StatusItemMenuPersistentActionDelegate {
         NSApp.terminate(nil)
     }
 
+    /// 1.6.0: 메뉴의 "메뉴바 아이콘 복구" 항목 클릭 시 호출.
+    /// AppDelegate 로 위임 — 사용량 pill + Companion 양쪽 다 강제 재생성.
+    @objc func recoverMenuBarFromMenu() {
+        (NSApp.delegate as? AppDelegate)?.forceRecoverAllMenuBarItems()
+    }
+
     @objc func copyError(_ sender: NSMenuItem) {
         if let err = sender.representedObject as? String {
             let pb = NSPasteboard.general

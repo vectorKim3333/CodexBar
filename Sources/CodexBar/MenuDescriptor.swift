@@ -66,6 +66,7 @@ struct MenuDescriptor {
         case quit
         case copyError(String)
         case updateAvailable
+        case recoverMenuBar
     }
 
     var sections: [Section]
@@ -348,6 +349,7 @@ struct MenuDescriptor {
         }
         entries.append(contentsOf: [
             .action(L("Refresh"), .refresh),
+            .action(L("menubar.recover.menu_item"), .recoverMenuBar),
             .action(L("Settings..."), .settings),
             .action(L("About CodexBar"), .about),
             .action(L("Quit"), .quit),
@@ -443,6 +445,7 @@ extension MenuDescriptor.MenuAction {
         case .loginToProvider: MenuDescriptor.MenuActionSystemImage.loginToProvider.rawValue
         case .copyError: MenuDescriptor.MenuActionSystemImage.copyError.rawValue
         case .updateAvailable: nil
+        case .recoverMenuBar: MenuDescriptor.MenuActionSystemImage.refresh.rawValue
         }
     }
 }

@@ -72,13 +72,23 @@ enum CompanionSpriteFrameRenderer {
         }
     }
 
-    /// Fallback chain — macOS 버전이 낮아 "dog" 가 없으면 보편적인 `pawprint.fill` 로 대체.
-    /// 둘 다 실패하면 nil → drawFrame 이 빈 NSImage 반환.
+    /// Fallback chain. 사용자 환경에 따라 SF Symbol 이 일시적으로 nil 반환하는 케이스가
+    /// 있어 (display sleep 후 cache invalidation 등) 여러 후보를 순차 시도. 모든 SF
+    /// Symbol 실패해도 `drawFrame` 의 placeholder rendering 으로 zero-size image 절대 안 반환.
+    private static let universalFallbackSymbols: [String] = [
+        "pawprint.fill", "pawprint", "circle.fill", "questionmark.circle.fill",
+    ]
+
     private static func resolveSymbol(name: String) -> NSImage? {
         if let img = NSImage(systemSymbolName: name, accessibilityDescription: nil) {
             return img
         }
-        return NSImage(systemSymbolName: "pawprint.fill", accessibilityDescription: nil)
+        for candidate in Self.universalFallbackSymbols {
+            if let img = NSImage(systemSymbolName: candidate, accessibilityDescription: nil) {
+                return img
+            }
+        }
+        return nil
     }
 
     // MARK: - Drawing
@@ -86,11 +96,19 @@ enum CompanionSpriteFrameRenderer {
     private static func drawFrame(character: CompanionCharacter, frameIndex: Int, size: NSSize) -> NSImage {
         let image = NSImage(size: size)
         image.lockFocus()
-        defer { image.unlockFocus() }
 
         guard let ctx = NSGraphicsContext.current?.cgContext,
               let symbol = self.resolveSymbol(name: self.symbolName(for: character))
-        else { return image }
+        else {
+            // SF Symbol resolution 완전 실패 → 직접 그린 placeholder (단색 원).
+            // macOS 가 zero-size image 인 status item 을 자동 hide 하기 때문에 절대로
+            // 빈 NSImage 반환하면 안 됨. 작은 dot 이라도 그려서 visible 보장.
+            self.drawPlaceholderInLockedContext(size: size)
+            image.unlockFocus()
+            image.isTemplate = true
+            return image
+        }
+        defer { image.unlockFocus() }
 
         // SF Symbol pointSize 명시 — image size 보다 작게 둬서 rotate 후에도 가장자리 잘림 방지.
         let config = NSImage.SymbolConfiguration(pointSize: Self.symbolPointSize, weight: .medium)
@@ -115,5 +133,17 @@ enum CompanionSpriteFrameRenderer {
         configured.draw(in: drawRect, from: .zero, operation: .sourceOver, fraction: 1)
 
         return image
+    }
+
+    /// SF Symbol resolution 실패 시 직접 픽셀 그려서 visible 보장.
+    /// 빈 NSImage (width=0 / height=0) 를 button.image 로 set 하면 macOS 가 status item
+    /// 을 자동 hide 시켜 사용자가 캐릭터를 못 보는 케이스가 발생함 (1.5.6 사용자 보고).
+    /// 호출자가 이미 image.lockFocus() 한 context 안에서 호출해야 함.
+    private static func drawPlaceholderInLockedContext(size: NSSize) {
+        NSColor.black.setFill()
+        let inset: CGFloat = 4
+        NSBezierPath(ovalIn: NSRect(
+            x: inset, y: inset,
+            width: size.width - inset * 2, height: size.height - inset * 2)).fill()
     }
 }

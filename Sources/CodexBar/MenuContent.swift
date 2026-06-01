@@ -138,6 +138,8 @@ struct MenuContent: View {
             self.actions.copyError(message)
         case .updateAvailable:
             UpdateChecker.shared.openInstallGuide()
+        case .recoverMenuBar:
+            (NSApp.delegate as? AppDelegate)?.forceRecoverAllMenuBarItems()
         }
     }
 }

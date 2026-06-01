@@ -291,6 +291,15 @@ final class UsageStore {
             self.codexAccountSnapshots = codexAccountUsageSnapshotStore.load(
                 for: settings.codexVisibleAccountProjection.visibleAccounts)
         }
+        // 1.8.3: 마지막 사용량 snapshot 복원 (warm start). 디스플레이 변경 자동 재시작
+        // (1.8.2) 의 cold start 에서 빈 pill / "인증 만료" 문구 flash 제거. stale 로 표시되고
+        // 첫 refresh 가 실제 값으로 갱신. background work 시작하는 정상 실행에서만 복원.
+        if self.startupBehavior.automaticallyStartsBackgroundWork {
+            let cachedSnapshots = UsageSnapshotCache.load()
+            if !cachedSnapshots.isEmpty {
+                self.snapshots = cachedSnapshots
+            }
+        }
         self.logStartupState()
         self.bindSettings()
         self.pathDebugInfo = PathDebugSnapshot(

@@ -135,6 +135,9 @@ extension UsageStore {
                 self.handleSessionQuotaTransition(provider: provider, snapshot: backfilled)
                 self.lastKnownResetSnapshots[provider] = backfilled
                 self.snapshots[provider] = backfilled
+                // 1.8.3: 성공한 snapshot 을 warm-start 캐시에 저장 (개별 provider refresh
+                // 경로 — 전체 refresh 의 persistWidgetSnapshot 만으론 startup 직후 누락).
+                self.saveUsageSnapshotCache()
                 self.lastSourceLabels[provider] = result.sourceLabel
                 self.errors[provider] = nil
                 self.rateLimitBackoffUntil.removeValue(forKey: provider)
