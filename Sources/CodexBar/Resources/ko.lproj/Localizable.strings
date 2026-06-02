@@ -524,6 +524,7 @@
 "companion.section.title" = "캐릭터";
 "companion.toggle.label" = "메뉴바에 캐릭터 표시";
 "companion.toggle.subtitle" = "토큰 사용 속도에 따라 움직이는 캐릭터를 메뉴바에 추가합니다.";
+"companion.notVisible.hint" = "캐릭터가 메뉴바에 안 보이나요? 메뉴바 공간이 부족하면 (특히 노치 있는 작은 화면) macOS 가 캐릭터를 노치 뒤로 숨깁니다. ⌘ 키를 누른 채 메뉴바 아이콘을 드래그해 위치를 옮기거나, 다른 메뉴바 앱을 줄여 보세요. 옮긴 위치는 다음 실행에도 유지됩니다.";
 "companion.character.label" = "캐릭터";
 "companion.target.label" = "대상";
 "companion.character.dog" = "강아지";

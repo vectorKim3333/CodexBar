@@ -127,6 +127,10 @@ struct DisplayPane: View {
                 }
                 self.companionTargetRow
                 CompanionPreviewView(character: self.settings.companionCharacter)
+                Text(L("companion.notVisible.hint"))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }

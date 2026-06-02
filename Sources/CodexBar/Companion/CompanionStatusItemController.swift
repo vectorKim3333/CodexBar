@@ -72,6 +72,10 @@ final class CompanionStatusItemController {
     func start() {
         guard self.statusItem == nil else { return }
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        // 1.8.7: 좁은(노치) 메뉴바에서 캐릭터가 overflow 로 잘려 안 보일 때, 사용자가 ⌘-드래그로
+        // 위치를 옮겨 빼낼 수 있다. autosaveName 이 없으면 잦은 재시작(디스플레이 변경/heartbeat
+        // 등)마다 위치가 초기화돼 다시 잘린다. 이름을 주면 macOS 가 위치를 기억해 수동 복구가 유지됨.
+        item.autosaveName = "ClCoBar.companion"
         item.button?.image = CompanionSpriteFrameRenderer.render(
             character: self.character, frameIndex: 0)
         item.button?.action = #selector(self.handleClick)

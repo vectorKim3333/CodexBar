@@ -513,6 +513,7 @@
 "companion.section.title" = "Character";
 "companion.toggle.label" = "Show character in menu bar";
 "companion.toggle.subtitle" = "Adds a character to the menu bar that moves at a speed based on token burn rate.";
+"companion.notVisible.hint" = "Character not showing in the menu bar? When the menu bar is full (especially on small notched displays), macOS hides items behind the notch. Hold ⌘ and drag the menu bar icons to reposition, or remove other menu bar apps to free up space. The new position is remembered across restarts.";
 "companion.character.label" = "Character";
 "companion.target.label" = "Target";
 "companion.character.dog" = "Dog";
