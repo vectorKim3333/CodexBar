@@ -929,6 +929,9 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
             return existing
         }
         let item = Self.makeStatusItem(statusBar: self.statusBar)
+        // 1.8.7: provider 별 고정 위치 기억. 좁은 메뉴바에서 사용자가 ⌘-드래그로 재배치한
+        // 위치가 잦은 재시작(디스플레이 변경/heartbeat) 후에도 유지되도록 한다.
+        item.autosaveName = "ClCoBar.pill.\(provider.rawValue)"
         self.statusItems[provider] = item
         return item
     }

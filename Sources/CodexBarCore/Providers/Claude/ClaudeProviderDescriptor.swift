@@ -101,12 +101,37 @@ public enum ClaudeProviderDescriptor {
         // OAuth 로 동작하는 사용자는 매 refresh 마다 브라우저를 긁지 않아 프롬프트가 사라진다.
         let hasManualHeader = Self.manualCookieHeader(from: context) != nil
         let explicitWeb = selectedDataSource == .web
-        let needsWebProbe = hasManualHeader || explicitWeb || webExtrasEnabled || (!hasOAuth && !hasCLI)
-        let hasWebSession = needsWebProbe
-            ? ClaudeWebFetchStrategy.isAvailableForFallback(
+        // 사용자가 명시적으로 Web 을 원하는 경우 (manual header / Web 소스 / webExtras) 는 항상 probe.
+        let explicitWebNeed = hasManualHeader || explicitWeb || webExtrasEnabled
+        // OAuth·CLI 둘 다 없을 때만 Web 이 유일한 자동 fallback.
+        let autoWebFallback = !hasOAuth && !hasCLI
+
+        let hasWebSession: Bool
+        if explicitWebNeed {
+            hasWebSession = ClaudeWebFetchStrategy.isAvailableForFallback(
                 context: context,
                 browserDetection: context.browserDetection)
-            : false
+        } else if autoWebFallback {
+            // 1.8.7: 자동 fallback probe 는 세션이 *없으면* negative 캐시로 재스캔을 막는다.
+            // 브라우저 쿠키 스캔이 TCC "다른 앱의 데이터에 접근" 프롬프트를 유발하고, ad-hoc
+            // 서명 앱은 그 동의가 launch 간 유지되지 않아 세션 없는 사용자가 매 refresh ·
+            // cold-start (모니터 도킹/언도킹 재시작 포함) 마다 프롬프트를 다시 받았다.
+            if ClaudeWebProbeGate.shouldProbe() {
+                let available = ClaudeWebFetchStrategy.isAvailableForFallback(
+                    context: context,
+                    browserDetection: context.browserDetection)
+                if available {
+                    ClaudeWebProbeGate.recordSessionFound()
+                } else {
+                    ClaudeWebProbeGate.recordNoSession()
+                }
+                hasWebSession = available
+            } else {
+                hasWebSession = false
+            }
+        } else {
+            hasWebSession = false
+        }
 
         return ClaudeSourcePlanningInput(
             runtime: context.runtime,
