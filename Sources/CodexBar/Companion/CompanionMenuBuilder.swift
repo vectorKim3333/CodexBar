@@ -243,6 +243,7 @@ final class CompanionMenuBuilder: NSObject, NSMenuDelegate {
     private static func shortModelName(_ raw: String) -> String {
         let lower = raw.lowercased()
         let families: [(needle: String, pretty: String)] = [
+            ("fable", "Fable"),
             ("opus", "Opus"),
             ("sonnet", "Sonnet"),
             ("haiku", "Haiku"),

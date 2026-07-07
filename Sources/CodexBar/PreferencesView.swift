@@ -119,6 +119,47 @@ struct PreferencesView: View {
     private static let settingsWindowIdentifier = "com_apple_SwiftUI_Settings_window"
     private static let knownTabTitles = Set(PreferencesTab.allCases.map(\.title))
 
+    static func settingsWindow() -> NSWindow? {
+        NSApp.windows.first {
+            $0.identifier?.rawValue == settingsWindowIdentifier
+                || knownTabTitles.contains($0.title)
+        }
+    }
+
+    /// Brings the Settings window to the front and pulls it onto a visible screen.
+    /// Returns `false` when the window doesn't exist yet (the SwiftUI `Settings`
+    /// scene opens asynchronously, so callers poll until this succeeds).
+    ///
+    /// Robustness this buys, beyond just opening the scene:
+    /// - Multi-monitor / disconnected-display restore: SwiftUI restores the window
+    ///   to its last saved frame, which can land on a monitor that is no longer
+    ///   attached — the window "opens" but is entirely off every current screen and
+    ///   the user sees nothing. We recenter it onto the main screen in that case.
+    /// - Opening behind the frontmost app: `orderFrontRegardless()` guarantees it
+    ///   surfaces even when another app is active.
+    @discardableResult
+    static func presentSettingsWindowToFront() -> Bool {
+        guard let window = settingsWindow() else { return false }
+        constrainOnScreen(window)
+        window.makeKeyAndOrderFront(nil)
+        window.orderFrontRegardless()
+        return true
+    }
+
+    private static func constrainOnScreen(_ window: NSWindow) {
+        let frame = window.frame
+        // Reachable if the title-bar strip overlaps some visible screen area.
+        let titleStrip = NSRect(
+            x: frame.minX, y: frame.maxY - 24, width: frame.width, height: 24)
+        let reachable = NSScreen.screens.contains { $0.visibleFrame.intersects(titleStrip) }
+        if reachable { return }
+        guard let screen = NSScreen.main ?? NSScreen.screens.first else { return }
+        let vf = screen.visibleFrame
+        window.setFrameOrigin(NSPoint(
+            x: vf.midX - frame.width / 2,
+            y: vf.midY - frame.height / 2))
+    }
+
     private static func resizeSettingsWindow(width: CGFloat, height: CGFloat, animate: Bool) {
         guard let window = NSApp.windows.first(where: {
             $0.identifier?.rawValue == settingsWindowIdentifier
