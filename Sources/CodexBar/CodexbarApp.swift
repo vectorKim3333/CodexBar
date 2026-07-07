@@ -98,12 +98,6 @@ struct CodexBarApp: App {
         .windowResizability(.contentSize)
     }
 
-    private func openSettings(tab: PreferencesTab) {
-        self.preferencesSelection.tab = tab
-        NSApp.activate(ignoringOtherApps: true)
-        _ = NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
-    }
-
     private static func applyLanguagePreference(from settings: SettingsStore) {
         // ClCoBar is Korean-only. Force the AppleLanguages preference so any
         // system-localized APIs (formatters, etc.) also speak Korean.
@@ -197,11 +191,44 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// 사용자가 메뉴 / ⌘, 도 못 쓸 때의 최종 수단. 환경설정 자동 표시 + status item 강제
     /// 복구. ClCoBar 는 LSUIElement 라 Dock 아이콘 없지만 macOS 가 이 콜백을 발화함.
     func applicationShouldHandleReopen(_: NSApplication, hasVisibleWindows _: Bool) -> Bool {
-        self.forceRecoverAllMenuBarItems()
+        // 1.8.10: 예전엔 여기서 무조건 `forceRecoverAllMenuBarItems()` (500ms 뒤 process
+        // relaunch) 를 호출하고 `showPreferencesWindow:` 셀렉터로 설정을 열려 했다. macOS 13+
+        // 에서 그 셀렉터는 `showSettingsWindow:` 로 개명돼 응답자가 없어(sendAction=false)
+        // 설정이 안 떴고, 설령 떠도 500ms 뒤 relaunch 가 창을 죽였다 — 즉 "아이콘이 다 사라져
+        // Finder 에서 앱을 다시 열어 설정으로 탈출" 이라는 catch-22 escape 의 목적 자체가 깨져
+        // 있었다. relaunch 는 1.8.5 에서 본 TCC "다른 앱 데이터 접근" 프롬프트도 유발.
+        //
+        // 이제는 relaunch 없이 설정만 확실히 연다. keepalive WindowGroup 창(→ env
+        // `openSettings()`)은 메뉴바 status item 과 독립적이라 아이콘이 숨겨진 상태에서도
+        // 동작하므로, 설정만 열어주면 사용자가 그 안의 "메뉴바 아이콘 복구" 버튼으로 복구할 수
+        // 있다 (복구 = 명시적 relaunch, 설정 진입과 분리).
+        self.openSettingsFromReopen()
+        return true
+    }
+
+    /// 확실하게 설정 창을 여는 단일 경로. 주 경로는 keepalive 창을 통한 SwiftUI env action
+    /// (`.codexbarOpenSettings` → `HiddenWindowView`), keepalive 창이 없을 극히 드문 경우를
+    /// 위해 macOS 버전에 맞는 AppKit 셀렉터를 폴백으로 시도한다.
+    @MainActor
+    private func openSettingsFromReopen() {
         self.preferencesSelection?.tab = .general
         NSApp.activate(ignoringOtherApps: true)
-        _ = NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
-        return true
+        NotificationCenter.default.post(
+            name: .codexbarOpenSettings,
+            object: nil,
+            userInfo: ["tab": PreferencesTab.general.rawValue])
+        // Fallback: macOS 13+ 는 showPreferencesWindow: → showSettingsWindow: 로 개명.
+        if !NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil) {
+            _ = NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
+        }
+        // 어느 경로로 열렸든 창을 앞으로 + 화면 안으로. (keepalive 창이 살아있으면
+        // HiddenWindowView 도 같은 일을 하지만, 죽은 경우까지 커버.)
+        Task { @MainActor in
+            for _ in 0 ..< 20 {
+                if PreferencesView.presentSettingsWindowToFront() { break }
+                try? await Task.sleep(for: .milliseconds(50))
+            }
+        }
     }
 
     func runProviderLoginFlow(_ provider: UsageProvider) async {

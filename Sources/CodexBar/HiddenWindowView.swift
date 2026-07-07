@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct HiddenWindowView: View {
@@ -9,6 +10,13 @@ struct HiddenWindowView: View {
             .onReceive(NotificationCenter.default.publisher(for: .codexbarOpenSettings)) { _ in
                 Task { @MainActor in
                     self.openSettings()
+                    // The SwiftUI `Settings` scene opens asynchronously; poll briefly and
+                    // then surface it (front + on-screen) so it can't hide behind another
+                    // app or land off-screen on a disconnected-monitor restore.
+                    for _ in 0 ..< 20 {
+                        if PreferencesView.presentSettingsWindowToFront() { break }
+                        try? await Task.sleep(for: .milliseconds(50))
+                    }
                 }
             }
             .task {

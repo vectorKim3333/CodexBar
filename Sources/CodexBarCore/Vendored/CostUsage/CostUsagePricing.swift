@@ -258,6 +258,16 @@ enum CostUsagePricing {
             outputCostPerTokenAboveThreshold: nil,
             cacheCreationInputCostPerTokenAboveThreshold: nil,
             cacheReadInputCostPerTokenAboveThreshold: nil),
+        "claude-fable-5": ClaudePricing(
+            inputCostPerToken: 1e-5,
+            outputCostPerToken: 5e-5,
+            cacheCreationInputCostPerToken: 1.25e-5,
+            cacheReadInputCostPerToken: 1e-6,
+            thresholdTokens: nil,
+            inputCostPerTokenAboveThreshold: nil,
+            outputCostPerTokenAboveThreshold: nil,
+            cacheCreationInputCostPerTokenAboveThreshold: nil,
+            cacheReadInputCostPerTokenAboveThreshold: nil),
         "claude-sonnet-4-5": ClaudePricing(
             inputCostPerToken: 3e-6,
             outputCostPerToken: 1.5e-5,
@@ -518,12 +528,20 @@ enum CostUsagePricing {
 
     /// 가격표에 정확히 없는 (대개 새로 나온) Claude 모델용 family fallback.
     /// 신규 모델 출시 때마다 가격표가 없으면 비용이 0 으로 잡혀 cost 기반 표시가 틀어진다
-    /// (예: opus-4-8 출시 직후 cost=$0 → Opus 가 "주요 모델"(=최대 비용)에서 누락).
+    /// (예: opus-4-8 출시 직후 cost=$0 → Opus 가 "주요 모델"(=최대 비용)에서 누락.
+    /// fable-5 출시 직후에도 같은 버그 재발 — family 분기가 새 family 를 못 잡았음).
     /// 해당 family 의 최신 알려진 단가로 대체해 0 비용을 방지한다.
     private static func claudeFamilyFallbackPricing(for normalizedKey: String) -> ClaudePricing? {
+        if normalizedKey.contains("fable") { return self.claude["claude-fable-5"] }
         if normalizedKey.contains("opus") { return self.claude["claude-opus-4-8"] }
         if normalizedKey.contains("sonnet") { return self.claude["claude-sonnet-4-6"] }
         if normalizedKey.contains("haiku") { return self.claude["claude-haiku-4-5"] }
+        // 완전히 새로운 family (예: fable 첫 등장) 도 $0 으로 떨어지지 않도록 최후 fallback:
+        // 현행 최상위(flagship) 단가로 추정. 저가 모델이면 과대 추정될 수 있지만, $0 은
+        // "주요 모델" 산정과 일일 비용 합계를 둘 다 깨뜨리므로 추정이 낫다. 캐시는
+        // pricedSampleCount<sampleCount 경로로 정확한 단가 추가 시 자동 재계산된다.
+        // "claude" prefix 가드: 로그의 "<synthetic>" 류 비모델 항목엔 가격을 매기지 않음.
+        if normalizedKey.hasPrefix("claude") { return self.claude["claude-fable-5"] }
         return nil
     }
 
